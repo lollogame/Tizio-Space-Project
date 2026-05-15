@@ -1,16 +1,27 @@
-MIT License
+Custom Source License (CSL) v1.0
 
-Copyright (c) 2026 Tizio9258
+Copyright (c) 2026 [T.S.P MOD - Tizio9258]
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+of this software and associated documentation files (the "Software"), to use,
+copy, modify, fork, and distribute the Software, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. The original copyright notice and this license must be included in all copies
+   or substantial portions of the Software.
+
+2. Original creator credits must be clearly retained in source code distributions
+   and documentation.
+
+3. Forks and modified versions may be publicly distributed.
+
+4. Commercial use of the Software is permitted, including internal business use,
+   SaaS usage, and integration into commercial environments.
+
+5. Selling the Software, sublicensing it for direct monetary profit, or selling
+   modified versions of the Software as standalone products is prohibited without
+   prior written permission from the original copyright holder.
+
+6. This license applies to the Software and all derivative works.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
