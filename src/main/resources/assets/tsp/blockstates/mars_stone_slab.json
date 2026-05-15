@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "tsp:block/mars/mars_stone_slab"
+    },
+    "type=double": {
+      "model": "tsp:block/mars/mars_stone"
+    },
+    "type=top": {
+      "model": "tsp:block/mars/mars_stone_slab_top"
+    }
+  }
+}

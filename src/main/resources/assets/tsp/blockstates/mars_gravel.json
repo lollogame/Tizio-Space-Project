@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "tsp:block/mars/mars_gravel"
+      },
+      {
+        "model": "tsp:block/mars/mars_gravel",
+        "y": 90
+      },
+      {
+        "model": "tsp:block/mars/mars_gravel",
+        "y": 180
+      },
+      {
+        "model": "tsp:block/mars/mars_gravel",
+        "y": 270
+      }
+    ]
+  }
+}

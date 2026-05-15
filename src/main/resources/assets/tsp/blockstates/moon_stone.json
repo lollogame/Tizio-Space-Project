@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "tsp:block/moon/moon_stone"
+      },
+      {
+        "model": "tsp:block/moon/moon_stone",
+        "y": 90
+      },
+      {
+        "model": "tsp:block/moon/moon_stone",
+        "y": 180
+      },
+      {
+        "model": "tsp:block/moon/moon_stone",
+        "y": 270
+      }
+    ]
+  }
+}

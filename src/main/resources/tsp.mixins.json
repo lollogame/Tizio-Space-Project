@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "tizio.dev.tsp.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "tsp.refmap.json",
+  "mixins": [
+    "entity.GravityModifier",
+    "entity.ItemGravity",
+    "entity.NoVoidDamage"
+  ],
+  "client": [
+    "render.DepthModifier"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

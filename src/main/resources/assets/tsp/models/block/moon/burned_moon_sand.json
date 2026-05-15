@@ -1,0 +1,8 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "tsp:block/burned_moon_sand",
+    "particle": "tsp:block/burned_moon_sand"
+  },
+  "render_type": "solid"
+}

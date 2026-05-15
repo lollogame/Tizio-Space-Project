@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "tsp:block/mars_stone",
+    "top": "tsp:block/mars_stone",
+    "side": "tsp:block/mars_stone"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "tsp:item/space_suit_tier_1_boots"
+  }
+}

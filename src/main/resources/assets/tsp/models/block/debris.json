@@ -1,0 +1,8 @@
+{
+  "parent": "tsp:custom/debris_1",
+  "textures": {
+    "all": "tsp:block/debris",
+    "particle": "tsp:block/debris"
+  },
+  "render_type": "cutout"
+}

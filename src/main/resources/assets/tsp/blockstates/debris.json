@@ -1,0 +1,36 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "tsp:custom/debris_1"
+      },
+      {
+        "model": "tsp:custom/debris_1",
+        "y": 90
+      },
+      {
+        "model": "tsp:custom/debris_1",
+        "y": 180
+      },
+      {
+        "model": "tsp:custom/debris_1",
+        "y": 270
+      },
+      {
+        "model": "tsp:custom/debris_2"
+      },
+      {
+        "model": "tsp:custom/debris_2",
+        "y": 90
+      },
+      {
+        "model": "tsp:custom/debris_2",
+        "y": 180
+      },
+      {
+        "model": "tsp:custom/debris_2",
+        "y": 270
+      }
+    ]
+  }
+}

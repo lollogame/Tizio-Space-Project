@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "tsp:block/moon/burned_moon_sand"
+      },
+      {
+        "model": "tsp:block/moon/burned_moon_sand",
+        "y": 90
+      },
+      {
+        "model": "tsp:block/moon/burned_moon_sand",
+        "y": 180
+      },
+      {
+        "model": "tsp:block/moon/burned_moon_sand",
+        "y": 270
+      }
+    ]
+  }
+}

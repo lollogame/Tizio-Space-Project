@@ -1,0 +1,29 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "tsp:projection",
+  "fragment": "tsp:sun",
+  "attributes": ["Position", "UV0"],
+  "samplers": [
+    { "name": "Sampler0" }
+  ],
+  "uniforms": [
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1] },
+    { "name": "ProjMat",      "type": "matrix4x4", "count": 16, "values": [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1] },
+    { "name": "PlanetRadius",       "type": "float", "count": 1, "values": [2.8]  },
+    { "name": "SunRadius",          "type": "float", "count": 1, "values": [3.4]  },
+    { "name": "BloomRadius",        "type": "float", "count": 1, "values": [5.0]  },
+    { "name": "Density",            "type": "float", "count": 1, "values": [4.0]  },
+    { "name": "ScatteringStrength", "type": "float", "count": 1, "values": [1.0]  },
+    { "name": "Time",               "type": "float", "count": 1, "values": [0.0]  },
+    { "name": "SunTint",            "type": "float", "count": 3, "values": [1.0, 0.92, 0.75] },
+    { "name": "CenterRelative",     "type": "float", "count": 3, "values": [0.0, 0.0, 0.0]  },
+    { "name": "AxisX",              "type": "float", "count": 3, "values": [1.0, 0.0, 0.0]  },
+    { "name": "AxisY",              "type": "float", "count": 3, "values": [0.0, 1.0, 0.0]  },
+    { "name": "AxisZ",              "type": "float", "count": 3, "values": [0.0, 0.0, 1.0]  },
+    { "name": "CameraLocalPos",     "type": "float", "count": 3, "values": [0.0, 0.0, -16.0] }
+  ]
+}

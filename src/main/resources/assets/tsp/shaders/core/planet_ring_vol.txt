@@ -1,0 +1,140 @@
+#version 150
+
+uniform float PlanetRadius;
+uniform float RingInnerRadius;
+uniform float RingOuterRadius;
+uniform vec3  LightDirection;
+uniform vec3  CameraLocalPos;
+uniform sampler2D Sampler0;
+
+in  vec3 fragLocalPos;
+out vec4 fragColor;
+
+const float ShadowSoftness      = 0.015;
+const float AmbientLight        = 0.10;
+const float RingAmbient         = 5.55;
+
+const float RING_HALF_HEIGHT    = 0.015;
+const int   MARCH_STEPS         = 16;
+const float ABSORPTION          = 6.0;
+const float SCATTER_FWD         = 8.0;
+const float SCATTER_BACK        = 1.8;
+const float PHASE_G             = 0.55;
+const float DENSITY_SCALE       = 1.8;
+
+const float PROXIMITY_FADE_DIST = 0.4;
+const float PROXIMITY_FADE_SOFT = 0.6;
+
+struct Ray {
+    vec3 origin;
+    vec3 direction;
+};
+
+float raySphereIntersectNearest(Ray ray, float radius) {
+    float a = dot(ray.direction, ray.direction);
+    float b = 2.0 * dot(ray.origin, ray.direction);
+    float c = dot(ray.origin, ray.origin) - radius * radius;
+    float disc = b * b - 4.0 * a * c;
+    if (disc < 0.0) return -1.0;
+    float sqrtDisc = sqrt(disc);
+    float t0 = (-b - sqrtDisc) / (2.0 * a);
+    float t1 = (-b + sqrtDisc) / (2.0 * a);
+    if (t1 < 0.0) return -1.0;
+    return (t0 >= 0.0) ? t0 : t1;
+}
+
+vec2 ringUV(vec3 p) {
+    float r     = length(p);
+    float v     = (r - RingInnerRadius) / max(RingOuterRadius - RingInnerRadius, 0.0001);
+    float angle = atan(p.z, p.x) / (2.0 * 3.14159265358979) + 0.5;
+    return vec2(fract(angle), clamp(v, 0.0, 1.0));
+}
+
+float proximityFade(vec3 p) {
+    float dist = length(p - CameraLocalPos);
+    float inner = PROXIMITY_FADE_DIST * (1.0 - PROXIMITY_FADE_SOFT);
+    return smoothstep(inner, PROXIMITY_FADE_DIST, dist);
+}
+
+float ringDensity(vec3 p) {
+    float r = length(p);
+    if (r < RingInnerRadius || r > RingOuterRadius) return 0.0;
+    vec4 tex = texture(Sampler0, ringUV(p));
+    float vFade = smoothstep(0.0, 0.06, tex.a) * smoothstep(1.0, 0.94, tex.a);
+    float yFade = 1.0 - smoothstep(0.0, 1.0, abs(p.y) / RING_HALF_HEIGHT);
+    return tex.a * vFade * yFade * DENSITY_SCALE * proximityFade(p);
+}
+
+float planetShadow(vec3 p) {
+    vec3 sunDir = normalize(LightDirection);
+    float tCA   = -dot(p, sunDir);
+    if (tCA <= 0.0) return 1.0;
+    vec3  closest = p + sunDir * tCA;
+    float dist    = length(closest);
+    float soft    = max(ShadowSoftness, 0.001) * PlanetRadius;
+    return smoothstep(PlanetRadius - soft, PlanetRadius + soft, dist);
+}
+
+float henyeyGreenstein(float cosTheta, float g) {
+    float g2 = g * g;
+    return (1.0 - g2) / pow(1.0 + g2 - 2.0 * g * cosTheta, 1.5) / (4.0 * 3.14159265358979);
+}
+
+void main() {
+    if (!gl_FrontFacing) discard;
+    if (dot(CameraLocalPos, CameraLocalPos) < PlanetRadius * PlanetRadius) discard;
+
+    Ray viewRay;
+    viewRay.origin    = CameraLocalPos;
+    viewRay.direction = normalize(fragLocalPos - CameraLocalPos);
+
+    float invDy  = 1.0 / (abs(viewRay.direction.y) < 0.00001 ? 0.00001 : viewRay.direction.y);
+    float tBot   = (-RING_HALF_HEIGHT - viewRay.origin.y) * invDy;
+    float tTop   = ( RING_HALF_HEIGHT - viewRay.origin.y) * invDy;
+    float tEnter = min(tBot, tTop);
+    float tExit  = max(tBot, tTop);
+
+    if (tExit < 0.0) discard;
+    tEnter = max(tEnter, 0.0);
+
+    float sphereHit = raySphereIntersectNearest(viewRay, PlanetRadius);
+    if (sphereHit >= 0.0) tExit = min(tExit, sphereHit);
+    if (tExit <= tEnter) discard;
+
+    vec3  sunDir   = normalize(LightDirection);
+    float cosTheta = dot(viewRay.direction, sunDir);
+    float phaseFwd = henyeyGreenstein(cosTheta,  PHASE_G);
+    float phaseBck = henyeyGreenstein(cosTheta, -PHASE_G * 0.5);
+
+    float stepSize    = (tExit - tEnter) / float(MARCH_STEPS);
+    float transmit    = 1.0;
+    vec3  accumulated = vec3(0.0);
+
+    for (int i = 0; i < MARCH_STEPS; i++) {
+        float t = tEnter + (float(i) + 0.5) * stepSize;
+        vec3  p = viewRay.origin + viewRay.direction * t;
+
+        float r = length(p);
+        if (r < RingInnerRadius || r > RingOuterRadius) continue;
+
+        float density = ringDensity(p);
+        if (density < 0.0001) continue;
+
+        vec4  texColor = texture(Sampler0, ringUV(p));
+        float shadow   = planetShadow(p);
+        float ambient  = mix(AmbientLight, RingAmbient, shadow);
+
+        float scatter  = (SCATTER_FWD * phaseFwd + SCATTER_BACK * phaseBck) * shadow + ambient;
+        vec3  sampleC  = texColor.rgb * scatter * density * stepSize;
+
+        accumulated += sampleC * transmit;
+        transmit    *= exp(-density * stepSize * ABSORPTION);
+
+        if (transmit < 0.002) break;
+    }
+
+    float alpha = 1.0 - transmit;
+    if (alpha < 0.001) discard;
+
+    fragColor = vec4(accumulated / max(alpha, 0.0001), alpha);
+}
