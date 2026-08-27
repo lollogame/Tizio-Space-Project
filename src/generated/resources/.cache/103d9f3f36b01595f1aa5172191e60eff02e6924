@@ -1,0 +1,4 @@
+// 1.20.1	2026-08-26T21:30:26.6106893	Registries
+9c01472895493c570bbad569e9cccf7809cd3cd1 data/tsp/forge/biome_modifier/mars_iron_ore_ore_add.json
+e9d3eb841c7a23ebc74962c575e8a7bff44c930a data/tsp/worldgen/configured_feature/mars_iron_ore_ore.json
+ca0e7580e02aa883b8bcbf8cbb34b5a63dac0989 data/tsp/worldgen/placed_feature/mars_iron_ore_ore_placed.json

@@ -1,0 +1,11 @@
+{
+  "type": "forge:add_features",
+  "biomes": [
+    "tsp:venus_plains",
+    "tsp:mars_plains",
+    "tsp:moon_plains",
+    "tsp:moon_wasted_plains"
+  ],
+  "features": "tsp:debris",
+  "step": "top_layer_modification"
+}

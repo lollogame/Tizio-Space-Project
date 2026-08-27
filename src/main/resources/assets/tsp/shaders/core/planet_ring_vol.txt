@@ -11,19 +11,19 @@ in  vec3 fragLocalPos;
 out vec4 fragColor;
 
 const float ShadowSoftness      = 0.015;
-const float AmbientLight        = 0.10;
-const float RingAmbient         = 5.55;
+const float AmbientLight        = 0.30;
+const float RingAmbient         = 1.55;
 
-const float RING_HALF_HEIGHT    = 0.015;
-const int   MARCH_STEPS         = 16;
+const float RING_HALF_HEIGHT    = 0.15;
+const int   MARCH_STEPS         = 1;
 const float ABSORPTION          = 6.0;
 const float SCATTER_FWD         = 8.0;
 const float SCATTER_BACK        = 1.8;
 const float PHASE_G             = 0.55;
-const float DENSITY_SCALE       = 1.8;
+const float DENSITY_SCALE       = 0.5;
 
-const float PROXIMITY_FADE_DIST = 0.4;
-const float PROXIMITY_FADE_SOFT = 0.6;
+const float DISSOLVE_WIDTH_RATIO = 0.25;
+const float DISSOLVE_SOFTNESS    = 0.5;
 
 struct Ray {
     vec3 origin;
@@ -50,10 +50,15 @@ vec2 ringUV(vec3 p) {
     return vec2(fract(angle), clamp(v, 0.0, 1.0));
 }
 
+
 float proximityFade(vec3 p) {
+    float ringWidth = max(RingOuterRadius - RingInnerRadius, 0.0001);
+
+    float fadeRadius  = ringWidth * DISSOLVE_WIDTH_RATIO;
+    float innerRadius = fadeRadius * (1.0 - DISSOLVE_SOFTNESS);
     float dist = length(p - CameraLocalPos);
-    float inner = PROXIMITY_FADE_DIST * (1.0 - PROXIMITY_FADE_SOFT);
-    return smoothstep(inner, PROXIMITY_FADE_DIST, dist);
+
+    return smoothstep(innerRadius, fadeRadius, dist);
 }
 
 float ringDensity(vec3 p) {

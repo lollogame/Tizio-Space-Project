@@ -1,0 +1,12 @@
+{
+  "type": "forge:add_features",
+  "biomes": [
+    "tsp:moon_plains",
+    "tsp:moon_wasted_plains"
+  ],
+  "features": [
+    "tsp:moon/moon_crater_large",
+    "tsp:moon/moon_crater_small"
+  ],
+  "step": "local_modifications"
+}

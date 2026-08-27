@@ -1,0 +1,18 @@
+// 1.20.1	2026-08-26T19:22:04.4500041	Loot Tables
+59afbb0eb241a73fa9b3f8761c590737770764ba data/tsp/loot_tables/blocks/debris.json
+680555d6c1f976a8c0f67b090e07afce3d39011f data/tsp/loot_tables/blocks/mars_gravel.json
+067e178bf3345a3cd208b25b842cd1a6c2d369f8 data/tsp/loot_tables/blocks/mars_iron_ore.json
+f0598c188c9116b06cbee7aec372f09cc70a8919 data/tsp/loot_tables/blocks/mars_sand.json
+f53b531f6cbd66b2110c3409359f461ec1a1210a data/tsp/loot_tables/blocks/mars_stone.json
+4202def244af8e0b56d7ead88acca05ccca7397a data/tsp/loot_tables/blocks/mars_stone_slab.json
+f3228795c843edd3bc752e06209c778fb6de4cd5 data/tsp/loot_tables/blocks/mars_stone_stairs.json
+7fae1f1853ac7fb04557e8b118111a4232936b29 data/tsp/loot_tables/blocks/moon_dark_sand.json
+2b49c6aa1eac3a7557ab7008d74cc1ee6f21abdb data/tsp/loot_tables/blocks/moon_sand.json
+a752f4e42bb3ee27e1f1befb8d0a1518cb4abb4d data/tsp/loot_tables/blocks/moon_stone.json
+e8e8df22986ed041781d2494d0d4bbe00e80b21e data/tsp/loot_tables/blocks/moon_stone_slab.json
+c742e2b8ad3bdc17d2bd3ff574c91d9d6b2a748e data/tsp/loot_tables/blocks/moon_stone_stairs.json
+6d4c7f4573ea694010974197fdde8c9ba39c8bd9 data/tsp/loot_tables/blocks/venus_gravel.json
+b88b6c82caea8fe7d4193d0cffa0da2cf911157b data/tsp/loot_tables/blocks/venus_sand.json
+128215ff1ed5d4055f6cc4f0582f7349dd4e077c data/tsp/loot_tables/blocks/venus_stone.json
+42c2606efacefa1a84332868c8245d37062be1fc data/tsp/loot_tables/blocks/venus_stone_slab.json
+9f2d535f7680a2308db59601687bfc36ef172b9a data/tsp/loot_tables/blocks/venus_stone_stairs.json

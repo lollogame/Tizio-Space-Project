@@ -1,0 +1,19 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "tsp:vertex/sky_atmosphere",
+  "fragment": "tsp:fragment/environment/sky_atmosphere",
+  "attributes": ["Position"],
+  "samplers": [],
+  "uniforms": [
+    { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [1.0,0.0,0.0,0.0, 0.0,1.0,0.0,0.0, 0.0,0.0,1.0,0.0, 0.0,0.0,0.0,1.0] },
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1.0,0.0,0.0,0.0, 0.0,1.0,0.0,0.0, 0.0,0.0,1.0,0.0, 0.0,0.0,0.0,1.0] },
+    { "name": "ColorModulator", "type": "float", "count": 4, "values": [1.0,1.0,1.0,1.0] },
+    { "name": "SunDir", "type": "float", "count": 3, "values": [0.0,1.0,0.0] },
+    { "name": "uWavelenghts", "type": "float", "count": 3, "values": [680.0,550.0,440.0] },
+    { "name": "uCamHeight", "type": "float", "count": 1, "values": [0.0] }
+  ]
+}

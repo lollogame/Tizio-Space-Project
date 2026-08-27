@@ -1,0 +1,9 @@
+{
+  "type": "forge:add_features",
+  "biomes": "tsp:venus_plains",
+  "features": [
+    "tsp:venus/venus_cave_stone",
+    "tsp:venus/venus_cave_gravel"
+  ],
+  "step": "underground_ores"
+}

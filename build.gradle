@@ -75,7 +75,10 @@ mixin {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
-
+    maven {
+        url "https://cursemaven.com"
+    }
+    mavenCentral()
 }
 
 dependencies {
@@ -83,7 +86,42 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
+    //implementation fg.deobf("curse.maven:free-cam-557076:4643128")
+
+//    implementation fg.deobf("curse.maven:viltrumite-1553010:8677178")
+//    implementation fg.deobf("curse.maven:viltrumite-flight-1528087:8642587")
+
+    implementation fg.deobf("curse.maven:worldedit-225608:4586218")
+
+    //simple clouds test
+    //implementation fg.deobf("curse.maven:simple-clouds-1121215:6928978")
+    //implementation fg.deobf("curse.maven:better-clouds-1285973:7074847")
+
+    //testing with other mods
+//    implementation fg.deobf("curse.maven:jade-324717:8479276")
+    //implementation fg.deobf("curse.maven:embeddium-908741:5681725")
+    //runtimeOnly("curse.maven:oculus-581495:6020961")
+
+
 }
+
+//processResources {
+//
+//    doLast {
+//        def source = file("$destinationDir/assets/tsp/shaders/include/shading/light.glsl")
+//        def targetDir = file("$destinationDir/assets/minecraft/shaders/include")
+//        def target = file("$targetDir/light.glsl")
+//
+//        if (source.exists()) {
+//            targetDir.mkdirs()
+//            target.text = source.text
+//            println "[TSP] light.glsl duplicato in assets/minecraft/shaders/include/ per l'override vanilla"
+//        } else {
+//            println "[TSP] Và CHIaaannne': la sorgente light.glsl non trovata in ${source} - override NON applicato"
+//        }
+//    }
+//}
+
 
 tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,

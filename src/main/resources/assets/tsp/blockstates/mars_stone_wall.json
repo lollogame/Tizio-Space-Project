@@ -1,9 +1,0 @@
-{
-  "multipart": [
-    {
-      "apply": {
-        "model": "tsp:block/mars/mars_stone_wall_post"
-      }
-    }
-  ]
-}

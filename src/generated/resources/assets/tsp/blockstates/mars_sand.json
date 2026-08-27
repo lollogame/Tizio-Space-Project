@@ -1,0 +1,21 @@
+{
+  "variants": {
+    "": [
+      {
+        "model": "tsp:block/mars_sand"
+      },
+      {
+        "model": "tsp:block/mars_sand",
+        "y": 90
+      },
+      {
+        "model": "tsp:block/mars_sand",
+        "y": 180
+      },
+      {
+        "model": "tsp:block/mars_sand",
+        "y": 270
+      }
+    ]
+  }
+}

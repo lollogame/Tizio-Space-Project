@@ -1,0 +1,1339 @@
+package tizio.dev.tsp.core.gui;
+
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import tizio.dev.tsp.config.ConfigManager;
+import tizio.dev.tsp.core.celestial.instance.elements.SolarSystemData;
+import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
+import tizio.dev.tsp.core.celestial.instance.elements.sun.SunInstance;
+import tizio.dev.tsp.core.data.CelestialJsonLoader;
+import tizio.dev.tsp.core.gui.theme.SystemEditorTheme;
+import tizio.dev.tsp.core.gui.widgets.*;
+import tizio.dev.tsp.core.handlers.gravity.GravityManager;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.Consumer;
+
+public class SystemEditor extends Screen {
+
+    private static final int ROW_H    = 18;
+    private static final int HEADER_H = 24;
+
+    private enum NodeType { SYSTEM, STAR, BODY }
+
+    private enum Tab {
+        SYSTEM, STAR, GENERAL, ORBIT, SURFACE, ATMOSPHERE, RINGS, SKY
+    }
+
+    private static class InspectorEntry {
+        AbstractWidget widget;
+        int rawY;
+        int height;
+        String label;
+
+        InspectorEntry(AbstractWidget widget, int rawY, int height, String label) {
+            this.widget = widget;
+            this.rawY = rawY;
+            this.height = height;
+            this.label = label;
+        }
+    }
+
+    private SolarSystemData activeSystem  = null;
+    private NodeType           selectedNode  = NodeType.SYSTEM;
+    private PlanetInstance.Config selectedBody = null;
+    private Tab                activeTab     = Tab.SYSTEM;
+
+    private boolean hideUI              = false;
+    private boolean leftPanelCollapsed  = false;
+    private boolean rightPanelCollapsed = false;
+    private boolean systemDropdownOpen  = false;
+
+    private String searchQuery      = "";
+    private EditBox searchEditBox   = null;
+
+    private EditorTreeWidget treeWidget = null;
+    private PlanetInstance.Config copiedBodyConfig = null;
+
+    private final List<InspectorEntry> inspectorEntries = new ArrayList<>();
+    private int rightScrollOffset = 0;
+    private int totalInspectorHeight = 0;
+
+    private String  statusMessage     = "";
+    private long    statusMessageTime = 0;
+    private boolean statusIsError     = false;
+
+    // Active Edit Boxes
+    private EditBox sysIdEditBox;
+    private EditBox sysDimEditBox;
+    private EditBox starIdEditBox;
+    private EditBox starColorEditBox;
+    private EditBox bodyIdEditBox;
+    private EditBox bodyParentEditBox;
+    private EditBox bodyDimEditBox;
+    private EditBox dayTextureEditBox;
+    private EditBox nightTextureEditBox;
+    private EditBox bodyColorEditBox;
+    private EditBox epochUtcEditBox;
+    private EditBox atmosColorEditBox;
+    private EditBox ringTextureEditBox;
+    private EditBox rockTextureEditBox;
+    private EditBox ringColorEditBox;
+    private EditBox cloudTextureEditBox;
+    private EditBox cloudColorEditBox;
+    private EditBox skyTextureEditBox;
+    private EditBox starsColorEditBox;
+    private EditBox fogColorEditBox;
+
+    // Color Pickers
+    private ColorPreviewWidget starColorPicker;
+    private ColorPreviewWidget bodyColorPicker;
+    private ColorPreviewWidget atmosColorPicker;
+    private ColorPreviewWidget ringColorPicker;
+    private ColorPreviewWidget cloudColorPicker;
+    private ColorPreviewWidget starsColorPicker;
+    private ColorPreviewWidget fogColorPicker;
+
+    public SystemEditor() {
+        super(Component.literal("Development Celestial Editor"));
+    }
+    private int getPanelLeftWidth() {
+        return Math.min(190, Math.max(140, (this.width / 2) - 95));
+    }
+    private int getPanelRightWidth() {
+        return Math.min(195, Math.max(140, (this.width / 2) - 95));
+    }
+
+    @Override
+    protected void init() {
+
+        if(!ConfigManager.isDevelopmentMode()) return;
+
+        CelestialJsonLoader.ensureLoaded();
+
+        if (activeSystem == null) {
+            var systems = CelestialJsonLoader.getActiveSystems();
+            String lastId = CelestialJsonLoader.getActiveSelectedSystemId();
+            if (lastId != null && systems.containsKey(lastId)) {
+                activeSystem = systems.get(lastId);
+            } else if (!systems.isEmpty()) {
+                activeSystem = systems.values().iterator().next();
+            } else {
+                activeSystem = createDefaultSystem();
+                CelestialJsonLoader.updateSystemInMemory(activeSystem, true);
+            }
+        }
+
+        if (activeSystem != null) {
+            CelestialJsonLoader.setActiveSelectedSystemId(activeSystem.id);
+        }
+
+        buildLayout();
+    }
+
+    private SolarSystemData createDefaultSystem() {
+        SolarSystemData system = new SolarSystemData("new_system", "tsp:space");
+        system.star = new SunInstance.Config("sun", 2000.0F, "#ffd48a");
+        PlanetInstance.Config earth = new PlanetInstance.Config("new_planet", "planet", "sun", 250.0F, "earth_mat_0", "#7fb8ff");
+        earth.orbit.radius     = 16000.0;
+        earth.orbit.periodDays = 365.25;
+        earth.atmosphere.enabled = true;
+        system.bodies.add(earth);
+        return system;
+    }
+
+    private void showStatus(String msg, boolean error) {
+        this.statusMessage = msg;
+        this.statusIsError = error;
+        this.statusMessageTime = System.currentTimeMillis() + 4000;
+    }
+
+    private void buildLayout() {
+        clearWidgets();
+        inspectorEntries.clear();
+        if (hideUI) return;
+
+        buildHeaderToolbar();
+
+        if (!leftPanelCollapsed) {
+            buildLeftPanel();
+        }
+
+        if (!rightPanelCollapsed) {
+            buildRightPanel();
+        }
+    }
+
+    private void buildHeaderToolbar() {
+        int x = 4;
+        int y = 2;
+
+        String sysLabel = "Sys: [" + (activeSystem != null ? activeSystem.id : "None") + "]";
+        addRenderableWidget(new Button(x, y, 120, 20, Component.literal(sysLabel), b -> {
+            systemDropdownOpen = !systemDropdownOpen;
+        }).accentColor(SystemEditorTheme.ACCENT));
+        x += 123;
+
+        addRenderableWidget(new Button(x, y, 45, 20, Component.literal("+Sys"), b -> addNewSystem()));
+        x += 47;
+
+        addRenderableWidget(new Button(x, y, 45, 20, Component.literal("-Sys"), b -> promptRemoveCurrentSystem()).accentColor(SystemEditorTheme.RED));
+        x += 47;
+
+        addRenderableWidget(new Button(x, y, 60, 20, Component.literal("Export"), b -> exportCurrentSystem()));
+        x += 62;
+
+        addRenderableWidget(new Button(this.width - 75, y, 71, 20, Component.literal("Hide UI"), b -> toggleHideUI()).accentColor(SystemEditorTheme.AMBER));
+
+        // Toggle Left Sidebar Button
+        int leftW = getPanelLeftWidth();
+        String leftToggleLabel = leftPanelCollapsed ? " Tree > " : " < ";
+        addRenderableWidget(new Button(leftPanelCollapsed ? 4 : leftW - 24, HEADER_H + 2, leftPanelCollapsed ? 55 : 20, 16, Component.literal(leftToggleLabel), b -> {
+            leftPanelCollapsed = !leftPanelCollapsed;
+            buildLayout();
+        }).compact(true));
+
+        // Toggle Right Sidebar Button
+        int rightW = getPanelRightWidth();
+        int p2X = this.width - rightW;
+        String rightToggleLabel = rightPanelCollapsed ? " < Insp. " : " > ";
+        addRenderableWidget(new Button(rightPanelCollapsed ? this.width - 60 : p2X + 4, HEADER_H + 2, rightPanelCollapsed ? 56 : 20, 16, Component.literal(rightToggleLabel), b -> {
+            rightPanelCollapsed = !rightPanelCollapsed;
+            buildLayout();
+        }).compact(true));
+    }
+
+    private void buildLeftPanel() {
+        int panelX = 4;
+        int startY = HEADER_H + 20;
+        int width  = getPanelLeftWidth() - 8;
+
+        // Search Input Box
+        searchEditBox = new EditBox(this.font, panelX, startY, width, ROW_H, Component.literal("Search"));
+        searchEditBox.setValue(searchQuery);
+        searchEditBox.setHint(Component.literal("Search bodies..."));
+        searchEditBox.setResponder(val -> {
+            this.searchQuery = val;
+            if (treeWidget != null) {
+                treeWidget.setFilterQuery(val);
+            }
+        });
+        addRenderableWidget(searchEditBox);
+
+        int treeY = startY + ROW_H + 4;
+        int treeH = this.height - treeY - 52;
+
+        // Tree Widget
+        String currentSelId = (selectedNode == NodeType.SYSTEM && activeSystem != null) ? activeSystem.id
+                : ((selectedNode == NodeType.STAR && activeSystem != null && activeSystem.star != null) ? activeSystem.star.id
+                : (selectedBody != null ? selectedBody.id : null));
+
+        treeWidget = new EditorTreeWidget(panelX, treeY, width, treeH, item -> {
+            if (item == null) return;
+            if ("system".equalsIgnoreCase(item.type)) {
+                selectedNode = NodeType.SYSTEM;
+                activeTab    = Tab.SYSTEM;
+            } else if (item.bodyConfig == null && ("star".equalsIgnoreCase(item.type) || "blackhole".equalsIgnoreCase(item.type))) {
+                selectedNode = NodeType.STAR;
+                activeTab    = Tab.STAR;
+            } else if (item.bodyConfig != null) {
+                selectedNode = NodeType.BODY;
+                selectedBody = item.bodyConfig;
+                boolean isBH = selectedBody.isBlackHole();
+                boolean isStar = "star".equalsIgnoreCase(selectedBody.type);
+                if ((isBH || isStar) && (activeTab == Tab.ATMOSPHERE || activeTab == Tab.RINGS)) {
+                    activeTab = Tab.GENERAL;
+                } else if (activeTab == Tab.SYSTEM || activeTab == Tab.STAR) {
+                    activeTab = Tab.GENERAL;
+                }
+            }
+            buildLayout();
+        });
+
+        treeWidget.rebuildFromSystem(activeSystem, currentSelId);
+        if (!searchQuery.isEmpty()) {
+            treeWidget.setFilterQuery(searchQuery);
+        }
+        addRenderableWidget(treeWidget);
+
+        // Action Buttons at bottom of Left Panel
+        int botY1 = this.height - 46;
+        int btnW4 = (width - 6) / 4;
+
+        addRenderableWidget(new Button(panelX, botY1, btnW4, ROW_H, Component.literal("+Planet"), button -> addBody("planet")).compact(true));
+        addRenderableWidget(new Button(panelX + btnW4 + 2, botY1, btnW4, ROW_H, Component.literal("+Moon"), button -> addBody("moon")).compact(true));
+        addRenderableWidget(new Button(panelX + (btnW4 + 2) * 2, botY1, btnW4, ROW_H, Component.literal("+ BH"), button -> addBody("blackhole")).compact(true));
+
+        // Delete Body Button - Red Accent
+        addRenderableWidget(new Button(panelX + (btnW4 + 2) * 3, botY1, btnW4, ROW_H, Component.literal("Delete"), button -> promptRemoveSelectedBody()).compact(true).accentColor(SystemEditorTheme.RED));
+
+        int botY2 = this.height - 24;
+        int btnW3 = (width - 4) / 3;
+        addRenderableWidget(new Button(panelX, botY2, btnW3, ROW_H, Component.literal("Copy"), button -> copySelectedBodyConfig()).compact(true));
+        addRenderableWidget(new Button(panelX + btnW3 + 2, botY2, btnW3, ROW_H, Component.literal("Paste"), button -> pasteBodyConfig()).compact(true));
+        addRenderableWidget(new Button(panelX + (btnW3 + 2) * 2, botY2, btnW3, ROW_H, Component.literal("Duplicate"), button -> duplicateSelectedBody()).compact(true));
+    }
+
+    private void buildRightPanel() {
+        int rightW = getPanelRightWidth();
+        int panelX = this.width - rightW + 4;
+        int startY = HEADER_H + 20;
+        int width  = rightW - 8;
+
+        // Header Tab Navigation
+        buildTabHeader(panelX, startY, width);
+
+        int formY = startY + ROW_H + 4;
+
+        switch (activeTab) {
+            case SYSTEM     -> buildSystemTab(panelX, formY, width);
+            case STAR       -> buildStarTab(panelX, formY, width);
+            case GENERAL    -> { if (selectedBody != null) buildGeneralTab(panelX, formY, width); }
+            case ORBIT      -> { if (selectedBody != null) buildOrbitTab(panelX, formY, width); }
+            case SURFACE    -> { if (selectedBody != null) buildSurfaceTab(panelX, formY, width); }
+            case ATMOSPHERE -> { if (selectedBody != null && !selectedBody.isBlackHole() && !"star".equalsIgnoreCase(selectedBody.type)) buildAtmosphereTab(panelX, formY, width); }
+            case RINGS      -> { if (selectedBody != null && !selectedBody.isBlackHole() && !"star".equalsIgnoreCase(selectedBody.type)) buildRingsTab(panelX, formY, width); }
+            case SKY        -> { if (selectedBody != null) buildSkyTab(panelX, formY, width); }
+        }
+
+        if (selectedNode == NodeType.BODY && selectedBody != null) {
+            addRenderableWidget(new Button(panelX, this.height - 22, width, ROW_H,
+                    Component.literal("Reset this body."), b -> promptResetBody())
+                    .compact(true)
+                    .accentColor(SystemEditorTheme.RED));
+        }
+
+        updateInspectorScrollPositions();
+    }
+
+    private void buildTabHeader(int x, int y, int width) {
+        if (selectedNode == NodeType.SYSTEM) {
+            addTabBtn(x, y, width, "System Settings", Tab.SYSTEM);
+        } else if (selectedNode == NodeType.STAR) {
+            addTabBtn(x, y, width, "Central Object", Tab.STAR);
+        } else {
+            boolean isBH = selectedBody != null && selectedBody.isBlackHole();
+            boolean isStar = selectedBody != null && "star".equalsIgnoreCase(selectedBody.type);
+            if ((isBH || isStar) && (activeTab == Tab.ATMOSPHERE || activeTab == Tab.RINGS)) {
+                activeTab = Tab.GENERAL;
+            }
+
+            if (isBH || isStar) {
+                int tw = (width - 6) / 4;
+                addTabBtn(x,            y, tw, "Gen",  Tab.GENERAL);
+                addTabBtn(x + (tw+2),   y, tw, "Orb",  Tab.ORBIT);
+                addTabBtn(x + (tw+2)*2, y, tw, "Surf", Tab.SURFACE);
+                addTabBtn(x + (tw+2)*3, y, tw, "Sky",  Tab.SKY);
+            } else {
+                int tw = (width - 12) / 7;
+                addTabBtn(x,            y, tw, "Gen",  Tab.GENERAL);
+                addTabBtn(x + (tw+2),   y, tw, "Orb",  Tab.ORBIT);
+                addTabBtn(x + (tw+2)*2, y, tw, "Surf", Tab.SURFACE);
+                addTabBtn(x + (tw+2)*3, y, tw, "Atm",  Tab.ATMOSPHERE);
+                addTabBtn(x + (tw+2)*4, y, tw, "Ring", Tab.RINGS);
+                addTabBtn(x + (tw+2)*5, y, tw, "Sky",  Tab.SKY);
+                addTabBtn(x + (tw+2)*6, y, tw, "Sys",  Tab.SYSTEM);
+            }
+        }
+    }
+
+    private void addTabBtn(int x, int y, int width, String label, Tab tab) {
+        boolean isCurrent = (activeTab == tab);
+        addRenderableWidget(new Button(x, y, width, ROW_H, Component.literal(label), b -> {
+            activeTab = tab;
+            rightScrollOffset = 0;
+            buildLayout();
+        }).activeTab(isCurrent).compact(true));
+    }
+
+    private void addInspectorWidget(AbstractWidget widget, int rawY, int height, String label) {
+        addWidget(widget);
+        inspectorEntries.add(new InspectorEntry(widget, rawY, height, label));
+        totalInspectorHeight = Math.max(totalInspectorHeight, rawY + height);
+    }
+
+    private void updateInspectorScrollPositions() {
+        int formY = HEADER_H + 44;
+        int visibleTop = formY;
+        int visibleBottom = this.height - 24;
+        int maxScroll = getMaxInspectorScroll();
+        rightScrollOffset = Math.max(0, Math.min(maxScroll, rightScrollOffset));
+
+        for (InspectorEntry entry : inspectorEntries) {
+            int widgetY = formY + entry.rawY - rightScrollOffset;
+            entry.widget.setY(widgetY);
+            entry.widget.visible = (widgetY + entry.height >= visibleTop && widgetY <= visibleBottom);
+        }
+    }
+
+    private int getMaxInspectorScroll() {
+        int formY = HEADER_H + 44;
+        int visibleH = this.height - formY - 26;
+        return Math.max(0, totalInspectorHeight - visibleH);
+    }
+
+    private EditBox addLabeledEditBox(int x, int relativeY, int width, String label, String value, Consumer<String> responder) {
+        int formY = HEADER_H + 44;
+        int labelWidth = 42;
+        int fieldX = x + labelWidth;
+        int fieldW = width - labelWidth;
+
+        EditBox box = new EditBox(this.font, fieldX, formY + relativeY, fieldW, ROW_H, Component.literal(label));
+        box.setValue(value != null ? value : "");
+        box.setResponder(responder);
+        addInspectorWidget(box, relativeY, ROW_H, label);
+        return box;
+    }
+
+    private void addInspectorSliderWithReset(int x, int relativeY, int width, String label, double current, double def, double min, double max, Consumer<Double> onChange) {
+        int formY = HEADER_H + 44;
+        int sliderW = width - 24;
+        LabeledSlider slider = new LabeledSlider(x, formY + relativeY, sliderW, ROW_H, label, current, def, min, max, onChange);
+        addInspectorWidget(slider, relativeY, ROW_H, null);
+
+        // Reset Slider button - Red Accent
+        Button resetBtn = new Button(x + sliderW + 2, formY + relativeY, 22, ROW_H, Component.literal("R"), b -> slider.resetToDefault()).compact(true).accentColor(SystemEditorTheme.RED);
+        addInspectorWidget(resetBtn, relativeY, ROW_H, null);
+    }
+
+    private void buildSystemTab(int x, int y, int width) {
+        if (activeSystem == null) return;
+        totalInspectorHeight = 0;
+        int relY = 0;
+
+        sysIdEditBox = addLabeledEditBox(x, relY, width, "ID:", activeSystem.id, val -> {
+            if (val != null && !val.isBlank() && !val.equalsIgnoreCase(activeSystem.id)) {
+                String oldId = activeSystem.id;
+                CelestialJsonLoader.removeSystemInMemory(oldId);
+                activeSystem.id = val;
+                CelestialJsonLoader.setActiveSelectedSystemId(val);
+                CelestialJsonLoader.updateSystemInMemory(activeSystem, true);
+                if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, val);
+            }
+        });
+        relY += 22;
+
+        sysDimEditBox = addLabeledEditBox(x, relY, width, "Dim:", activeSystem.dimension != null ? activeSystem.dimension : "tsp:space", val -> {
+            activeSystem.dimension = val;
+            notifyChanged();
+        });
+        relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Origin X", activeSystem.originX, 0.0, -100000.0, 100000.0, val -> { activeSystem.originX = val; notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Origin Y", activeSystem.originY, 500.0, -100000.0, 100000.0, val -> { activeSystem.originY = val; notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Origin Z", activeSystem.originZ, 0.0, -100000.0, 100000.0, val -> { activeSystem.originZ = val; notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Scale", activeSystem.globalScale, 5.50, 0.001, 10.0, val -> { activeSystem.globalScale = val.floatValue(); notifyChanged(); });
+    }
+
+    private void buildStarTab(int x, int y, int width) {
+        if (activeSystem == null || activeSystem.star == null) return;
+        SunInstance.Config star = activeSystem.star;
+        totalInspectorHeight = 0;
+        int relY = 0;
+        int formY = HEADER_H + 44;
+
+        starIdEditBox = addLabeledEditBox(x, relY, width, "Star ID:", star.id, val -> { star.id = val; notifyChanged(); }); relY += 22;
+
+        Button typeBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Type: " + (star.isBlackHole() ? "Black Hole" : "Star")), b -> { star.type = star.isBlackHole() ? "star" : "blackhole"; notifyChanged(); buildLayout(); });
+        addInspectorWidget(typeBtn, relY, ROW_H, null); relY += 22;
+
+        Button enableBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Center Object Enabled: " + star.enabled), b -> { star.enabled = !star.enabled; notifyChanged(); buildLayout(); });
+        addInspectorWidget(enableBtn, relY, ROW_H, null); relY += 22;
+
+        starColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color"));
+        starColorEditBox.setValue(star.colorHex != null ? star.colorHex : "#ffd48a");
+        starColorEditBox.setResponder(val -> {
+            if (val.startsWith("#") && val.length() == 7) {
+                star.colorHex = val;
+                if (starColorPicker != null) starColorPicker.setHexColor(val);
+                notifyChanged();
+            }
+        });
+        addInspectorWidget(starColorEditBox, relY, ROW_H, "Color:");
+
+        starColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, star.colorHex, hex -> {
+            star.colorHex = hex;
+            if (starColorEditBox != null) starColorEditBox.setValue(hex);
+            notifyChanged();
+        });
+        addInspectorWidget(starColorPicker, relY, ROW_H, null); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Radius", star.radius, 2000.0, 100.0, 100000.0, val -> { star.radius = val.floatValue(); notifyChanged(); }); relY += 22;
+
+        if (star.isBlackHole()) {
+            addInspectorSliderWithReset(x, relY, width, "Disk Speed", star.diskRotationSpeed, 0.20, 0.0, 5.0, val -> { star.diskRotationSpeed = val.floatValue(); notifyChanged(); }); relY += 22;
+            addInspectorSliderWithReset(x, relY, width, "Intensity", star.intensity, 1.0, 0.0, 10.0, val -> { star.intensity = val.floatValue(); notifyChanged(); }); relY += 22;
+        } else {
+            addInspectorSliderWithReset(x, relY, width, "Sun R Factor", star.sunRadiusFactor, 1.3, 0.5, 5.0, val -> { star.sunRadiusFactor = val.floatValue(); notifyChanged(); }); relY += 22;
+            addInspectorSliderWithReset(x, relY, width, "Scatter Str", star.scatteringStrength, 0.5, 0.0, 2.0, val -> { star.scatteringStrength = val.floatValue(); notifyChanged(); }); relY += 22;
+            addInspectorSliderWithReset(x, relY, width, "Density Fall", star.densityFalloff, 5.0, 1.0, 20.0, val -> { star.densityFalloff = val.floatValue(); notifyChanged(); }); relY += 22;
+        }
+
+        addInspectorSliderWithReset(x, relY, width, "Yaw (°)", star.yaw, 0.0, -180.0, 180.0, val -> { star.yaw = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Pitch (°)", star.pitch, 0.0, -180.0, 180.0, val -> { star.pitch = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Roll (°)", star.roll, 0.0, -180.0, 180.0, val -> { star.roll = val.floatValue(); notifyChanged(); });
+    }
+
+    private void buildGeneralTab(int x, int y, int width) {
+        totalInspectorHeight = 0;
+        int relY = 0;
+        int formY = HEADER_H + 44;
+
+        bodyIdEditBox = addLabeledEditBox(x, relY, width, "ID:", selectedBody.id, val -> {
+            selectedBody.id = val;
+            notifyChanged();
+            if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, val);
+        }); relY += 22;
+
+        Button typeBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Type: " + selectedBody.type), b -> {
+            selectedBody.type = switch (selectedBody.type.toLowerCase(Locale.ROOT)) {
+                case "planet"    -> "moon";
+                case "moon"      -> "star";
+                case "star"      -> "blackhole";
+                default          -> "planet";
+            };
+            if (selectedBody.isBlackHole()) {
+                selectedBody.atmosphere.enabled = false;
+                selectedBody.ring.enabled = false;
+            }
+            notifyChanged();
+            buildLayout();
+        });
+        addInspectorWidget(typeBtn, relY, ROW_H, null); relY += 22;
+
+        bodyParentEditBox = addLabeledEditBox(x, relY, width, "Parent:", selectedBody.parentId != null ? selectedBody.parentId : "sun", val -> {
+            selectedBody.parentId = val;
+            notifyChanged();
+            if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, selectedBody.id);
+        }); relY += 22;
+
+        bodyDimEditBox = addLabeledEditBox(x, relY, width, "Dim:", selectedBody.dimension != null ? selectedBody.dimension : "", val -> { selectedBody.dimension = val; notifyChanged(); }); relY += 24;
+
+        Button dupBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Duplicate Body Config"), b -> duplicateSelectedBody());
+        addInspectorWidget(dupBtn, relY, ROW_H, null);
+    }
+
+    private void buildOrbitTab(int x, int y, int width) {
+        if (selectedBody.orbit == null) selectedBody.orbit = new PlanetInstance.Orbit();
+        totalInspectorHeight = 0;
+        int relY = 0;
+        int formY = HEADER_H + 44;
+
+        Button orbBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Orbit Enabled: " + selectedBody.orbit.enabled), b -> {
+            selectedBody.orbit.enabled = !selectedBody.orbit.enabled;
+            notifyChanged(); buildLayout();
+        });
+        addInspectorWidget(orbBtn, relY, ROW_H, null); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Orbit Radius",  selectedBody.orbit.radius,       16000.0, 0.0,     200000.0, val -> { selectedBody.orbit.radius       = val; notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Period (Days)", selectedBody.orbit.periodDays,    365.25,  0.1,     60000.0,  val -> { selectedBody.orbit.periodDays    = val; notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Inclination°",  selectedBody.orbit.inclination,   0.0,     -90.0,   90.0,     val -> { selectedBody.orbit.inclination   = val; notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Asc Node°",     selectedBody.orbit.ascendingNode, 0.0,     0.0,     360.0,    val -> { selectedBody.orbit.ascendingNode = val; notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Epoch Angle°",  selectedBody.orbit.epochAngle,    0.0,     0.0,     360.0,    val -> { selectedBody.orbit.epochAngle    = val; notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Vert Offset",   selectedBody.orbit.verticalOffset,0.0,    -2000.0,  2000.0,   val -> { selectedBody.orbit.verticalOffset= val; notifyChanged(); }); relY += 22;
+
+        epochUtcEditBox = addLabeledEditBox(x, relY, width, "Epoch:", selectedBody.orbit.epochUtc != null ? selectedBody.orbit.epochUtc : "2000-01-01T12:00:00Z", val -> { selectedBody.orbit.epochUtc = val; notifyChanged(); }); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Spin (Hours)", selectedBody.spinHours, 24.0, 0.0, 120.0, val -> { selectedBody.spinHours = val; notifyChanged(); });
+    }
+
+    private void buildSurfaceTab(int x, int y, int width) {
+        totalInspectorHeight = 0;
+        int relY = 0;
+        int formY = HEADER_H + 44;
+
+        addInspectorSliderWithReset(x, relY, width, "Body Radius", selectedBody.radius, 150.0, 1.0, 5000.0, val -> { selectedBody.radius = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Gravity", selectedBody.gravity, GravityManager.EARTH_GRAVITY_MS2, 0.0, 50.0, val -> {selectedBody.gravity = val.floatValue();notifyChanged();});relY += 22;
+
+        Button oxygenBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Oxygen: " + (selectedBody.oxygen ? "True" : "False")), b -> {
+            selectedBody.oxygen = !selectedBody.oxygen;
+            b.setMessage(Component.literal("Oxygen: " + (selectedBody.oxygen ? "True" : "False")));
+            notifyChanged();
+        });
+        addInspectorWidget(oxygenBtn, relY, ROW_H, null); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Temperature", selectedBody.temperature, 0.0, -1.0, 1.0, val -> { selectedBody.temperature = val.floatValue(); notifyChanged(); }); relY += 22;
+
+        if (selectedBody.isBlackHole()) {
+            addInspectorSliderWithReset(x, relY, width, "Disk Speed", selectedBody.diskRotationSpeed, 0.20, 0.0, 5.0, val -> { selectedBody.diskRotationSpeed = val.floatValue(); notifyChanged(); }); relY += 22;
+            addInspectorSliderWithReset(x, relY, width, "Intensity", selectedBody.intensity, 1.0, 0.0, 10.0, val -> { selectedBody.intensity = val.floatValue(); notifyChanged(); }); relY += 22;
+        } else {
+            dayTextureEditBox = addLabeledEditBox(x, relY, width, "Day:", selectedBody.texture != null ? selectedBody.texture : "", val -> { selectedBody.texture = val; notifyChanged(); }); relY += 22;
+            nightTextureEditBox = addLabeledEditBox(x, relY, width, "Night:", selectedBody.nightTexture != null ? selectedBody.nightTexture : "", val -> { selectedBody.nightTexture = val; notifyChanged(); }); relY += 22;
+        }
+
+        bodyColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
+        bodyColorEditBox.setValue(selectedBody.colorHex != null ? selectedBody.colorHex : "#7fb8ff");
+        bodyColorEditBox.setResponder(val -> {
+            if (val.startsWith("#") && val.length() == 7) {
+                selectedBody.colorHex = val;
+                if (bodyColorPicker != null) bodyColorPicker.setHexColor(val);
+                notifyChanged();
+            }
+        });
+        addInspectorWidget(bodyColorEditBox, relY, ROW_H, "Color:");
+
+        bodyColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.colorHex, hex -> {
+            selectedBody.colorHex = hex;
+            if (bodyColorEditBox != null) bodyColorEditBox.setValue(hex);
+            notifyChanged();
+        });
+        addInspectorWidget(bodyColorPicker, relY, ROW_H, null); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Rot Yaw°",   selectedBody.yaw,   0.0, -180.0, 180.0, val -> { selectedBody.yaw   = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rot Pitch°", selectedBody.pitch, 0.0, -180.0, 180.0, val -> { selectedBody.pitch = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rot Roll°",  selectedBody.roll,  0.0, -180.0, 180.0, val -> { selectedBody.roll  = val.floatValue(); notifyChanged(); });
+
+        if (!selectedBody.isBlackHole() && !"star".equalsIgnoreCase(selectedBody.type)) {
+            if (selectedBody.clouds == null) selectedBody.clouds = new PlanetInstance.Clouds();
+            relY += 22;
+
+            Button cldBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Clouds Enabled: " + selectedBody.clouds.enabled), b -> {
+                selectedBody.clouds.enabled = !selectedBody.clouds.enabled;
+                b.setMessage(Component.literal("Clouds Enabled: " + selectedBody.clouds.enabled));
+                notifyChanged();
+            });
+            addInspectorWidget(cldBtn, relY, ROW_H, null); relY += 22;
+
+            cloudTextureEditBox = addLabeledEditBox(x, relY, width, "Noise:", selectedBody.clouds.texture != null ? selectedBody.clouds.texture : "noise1", val -> { selectedBody.clouds.texture = val; notifyChanged(); }); relY += 22;
+
+            cloudColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
+            cloudColorEditBox.setValue(selectedBody.clouds.colorHex != null ? selectedBody.clouds.colorHex : "#ffffff");
+            cloudColorEditBox.setResponder(val -> {
+                if (val.startsWith("#") && val.length() == 7) {
+                    selectedBody.clouds.colorHex = val;
+                    if (cloudColorPicker != null) cloudColorPicker.setHexColor(val);
+                    notifyChanged();
+                }
+            });
+            addInspectorWidget(cloudColorEditBox, relY, ROW_H, "Color:");
+
+            cloudColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.clouds.colorHex != null ? selectedBody.clouds.colorHex : "#ffffff", hex -> {
+                selectedBody.clouds.colorHex = hex;
+                if (cloudColorEditBox != null) cloudColorEditBox.setValue(hex);
+                notifyChanged();
+            });
+            addInspectorWidget(cloudColorPicker, relY, ROW_H, null); relY += 22;
+
+            addInspectorSliderWithReset(x, relY, width, "Cloud Height", selectedBody.clouds.height, 0.03, 0.001, 0.2, val -> { selectedBody.clouds.height = val.floatValue(); notifyChanged(); }); relY += 22;
+            addInspectorSliderWithReset(x, relY, width, "Cloud Density", selectedBody.clouds.density, 0.5, 0.0, 1.0, val -> { selectedBody.clouds.density = val.floatValue(); notifyChanged(); }); relY += 22;
+            addInspectorSliderWithReset(x, relY, width, "Noise Scale", selectedBody.clouds.noiseScale, 1.0, 0.1, 10.0, val -> { selectedBody.clouds.noiseScale = val.floatValue(); notifyChanged(); }); relY += 22;
+            addInspectorSliderWithReset(x, relY, width, "Wind Speed", selectedBody.clouds.windSpeed, 0.01, -0.5, 0.5, val -> { selectedBody.clouds.windSpeed = val.floatValue(); notifyChanged(); });
+        }
+    }
+
+    private void buildAtmosphereTab(int x, int y, int width) {
+        if (selectedBody.atmosphere == null) selectedBody.atmosphere = new PlanetInstance.Atmosphere();
+        totalInspectorHeight = 0;
+        int relY = 0;
+        int formY = HEADER_H + 44;
+
+        Button atmBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Atmosphere Enabled: " + selectedBody.atmosphere.enabled), b -> {
+            selectedBody.atmosphere.enabled = !selectedBody.atmosphere.enabled;
+            notifyChanged(); buildLayout();
+        });
+        addInspectorWidget(atmBtn, relY, ROW_H, null); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Thickness",    selectedBody.atmosphere.thickness,         0.23,   0.04,  0.35,    val -> { selectedBody.atmosphere.thickness         = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Exposure",     selectedBody.atmosphere.exposure,           3.25,   1.0,   3.25,   val -> { selectedBody.atmosphere.exposure          = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Intensity",    selectedBody.atmosphere.intensity,          0.34,   0.15,  0.7,    val -> { selectedBody.atmosphere.intensity         = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rayleigh H",   selectedBody.atmosphere.rayleighScaleHeight,0.0913, 0.0913, 0.20,    val -> { selectedBody.atmosphere.rayleighScaleHeight= val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rayleigh Str", selectedBody.atmosphere.rayleighStrength,   0.0856, 0.0035, 0.0942,    val -> { selectedBody.atmosphere.rayleighStrength  = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "λ Red",        selectedBody.atmosphere.wavelengthR,        1000.0, 380.0, 1000.0, val -> { selectedBody.atmosphere.wavelengthR       = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "λ Green",      selectedBody.atmosphere.wavelengthG,        1000.0, 380.0, 1000.0, val -> { selectedBody.atmosphere.wavelengthG       = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "λ Blue",       selectedBody.atmosphere.wavelengthB,        1000.0, 380.0, 1000.0, val -> { selectedBody.atmosphere.wavelengthB       = val.floatValue(); notifyChanged(); }); relY += 22;
+
+        atmosColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
+        atmosColorEditBox.setValue(selectedBody.atmosphere.colorHex != null ? selectedBody.atmosphere.colorHex : "#ffffff");
+        atmosColorEditBox.setResponder(val -> {
+            if (val.startsWith("#") && val.length() == 7) {
+                selectedBody.atmosphere.colorHex = val;
+                if (atmosColorPicker != null) atmosColorPicker.setHexColor(val);
+                notifyChanged();
+            }
+        });
+        addInspectorWidget(atmosColorEditBox, relY, ROW_H, "Color:");
+
+        atmosColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.atmosphere.colorHex, hex -> {
+            selectedBody.atmosphere.colorHex = hex;
+            if (atmosColorEditBox != null) atmosColorEditBox.setValue(hex);
+            notifyChanged();
+        });
+        addInspectorWidget(atmosColorPicker, relY, ROW_H, null);
+    }
+
+    private void buildRingsTab(int x, int y, int width) {
+        if (selectedBody.ring == null) selectedBody.ring = new PlanetInstance.Ring();
+        totalInspectorHeight = 0;
+        int relY = 0;
+        int formY = HEADER_H + 44;
+
+        Button rngBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Ring Enabled: " + selectedBody.ring.enabled), b -> {
+            selectedBody.ring.enabled = !selectedBody.ring.enabled;
+            notifyChanged(); buildLayout();
+        });
+        addInspectorWidget(rngBtn, relY, ROW_H, null); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Inner Radius", selectedBody.ring.innerRadius, 180.0, 5.0,  2000.0, val -> { selectedBody.ring.innerRadius = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Outer Radius", selectedBody.ring.outerRadius, 300.0, 10.0, 4000.0, val -> { selectedBody.ring.outerRadius = val.floatValue(); notifyChanged(); }); relY += 22;
+
+        ringTextureEditBox = addLabeledEditBox(x, relY, width, "Ring:", selectedBody.ring.texture != null ? selectedBody.ring.texture : "saturn_ring", val -> { selectedBody.ring.texture = val; notifyChanged(); }); relY += 22;
+        rockTextureEditBox = addLabeledEditBox(x, relY, width, "Rock:", selectedBody.ring.rockTexture != null ? selectedBody.ring.rockTexture : "rock_texture", val -> { selectedBody.ring.rockTexture = val; notifyChanged(); }); relY += 22;
+
+        ringColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
+        ringColorEditBox.setValue(selectedBody.ring.colorHex != null ? selectedBody.ring.colorHex : "#ffffff");
+        ringColorEditBox.setResponder(val -> {
+            if (val.startsWith("#") && val.length() == 7) {
+                selectedBody.ring.colorHex = val;
+                if (ringColorPicker != null) ringColorPicker.setHexColor(val);
+                notifyChanged();
+            }
+        });
+        addInspectorWidget(ringColorEditBox, relY, ROW_H, "Color:");
+
+        ringColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.ring.colorHex, hex -> {
+            selectedBody.ring.colorHex = hex;
+            if (ringColorEditBox != null) ringColorEditBox.setValue(hex);
+            notifyChanged();
+        });
+        addInspectorWidget(ringColorPicker, relY, ROW_H, null); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Ring Yaw°",   selectedBody.ring.yaw,   0.0, -180.0, 180.0, val -> { selectedBody.ring.yaw   = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Ring Pitch°",  selectedBody.ring.pitch, 0.0, -180.0, 180.0, val -> { selectedBody.ring.pitch = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Ring Roll°",   selectedBody.ring.roll,  0.0, -180.0, 180.0, val -> { selectedBody.ring.roll  = val.floatValue(); notifyChanged(); }); relY += 22;
+
+        Button rkBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Rocks Enabled: " + selectedBody.ring.rocksEnabled), b -> {
+            selectedBody.ring.rocksEnabled = !selectedBody.ring.rocksEnabled;
+            notifyChanged(); buildLayout();
+        });
+        addInspectorWidget(rkBtn, relY, ROW_H, null); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Rock Count",    selectedBody.ring.rockCount,   4000.0, 0.0,   100000.0, val -> { selectedBody.ring.rockCount   = val.intValue();   notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rock Min Size", selectedBody.ring.rockMinSize,  0.5,   0.05,  10.0,    val -> { selectedBody.ring.rockMinSize  = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rock Max Size", selectedBody.ring.rockMaxSize,  2.0,   0.1,   20.0,    val -> { selectedBody.ring.rockMaxSize  = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rock Height",   selectedBody.ring.rockHeight,   5.0,   0.0,   100.0,   val -> { selectedBody.ring.rockHeight   = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Orbit Speed",   selectedBody.ring.rockOrbitSpeed,1.0,   0.0,   10.0,    val -> { selectedBody.ring.rockOrbitSpeed= val.floatValue(); notifyChanged(); });
+    }
+
+    private void buildSkyTab(int x, int y, int width) {
+        if (selectedBody.sky == null) selectedBody.sky = new PlanetInstance.Sky();
+        if (selectedBody.fog == null) selectedBody.fog = new PlanetInstance.SurfaceInstance.SurfaceFog();
+        totalInspectorHeight = 0;
+        int relY = 0;
+        int formY = HEADER_H + 44;
+
+        Button groundBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Ground Mode: " + selectedBody.sky.groundMode), b -> {
+            selectedBody.sky.groundMode = !selectedBody.sky.groundMode;
+            notifyChanged(); buildLayout();
+        });
+        addInspectorWidget(groundBtn, relY, ROW_H, null); relY += 22;
+
+        Button skyBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Skybox Rotation: " + selectedBody.sky.skyboxRotation), b -> {
+            selectedBody.sky.skyboxRotation = !selectedBody.sky.skyboxRotation;
+            notifyChanged(); buildLayout();
+        });
+        addInspectorWidget(skyBtn, relY, ROW_H, null); relY += 22;
+
+        Button skyConstBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Skybox Constant: " + selectedBody.sky.skyboxConstant), b -> {
+            selectedBody.sky.skyboxConstant = !selectedBody.sky.skyboxConstant;
+            notifyChanged(); buildLayout();
+        });
+        addInspectorWidget(skyConstBtn, relY, ROW_H, null); relY += 22;
+
+        skyTextureEditBox = addLabeledEditBox(x, relY, width, "Tex:", selectedBody.sky.skyboxTexture != null ? selectedBody.sky.skyboxTexture : "space_skybox", val -> { selectedBody.sky.skyboxTexture = val; notifyChanged(); }); relY += 22;
+
+        Button starsBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Stars Enabled: " + selectedBody.sky.starsEnabled), b -> {
+            selectedBody.sky.starsEnabled = !selectedBody.sky.starsEnabled;
+            notifyChanged(); buildLayout();
+        });
+        addInspectorWidget(starsBtn, relY, ROW_H, null); relY += 22;
+
+        addInspectorSliderWithReset(x, relY, width, "Stars Amount", selectedBody.sky.starsAmount, 5000.0, 0.0, 20000.0, val -> { selectedBody.sky.starsAmount = val.intValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Stars Seed", selectedBody.sky.starsSeed, 0.0, 0.0, 10000.0, val -> { selectedBody.sky.starsSeed = val.intValue(); notifyChanged(); }); relY += 22;
+
+        starsColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
+        starsColorEditBox.setValue(selectedBody.sky.starsColorHex != null ? selectedBody.sky.starsColorHex : "#ffffff");
+        starsColorEditBox.setResponder(val -> {
+            if (val.startsWith("#") && val.length() == 7) {
+                selectedBody.sky.starsColorHex = val;
+                if (starsColorPicker != null) starsColorPicker.setHexColor(val);
+                notifyChanged();
+            }
+        });
+        addInspectorWidget(starsColorEditBox, relY, ROW_H, "Color:");
+
+        starsColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.sky.starsColorHex != null ? selectedBody.sky.starsColorHex : "#ffffff", hex -> {
+            selectedBody.sky.starsColorHex = hex;
+            if (starsColorEditBox != null) starsColorEditBox.setValue(hex);
+            notifyChanged();
+        });
+        addInspectorWidget(starsColorPicker, relY, ROW_H, null); relY += 24;
+
+        // Custom Fog Controls
+        Button fogBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Fog Enabled: " + selectedBody.fog.enabled), b -> {
+            selectedBody.fog.enabled = !selectedBody.fog.enabled;
+            notifyChanged(); buildLayout();
+        });
+        addInspectorWidget(fogBtn, relY, ROW_H, null); relY += 22;
+
+        if (selectedBody.fog.enabled) {
+            Button fogShapeBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Fog Shape: " + selectedBody.fog.shape), b -> {
+                selectedBody.fog.shape = "CYLINDER".equalsIgnoreCase(selectedBody.fog.shape) ? "SPHERE" : "CYLINDER";
+                notifyChanged(); buildLayout();
+            });
+            addInspectorWidget(fogShapeBtn, relY, ROW_H, null); relY += 22;
+
+            fogColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
+            fogColorEditBox.setValue(selectedBody.fog.colorHex != null ? selectedBody.fog.colorHex : "#000000");
+            fogColorEditBox.setResponder(val -> {
+                if (val.startsWith("#") && val.length() == 7) {
+                    selectedBody.fog.colorHex = val;
+                    if (fogColorPicker != null) fogColorPicker.setHexColor(val);
+                    notifyChanged();
+                }
+            });
+            addInspectorWidget(fogColorEditBox, relY, ROW_H, "Fog Clr:");
+
+            fogColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.fog.colorHex != null ? selectedBody.fog.colorHex : "#000000", hex -> {
+                selectedBody.fog.colorHex = hex;
+                if (fogColorEditBox != null) fogColorEditBox.setValue(hex);
+                notifyChanged();
+            });
+            addInspectorWidget(fogColorPicker, relY, ROW_H, null); relY += 22;
+
+            Button useRdBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Use RenderDist: " + selectedBody.fog.useRenderDistance), b -> {
+                selectedBody.fog.useRenderDistance = !selectedBody.fog.useRenderDistance;
+                notifyChanged(); buildLayout();
+            });
+            addInspectorWidget(useRdBtn, relY, ROW_H, null); relY += 22;
+
+            if (selectedBody.fog.useRenderDistance) {
+                addInspectorSliderWithReset(x, relY, width, "Fog Start %", selectedBody.fog.startDistance, 0.0, -50.0, 100.0, val -> { selectedBody.fog.startDistance = val.floatValue(); notifyChanged(); }); relY += 22;
+                addInspectorSliderWithReset(x, relY, width, "Fog End %", selectedBody.fog.endDistance, 50.0, 1.0, 200.0, val -> { selectedBody.fog.endDistance = val.floatValue(); notifyChanged(); });
+            } else {
+                addInspectorSliderWithReset(x, relY, width, "Fog Start", selectedBody.fog.startDistance, 0.0, -100.0, 300.0, val -> { selectedBody.fog.startDistance = val.floatValue(); notifyChanged(); }); relY += 22;
+                addInspectorSliderWithReset(x, relY, width, "Fog End", selectedBody.fog.endDistance, 48.0, 2.0, 500.0, val -> { selectedBody.fog.endDistance = val.floatValue(); notifyChanged(); });
+            }
+        }
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        int rightW = getPanelRightWidth();
+        int p2X = this.width - rightW;
+
+        if (!rightPanelCollapsed && mouseX >= p2X && mouseX <= this.width && mouseY >= HEADER_H + 40 && mouseY <= this.height - 24) {
+            int maxScroll = getMaxInspectorScroll();
+            this.rightScrollOffset = Math.max(0, Math.min(maxScroll, this.rightScrollOffset - (int) (amount * 18)));
+            updateInspectorScrollPositions();
+            return true;
+        }
+
+        return super.mouseScrolled(mouseX, mouseY, amount);
+    }
+
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        if (hideUI) {
+            g.fill(this.width - 200, 4, this.width - 4, 20, SystemEditorTheme.PREVIEW_BANNER_BG);
+            g.drawString(this.font, "Preview Mode [ TAB/H to toggle ]", this.width - 194, 8, SystemEditorTheme.PREVIEW_BANNER_TEXT, SystemEditorTheme.TEXT_SHADOW);
+            super.render(g, mouseX, mouseY, partialTick);
+            return;
+        }
+
+        int leftW = getPanelLeftWidth();
+        int rightW = getPanelRightWidth();
+
+        // Top Header Bar
+        g.fill(0, 0, this.width, HEADER_H, SystemEditorTheme.HEADER_BG);
+        g.fill(0, HEADER_H - 1, this.width, HEADER_H, SystemEditorTheme.HEADER_BORDER_BOT);
+
+        // Left Panel Backdrop
+        if (!leftPanelCollapsed) {
+            g.fill(0, HEADER_H, leftW, this.height, SystemEditorTheme.PANEL_BG);
+            g.fill(leftW - 1, HEADER_H, leftW, this.height, SystemEditorTheme.PANEL_BORDER);
+            g.drawString(this.font, "SYSTEM TREE", 6, HEADER_H + 5, SystemEditorTheme.PANEL_TITLE_TEXT, SystemEditorTheme.TEXT_SHADOW);
+        }
+
+        // Right Panel Backdrop
+        if (!rightPanelCollapsed) {
+            int p2X = this.width - rightW;
+            g.fill(p2X, HEADER_H, this.width, this.height, SystemEditorTheme.PANEL_BG);
+            g.fill(p2X, HEADER_H, p2X + 1, this.height, SystemEditorTheme.PANEL_BORDER);
+
+            String rightHeader = switch (selectedNode) {
+                case SYSTEM -> "SYSTEM [" + (activeSystem != null ? activeSystem.id : "?") + "]";
+                case STAR   -> "STAR [" + (activeSystem != null && activeSystem.star != null ? activeSystem.star.id : "?") + "]";
+                case BODY   -> "BODY [" + (selectedBody != null ? selectedBody.id : "?") + "]";
+            };
+            g.drawString(this.font, rightHeader, p2X + 30, HEADER_H + 5, SystemEditorTheme.PANEL_TITLE_TEXT, SystemEditorTheme.TEXT_SHADOW);
+        }
+
+        int p2X = this.width - rightW;
+        int formY = HEADER_H + 42;
+        int visibleH = this.height - formY - 26;
+        int scissorBottom = this.height - 24;
+
+        ColorPreviewWidget openPicker = findOpenColorPicker();
+        int[] popupBounds = openPicker != null ? openPicker.getPopupBounds() : null;
+
+        if (!rightPanelCollapsed) {
+            g.enableScissor(p2X, formY, this.width, scissorBottom);
+
+            for (InspectorEntry entry : inspectorEntries) {
+                if (!entry.widget.visible) continue;
+                if (popupBounds != null && entry.widget != openPicker && rectsOverlap(
+                        entry.widget.getX(), entry.widget.getY(), entry.widget.getWidth(), entry.widget.getHeight(),
+                        popupBounds[0], popupBounds[1], popupBounds[2], popupBounds[3])) {
+                    continue;
+                }
+
+                if (entry.label != null) {
+                    int labelY = formY + entry.rawY - rightScrollOffset + (ROW_H - 8) / 2;
+                    g.drawString(this.font, entry.label, p2X + 6, labelY, SystemEditorTheme.INSPECTOR_LABEL_TEXT, SystemEditorTheme.TEXT_SHADOW);
+                }
+                entry.widget.render(g, mouseX, mouseY, partialTick);
+            }
+
+            g.disableScissor();
+        }
+
+        g.flush();
+
+        boolean hideSearchAndTree = systemDropdownOpen && searchEditBox != null;
+        if (hideSearchAndTree) {
+            searchEditBox.visible = false;
+            if (treeWidget != null) treeWidget.visible = false;
+        }
+
+        // Render widgets (header, sidebars, tab buttons, reset button, tree/search)
+        super.render(g, mouseX, mouseY, partialTick);
+
+        if (hideSearchAndTree) {
+            searchEditBox.visible = true;
+            if (treeWidget != null) treeWidget.visible = true;
+        }
+
+        g.flush();
+
+        if (!rightPanelCollapsed) {
+            // Render Inspector Scrollbar if content exceeds panel height
+            if (totalInspectorHeight > visibleH && visibleH > 0) {
+                int maxScroll = getMaxInspectorScroll();
+                int scrollbarH = Math.max(15, (visibleH * visibleH) / totalInspectorHeight);
+                int scrollbarY = formY + (rightScrollOffset * (visibleH - scrollbarH)) / Math.max(1, maxScroll);
+                int sbX = this.width - 4;
+
+                g.fill(sbX, formY, sbX + 3, formY + visibleH, SystemEditorTheme.INSPECTOR_SCROLLBAR_BG);
+                g.fill(sbX, scrollbarY, sbX + 3, scrollbarY + scrollbarH, SystemEditorTheme.INSPECTOR_SCROLLBAR_THUMB);
+            }
+        }
+
+        renderColorPickerOverlay(starColorPicker, g, mouseX, mouseY);
+        renderColorPickerOverlay(bodyColorPicker, g, mouseX, mouseY);
+        renderColorPickerOverlay(atmosColorPicker, g, mouseX, mouseY);
+        renderColorPickerOverlay(ringColorPicker, g, mouseX, mouseY);
+        renderColorPickerOverlay(cloudColorPicker, g, mouseX, mouseY);
+        renderColorPickerOverlay(starsColorPicker, g, mouseX, mouseY);
+        renderColorPickerOverlay(fogColorPicker, g, mouseX, mouseY);
+
+        // Render System Selection Dropdown Menu if open
+        if (systemDropdownOpen) {
+            renderSystemDropdown(g, mouseX, mouseY);
+        }
+
+        if (System.currentTimeMillis() < statusMessageTime) {
+            int textWidth  = this.font.width(statusMessage);
+            int toastWidth = textWidth + 24;
+            int toastHeight = 18;
+
+            int x1 = (this.width - toastWidth) / 2;
+            int y1 = HEADER_H + 6;
+            int x2 = x1 + toastWidth;
+            int y2 = y1 + toastHeight;
+
+            int bgColor     = 0xD0121318;
+            int textColor   = 0xFFEEEEEE;
+            int accentColor = statusIsError ? SystemEditorTheme.TOAST_ERROR_TEXT : SystemEditorTheme.TOAST_SUCCESS_TEXT;
+
+            g.fill(x1, y1, x2, y2, accentColor);
+            //g.fill(x1, y1, x1 + 3, y2, accentColor);
+            //g.fill(x1, y1, x2, y1 + 1, accentColor);
+
+            g.drawString(this.font, statusMessage, x1 + 8, y1 + 5, textColor, SystemEditorTheme.TEXT_SHADOW);
+        }
+    }
+
+    private ColorPreviewWidget findOpenColorPicker() {
+        if (starColorPicker != null && starColorPicker.isPaletteOpen()) return starColorPicker;
+        if (bodyColorPicker != null && bodyColorPicker.isPaletteOpen()) return bodyColorPicker;
+        if (atmosColorPicker != null && atmosColorPicker.isPaletteOpen()) return atmosColorPicker;
+        if (ringColorPicker != null && ringColorPicker.isPaletteOpen()) return ringColorPicker;
+        if (cloudColorPicker != null && cloudColorPicker.isPaletteOpen()) return cloudColorPicker;
+        if (starsColorPicker != null && starsColorPicker.isPaletteOpen()) return starsColorPicker;
+        if (fogColorPicker != null && fogColorPicker.isPaletteOpen()) return fogColorPicker;
+        return null;
+    }
+
+    private boolean rectsOverlap(int ax, int ay, int aw, int ah, int bx, int by, int bw, int bh) {
+        return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+    }
+
+    private void renderColorPickerOverlay(ColorPreviewWidget picker, GuiGraphics g, int mouseX, int mouseY) {
+        if (picker != null && picker.visible && picker.isPaletteOpen()) {
+            picker.renderPalettePopupOverlay(g, mouseX, mouseY);
+        }
+    }
+
+    private void renderSystemDropdown(GuiGraphics g, int mouseX, int mouseY) {
+        var systems = new ArrayList<>(CelestialJsonLoader.getActiveSystems().values());
+        int dropX = 4;
+        int dropY = 24;
+        int dropW = 150;
+        int itemH = 18;
+        int totalH = (systems.size() + 1) * itemH + 4;
+
+        g.fill(dropX, dropY, dropX + dropW, dropY + totalH, SystemEditorTheme.DROPDOWN_BG);
+        g.fill(dropX, dropY, dropX + dropW, dropY + 1, SystemEditorTheme.DROPDOWN_BORDER_TOP);
+        g.fill(dropX, dropY + totalH - 1, dropX + dropW, dropY + totalH, SystemEditorTheme.DROPDOWN_BORDER_SIDE);
+        g.fill(dropX, dropY, dropX + 1, dropY + totalH, SystemEditorTheme.DROPDOWN_BORDER_SIDE);
+        g.fill(dropX + dropW - 1, dropY, dropX + dropW, dropY + totalH, SystemEditorTheme.DROPDOWN_BORDER_SIDE);
+
+        for (int i = 0; i < systems.size(); i++) {
+            SolarSystemData sys = systems.get(i);
+            int iy = dropY + 2 + i * itemH;
+            boolean hovered = mouseX >= dropX && mouseX <= dropX + dropW && mouseY >= iy && mouseY < iy + itemH;
+            boolean isCurrent = activeSystem != null && activeSystem.id.equalsIgnoreCase(sys.id);
+
+            if (isCurrent) {
+                g.fill(dropX + 2, iy, dropX + dropW - 2, iy + itemH, SystemEditorTheme.DROPDOWN_ITEM_SEL_BG);
+                g.fill(dropX + 2, iy, dropX + 5, iy + itemH, SystemEditorTheme.DROPDOWN_ITEM_SEL_STRIP);
+            } else if (hovered) {
+                g.fill(dropX + 2, iy, dropX + dropW - 2, iy + itemH, SystemEditorTheme.DROPDOWN_ITEM_HOVER);
+            }
+
+            int textCol = isCurrent ? SystemEditorTheme.DROPDOWN_TEXT_ACTIVE : (hovered ? SystemEditorTheme.DROPDOWN_TEXT_HOVER : SystemEditorTheme.DROPDOWN_TEXT_NORMAL);
+            g.drawString(this.font, "[s] " + sys.id, dropX + 8, iy + 4, textCol, SystemEditorTheme.TEXT_SHADOW);
+        }
+
+        int iy = dropY + 2 + systems.size() * itemH;
+        boolean hoveredNew = mouseX >= dropX && mouseX <= dropX + dropW && mouseY >= iy && mouseY < iy + itemH;
+        if (hoveredNew) {
+            g.fill(dropX + 2, iy, dropX + dropW - 2, iy + itemH, SystemEditorTheme.DROPDOWN_ITEM_HOVER);
+        }
+        g.drawString(this.font, "+ Create New System", dropX + 8, iy + 4, hoveredNew ? SystemEditorTheme.DROPDOWN_TEXT_ACTIVE : SystemEditorTheme.DROPDOWN_TEXT_NEW, SystemEditorTheme.TEXT_SHADOW);
+    }
+
+    private void closeOtherColorPickers(ColorPreviewWidget current) {
+        if (starColorPicker != null && starColorPicker != current) starColorPicker.closePalette();
+        if (bodyColorPicker != null && bodyColorPicker != current) bodyColorPicker.closePalette();
+        if (atmosColorPicker != null && atmosColorPicker != current) atmosColorPicker.closePalette();
+        if (ringColorPicker != null && ringColorPicker != current) ringColorPicker.closePalette();
+        if (cloudColorPicker != null && cloudColorPicker != current) cloudColorPicker.closePalette();
+        if (starsColorPicker != null && starsColorPicker != current) starsColorPicker.closePalette();
+        if (fogColorPicker != null && fogColorPicker != current) fogColorPicker.closePalette();
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (systemDropdownOpen) {
+            if (handleSystemDropdownClick(mouseX, mouseY)) return true;
+        }
+
+        ColorPreviewWidget openPickerBefore = findOpenColorPicker();
+
+        if (starColorPicker != null && starColorPicker.isPaletteOpen()) {
+            if (starColorPicker.handlePaletteClick(mouseX, mouseY)) return true;
+        }
+        if (bodyColorPicker != null && bodyColorPicker.isPaletteOpen()) {
+            if (bodyColorPicker.handlePaletteClick(mouseX, mouseY)) return true;
+        }
+        if (atmosColorPicker != null && atmosColorPicker.isPaletteOpen()) {
+            if (atmosColorPicker.handlePaletteClick(mouseX, mouseY)) return true;
+        }
+        if (ringColorPicker != null && ringColorPicker.isPaletteOpen()) {
+            if (ringColorPicker.handlePaletteClick(mouseX, mouseY)) return true;
+        }
+        if (cloudColorPicker != null && cloudColorPicker.isPaletteOpen()) {
+            if (cloudColorPicker.handlePaletteClick(mouseX, mouseY)) return true;
+        }
+        if (starsColorPicker != null && starsColorPicker.isPaletteOpen()) {
+            if (starsColorPicker.handlePaletteClick(mouseX, mouseY)) return true;
+        }
+        if (fogColorPicker != null && fogColorPicker.isPaletteOpen()) {
+            if (fogColorPicker.handlePaletteClick(mouseX, mouseY)) return true;
+        }
+
+        int formY = HEADER_H + 44;
+        int scissorBottom = this.height - 24;
+        List<AbstractWidget> disabledForClick = new ArrayList<>();
+        for (InspectorEntry entry : inspectorEntries) {
+            if (entry.widget.visible && (entry.widget.getY() < formY || entry.widget.getY() + entry.height > scissorBottom)) {
+                entry.widget.active = false;
+                disabledForClick.add(entry.widget);
+            }
+        }
+
+        boolean result = super.mouseClicked(mouseX, mouseY, button);
+
+        for (AbstractWidget w : disabledForClick) {
+            w.active = true;
+        }
+
+        ColorPreviewWidget openPickerAfter = findOpenColorPicker();
+        if (openPickerAfter != null && openPickerAfter != openPickerBefore) {
+            closeOtherColorPickers(openPickerAfter);
+        }
+
+        return result;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        ColorPreviewWidget openPicker = findOpenColorPicker();
+        if (openPicker != null && openPicker.handlePaletteDrag(mouseX, mouseY)) {
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    private boolean handleSystemDropdownClick(double mouseX, double mouseY) {
+        var systems = new ArrayList<>(CelestialJsonLoader.getActiveSystems().values());
+        int dropX = 4;
+        int dropY = 24;
+        int dropW = 150;
+        int itemH = 18;
+
+        if (mouseX >= dropX && mouseX <= dropX + dropW) {
+            for (int i = 0; i < systems.size(); i++) {
+                int iy = dropY + 2 + i * itemH;
+                if (mouseY >= iy && mouseY < iy + itemH) {
+                    activeSystem = systems.get(i);
+                    selectedNode = NodeType.SYSTEM;
+                    activeTab    = Tab.SYSTEM;
+                    selectedBody = null;
+                    notifyChanged();
+                    systemDropdownOpen = false;
+                    showStatus("Selected System: " + activeSystem.id, false);
+                    buildLayout();
+                    return true;
+                }
+            }
+            int iy = dropY + 2 + systems.size() * itemH;
+            if (mouseY >= iy && mouseY < iy + itemH) {
+                systemDropdownOpen = false;
+                addNewSystem();
+                return true;
+            }
+        }
+
+        systemDropdownOpen = false;
+        return false;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if ((keyCode == 72 || keyCode == 258) && !isAnyTextFieldFocused()) {
+            toggleHideUI();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    private boolean isAnyTextFieldFocused() {
+        return (searchEditBox != null && searchEditBox.isFocused()) ||
+                (sysIdEditBox != null && sysIdEditBox.isFocused()) ||
+                (sysDimEditBox != null && sysDimEditBox.isFocused()) ||
+                (starIdEditBox != null && starIdEditBox.isFocused()) ||
+                (starColorEditBox != null && starColorEditBox.isFocused()) ||
+                (bodyIdEditBox != null && bodyIdEditBox.isFocused()) ||
+                (bodyParentEditBox != null && bodyParentEditBox.isFocused()) ||
+                (bodyDimEditBox != null && bodyDimEditBox.isFocused()) ||
+                (dayTextureEditBox != null && dayTextureEditBox.isFocused()) ||
+                (nightTextureEditBox != null && nightTextureEditBox.isFocused()) ||
+                (bodyColorEditBox != null && bodyColorEditBox.isFocused()) ||
+                (epochUtcEditBox != null && epochUtcEditBox.isFocused()) ||
+                (atmosColorEditBox != null && atmosColorEditBox.isFocused()) ||
+                (ringTextureEditBox != null && ringTextureEditBox.isFocused()) ||
+                (rockTextureEditBox != null && rockTextureEditBox.isFocused()) ||
+                (ringColorEditBox != null && ringColorEditBox.isFocused()) ||
+                (cloudTextureEditBox != null && cloudTextureEditBox.isFocused()) ||
+                (cloudColorEditBox != null && cloudColorEditBox.isFocused()) ||
+                (skyTextureEditBox != null && skyTextureEditBox.isFocused()) ||
+                (starsColorEditBox != null && starsColorEditBox.isFocused()) ||
+                (fogColorEditBox != null && fogColorEditBox.isFocused());
+    }
+
+    private void toggleHideUI() {
+        this.hideUI = !this.hideUI;
+        buildLayout();
+    }
+
+    private void switchNextSystem() {
+        systemDropdownOpen = !systemDropdownOpen;
+    }
+
+    private void addNewSystem() {
+        String newId = "system_" + (CelestialJsonLoader.getActiveSystems().size() + 1);
+        SolarSystemData sys = new SolarSystemData(newId, "tsp:space");
+        sys.star = new SunInstance.Config("sun", 2000.0F, "#ffd48a");
+        PlanetInstance.Config body = new PlanetInstance.Config("new_planet", "planet", "sun", 200.0F, "earth_mat_0", "#7fb8ff");
+        body.orbit.radius = 12000.0;
+        sys.bodies.add(body);
+        activeSystem = sys;
+        selectedNode = NodeType.SYSTEM;
+        activeTab    = Tab.SYSTEM;
+        selectedBody = null;
+        notifyChanged();
+        showStatus("Created new system: " + newId, false);
+        buildLayout();
+    }
+
+    private void promptRemoveCurrentSystem() {
+        if (activeSystem != null) {
+            Minecraft.getInstance().setScreen(new ConfirmationPopup(this, activeSystem.id, this::removeCurrentSystem));
+        }
+    }
+
+    private void promptRemoveSelectedBody() {
+        if (selectedBody != null) {
+            Minecraft.getInstance().setScreen(new ConfirmationPopup(this, selectedBody.id, this::removeSelectedBody));
+        }
+    }
+
+    private void promptResetBody() {
+        if (selectedBody != null) {
+            Minecraft.getInstance().setScreen(new ConfirmationPopup(this, selectedBody.id, this::resetSelectedBodyToDefaults));
+        }
+    }
+
+    private void removeCurrentSystem() {
+        if (activeSystem == null) return;
+        String removedId = activeSystem.id;
+        CelestialJsonLoader.removeSystemInMemory(activeSystem.id);
+        var systems = CelestialJsonLoader.getActiveSystems();
+        activeSystem = systems.isEmpty() ? null : systems.values().iterator().next();
+        selectedNode = NodeType.SYSTEM;
+        activeTab    = Tab.SYSTEM;
+        selectedBody = null;
+        showStatus("Removed system: " + removedId, false);
+        buildLayout();
+    }
+
+    private void exportCurrentSystem() {
+        if (activeSystem == null) return;
+        try {
+            File exported = CelestialJsonLoader.exportActiveSystem(activeSystem.id);
+            showStatus("Exported " + exported.getName(), false);
+        } catch (Exception e) {
+            showStatus("Export Error: " + e.getMessage(), true);
+        }
+    }
+
+    private void addBody(String type) {
+        if (activeSystem == null) return;
+        String newId    = type + "_" + (activeSystem.bodies.size() + 1);
+        String parentId = "moon".equalsIgnoreCase(type) && selectedBody != null ? selectedBody.id : "sun";
+        float  radius   = "moon".equalsIgnoreCase(type) ? 60.0F : ("blackhole".equalsIgnoreCase(type) ? 300.0F : 150.0F);
+        PlanetInstance.Config newBody = new PlanetInstance.Config(newId, type, parentId, radius, "earth_mat_0", "#7fb8ff");
+
+        if (newBody.isBlackHole()) {
+            newBody.atmosphere.enabled = false;
+            newBody.ring.enabled = false;
+        }
+
+        newBody.orbit.radius     = "moon".equalsIgnoreCase(type) ? 1200.0 : (activeSystem.bodies.size() + 1) * 8000.0;
+        newBody.orbit.periodDays = "moon".equalsIgnoreCase(type) ? 27.0   : (activeSystem.bodies.size() + 1) * 100.0;
+        activeSystem.bodies.add(newBody);
+        selectedBody = newBody;
+        selectedNode = NodeType.BODY;
+        activeTab    = Tab.GENERAL;
+        notifyChanged();
+        showStatus("Added " + type + ": " + newId, false);
+        buildLayout();
+    }
+
+    private void duplicateSelectedBody() {
+        if (activeSystem == null || selectedBody == null) return;
+        PlanetInstance.Config copy = selectedBody.copy();
+        copy.id = selectedBody.id + "_copy";
+        copy.orbit.radius += 1000.0;
+        activeSystem.bodies.add(copy);
+        selectedBody = copy;
+        selectedNode = NodeType.BODY;
+        notifyChanged();
+        showStatus("Duplicated body: " + copy.id, false);
+        buildLayout();
+    }
+
+    private void removeSelectedBody() {
+        if (activeSystem == null || selectedBody == null) return;
+        String removedId = selectedBody.id;
+        activeSystem.bodies.remove(selectedBody);
+        selectedBody = activeSystem.bodies.isEmpty() ? null : activeSystem.bodies.get(0);
+        selectedNode = selectedBody != null ? NodeType.BODY : NodeType.SYSTEM;
+        if (selectedNode == NodeType.SYSTEM) activeTab = Tab.SYSTEM;
+        notifyChanged();
+        showStatus("Deleted body: " + removedId, false);
+        buildLayout();
+    }
+
+    private void copySelectedBodyConfig() {
+        if (selectedBody != null) {
+            copiedBodyConfig = selectedBody.copy();
+            showStatus("Copied config of " + selectedBody.id, false);
+        }
+    }
+
+    private void pasteBodyConfig() {
+        if (selectedBody != null && copiedBodyConfig != null) {
+            String targetId = selectedBody.id;
+            selectedBody = copiedBodyConfig.copy();
+            selectedBody.id = targetId;
+            int idx = activeSystem.bodies.indexOf(selectedBody);
+            if (idx >= 0) activeSystem.bodies.set(idx, selectedBody);
+            notifyChanged();
+            showStatus("Pasted config onto " + targetId, false);
+            buildLayout();
+        }
+    }
+
+    private void resetSelectedBodyToDefaults() {
+        if (selectedBody == null) return;
+        selectedBody.orbit      = new PlanetInstance.Orbit();
+        selectedBody.atmosphere = new PlanetInstance.Atmosphere();
+        selectedBody.ring       = new PlanetInstance.Ring();
+        selectedBody.sky        = new PlanetInstance.Sky();
+        selectedBody.fog        = new PlanetInstance.SurfaceInstance.SurfaceFog();
+        if (selectedBody.isBlackHole()) {
+            selectedBody.atmosphere.enabled = false;
+            selectedBody.ring.enabled = false;
+        }
+        selectedBody.radius     = 150.0F;
+        selectedBody.oxygen     = false;
+        selectedBody.temperature = 0.0F;
+        selectedBody.yaw = selectedBody.pitch = selectedBody.roll = 0.0F;
+        notifyChanged();
+        showStatus("Reset this body.", false);
+        buildLayout();
+    }
+
+    private void notifyChanged() {
+        if (activeSystem != null) {
+            CelestialJsonLoader.setActiveSelectedSystemId(activeSystem.id);
+            CelestialJsonLoader.updateSystemInMemory(activeSystem, true);
+        }
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+}

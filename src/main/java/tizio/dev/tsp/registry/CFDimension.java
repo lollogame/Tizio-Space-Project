@@ -20,6 +20,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import tizio.dev.tsp.MainClass;
+import tizio.dev.tsp.core.celestial.lighting.LightShadeManager;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import java.util.function.Predicate;
 @Mod.EventBusSubscriber
 public class CFDimension {
 
-    @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
+    @Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class SpaceSpecialEffectsHandler {
 
         @SubscribeEvent
@@ -45,6 +46,11 @@ public class CFDimension {
                 @Override
                 public boolean isFoggyAt(int x, int y) {
                     return false;
+                }
+
+                @Override
+                public void adjustLightmapColors(ClientLevel level, float partialTick, float skyDarken, float blockLightRedFlicker, float skyLight, int pixelX, int pixelY, Vector3f colors) {
+                    LightShadeManager.adjustLightmapColors(level, partialTick, skyDarken, blockLightRedFlicker, skyLight, pixelX, pixelY, colors);
                 }
             };
             event.register(new ResourceLocation(MainClass.MODID, "space"), customEffect);
@@ -111,6 +117,7 @@ public class CFDimension {
 
             @Override
             public void adjustLightmapColors(ClientLevel level, float partialTick, float skyDarken, float blockLightRedFlicker, float skyLight, int pixelX, int pixelY, Vector3f colors) {
+                LightShadeManager.adjustLightmapColors(level, partialTick, skyDarken, blockLightRedFlicker, skyLight, pixelX, pixelY, colors);
                 if (CUSTOM_LIGHTS != null && !CUSTOM_LIGHTS.isEmpty()) {
                     for (Consumer<Object[]> consumer : CUSTOM_LIGHTS)
                         consumer.accept(new Object[]{level, partialTick, skyDarken, blockLightRedFlicker, skyLight, pixelX, pixelY, colors});
@@ -151,7 +158,7 @@ public class CFDimension {
         }
 
         private static void run(@Nullable Event event) {
-            register(ResourceKey.create(Registries.DIMENSION, new ResourceLocation("tsp", "space")), createOverworldEffects(false, false, false));
+            register(ResourceKey.create(Registries.DIMENSION, new ResourceLocation(MainClass.MODID, "space")), createOverworldEffects(false, false, false));
             register(Level.OVERWORLD, createOverworldEffects(false, false, false));
         }
     }

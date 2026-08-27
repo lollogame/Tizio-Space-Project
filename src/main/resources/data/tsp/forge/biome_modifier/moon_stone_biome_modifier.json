@@ -1,0 +1,11 @@
+{
+  "type": "forge:add_features",
+  "biomes": [
+    "tsp:moon_plains",
+    "tsp:moon_wasted_plains"
+  ],
+  "features": [
+    "tsp:moon/moon_stone"
+  ],
+  "step": "underground_ores"
+}

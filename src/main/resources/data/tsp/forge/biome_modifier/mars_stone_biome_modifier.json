@@ -1,0 +1,9 @@
+{
+  "type": "forge:add_features",
+  "biomes": "tsp:mars_plains",
+  "features": [
+    "tsp:mars/mars_stone",
+    "tsp:mars/mars_stone_mountains"
+  ],
+  "step": "underground_ores"
+}

@@ -1,0 +1,461 @@
+{
+  "id": "solar_system",
+  "dimension": "tsp:space",
+  "gravity": 0.0,
+  "origin": [
+    0.0,
+    500.0,
+    0.0
+  ],
+  "globalScale": 5.5,
+  "star": {
+    "id": "sun",
+    "type": "star",
+    "radius": 2000.0,
+    "color": "#FFF1B7",
+    "rotation": {
+      "yaw": -31.5,
+      "pitch": 14.594595,
+      "roll": -12.0
+    }
+  },
+  "bodies": [
+    {
+      "id": "mercury",
+      "type": "planet",
+      "parentId": "sun",
+      "gravity": 9.81,
+      "oxygen": false,
+      "temperature": 0.8,
+      "radius": 200.0,
+      "texture": "mercury",
+      "color": "#a5f0ee",
+      "spinHours": 24.0,
+      "orbit": {
+        "radius": 7207.2072072074125,
+        "periodDays": 87.97,
+        "epochAngle": 0.0,
+        "epochUtc": "2000-01-01T12:00:00Z",
+        "inclination": 7.0,
+        "ascendingNode": 0.0
+      }
+    },
+    {
+      "id": "venus",
+      "type": "planet",
+      "parentId": "sun",
+      "dimension": "tsp:venus",
+      "gravity": 8.87,
+      "oxygen": false,
+      "temperature": 1.0,
+      "radius": 320.0,
+      "texture": "venus",
+      "color": "#a5f0ee",
+      "spinHours": 24.0,
+      "sky": {
+        "skyboxRotation": true,
+        "skyboxConstant": false,
+        "skyboxTexture": "milky_way",
+        "starsEnabled": true,
+        "starsAmount": 900,
+        "starsSeed": 0,
+        "color": "#ffffff",
+        "groundMode": false
+      },
+      "fog": {
+        "enabled": true,
+        "color": "#B77C00",
+        "shape": "CYLINDER",
+        "startDistance": -20.39801,
+        "endDistance": 280.88
+      },
+      "orbit": {
+        "radius": 14556.962025316438,
+        "periodDays": 224.7,
+        "epochAngle": 0.0,
+        "epochUtc": "2000-01-01T12:00:00Z",
+        "inclination": 3.3900000000000006,
+        "ascendingNode": 0.0
+      },
+      "atmosphere": {
+        "enabled": true,
+        "thickness": 0.33691984,
+        "exposure": 2.6063292,
+        "intensity": 0.42563292,
+        "rayleighScaleHeight": 0.06942827,
+        "rayleighStrength": 0.0312,
+        "wavelengths": [
+          601.0549,
+          745.35864,
+          865.6118
+        ]
+      },
+      "clouds": {
+        "enabled": true,
+        "texture": "noise2",
+        "height": 0.008035353,
+        "density": 0.87777776,
+        "windSpeed": 0.0045,
+        "color": "#FFBF4B",
+        "noiseScale": 0.3
+      }
+    },
+    {
+      "id": "earth",
+      "type": "planet",
+      "parentId": "sun",
+      "dimension": "minecraft:overworld",
+      "gravity": 9.81,
+      "oxygen": true,
+      "temperature": 0.0,
+      "radius": 335.0,
+      "texture": "earth_mat_0",
+      "nightTexture": "earth_mat_1",
+      "color": "#a5f0ee",
+      "rotation": {
+        "yaw": 0.0,
+        "pitch": 23.5,
+        "roll": 0.0
+      },
+      "spinHours": 24.0,
+      "sky": {
+        "skyboxRotation": true,
+        "skyboxConstant": false,
+        "skyboxTexture": "milky_way",
+        "starsEnabled": true,
+        "starsAmount": 900,
+        "starsSeed": 0,
+        "color": "#ffffff",
+        "groundMode": false
+      },
+      "fog": {
+        "enabled": true,
+        "color": "#DBFFFF",
+        "shape": "CYLINDER",
+        "startDistance": 19.402985,
+        "endDistance": 247.68,
+        "useRenderDistance": true
+      },
+      "orbit": {
+        "radius": 17216.2162,
+        "periodDays": 365.26,
+        "epochAngle": 0.0,
+        "epochUtc": "2000-01-01T12:00:00Z",
+        "inclination": 0.0,
+        "ascendingNode": 0.0
+      },
+      "atmosphere": {
+        "enabled": true,
+        "thickness": 0.16402954,
+        "exposure": 3.25,
+        "intensity": 0.49678716,
+        "rayleighScaleHeight": 0.0913,
+        "rayleighStrength": 0.0312,
+        "wavelengths": [
+          661.46,
+          543.4,
+          446.6
+        ]
+      },
+      "clouds": {
+        "enabled": true,
+        "texture": "noise1",
+        "height": 0.007030303,
+        "density": 0.6666667,
+        "windSpeed": 0.0025,
+        "color": "#ffffff",
+        "noiseScale": 0.35
+      }
+    },
+    {
+      "id": "mars",
+      "type": "planet",
+      "parentId": "sun",
+      "dimension": "tsp:mars",
+      "gravity": 3.72,
+      "oxygen": false,
+      "temperature": 0.0176,
+      "radius": 300.0,
+      "texture": "mars",
+      "color": "#a5f0ee",
+      "spinHours": 24.6,
+      "sky": {
+        "skyboxRotation": true,
+        "skyboxConstant": false,
+        "skyboxTexture": "milky_way",
+        "starsEnabled": true,
+        "starsAmount": 900,
+        "starsSeed": 0,
+        "color": "#FFFFFF",
+        "groundMode": false
+      },
+      "fog": {
+        "enabled": true,
+        "color": "#FF934F",
+        "shape": "CYLINDER",
+        "startDistance": -15.789474,
+        "endDistance": 200.0,
+        "useRenderDistance": true
+      },
+      "orbit": {
+        "radius": 19936.708860759492,
+        "periodDays": 686.98,
+        "epochAngle": 0.0,
+        "epochUtc": "2000-01-01T12:00:00Z",
+        "inclination": 1.8499999999999943,
+        "ascendingNode": 0.0
+      },
+      "atmosphere": {
+        "enabled": true,
+        "thickness": 0.14516878,
+        "exposure": 2.7525315,
+        "intensity": 0.413038,
+        "rayleighScaleHeight": 0.0913,
+        "rayleighStrength": 0.07912626,
+        "wavelengths": [
+          721.30804,
+          761.3924,
+          629.11395
+        ]
+      },
+      "clouds": {
+        "enabled": true,
+        "texture": "noise3",
+        "height": 0.014065657,
+        "density": 0.7,
+        "windSpeed": 0.0025,
+        "color": "#ffffff",
+        "noiseScale": 0.1
+      }
+    },
+    {
+      "id": "jupiter",
+      "type": "planet",
+      "parentId": "sun",
+      "gravity": 9.81,
+      "oxygen": false,
+      "temperature": -0.5,
+      "radius": 486.0,
+      "texture": "jupiter",
+      "color": "#a5f0ee",
+      "rotation": {
+        "yaw": 0.0,
+        "pitch": 8.35443,
+        "roll": -14.43038
+      },
+      "spinHours": 9.9,
+      "orbit": {
+        "radius": 22784.81012658228,
+        "periodDays": 4332.59,
+        "epochAngle": 0.0,
+        "epochUtc": "2000-01-01T12:00:00Z",
+        "inclination": 1.2999999999999972,
+        "ascendingNode": 0.0
+      },
+      "atmosphere": {
+        "enabled": true,
+        "thickness": 0.324346,
+        "exposure": 3.3582277,
+        "intensity": 0.43822786,
+        "rayleighScaleHeight": 0.085219406,
+        "rayleighStrength": 0.20261616,
+        "wavelengths": [
+          913.7131,
+          977.8481,
+          1070.0422
+        ]
+      }
+    },
+    {
+      "id": "saturn",
+      "type": "planet",
+      "parentId": "sun",
+      "gravity": 9.81,
+      "oxygen": false,
+      "temperature": -0.7,
+      "radius": 440.0,
+      "texture": "saturn",
+      "color": "#FFFFFF",
+      "rotation": {
+        "yaw": 0.0,
+        "pitch": 26.73,
+        "roll": 0.0
+      },
+      "spinHours": 10.7,
+      "orbit": {
+        "radius": 25632.91139240506,
+        "periodDays": 10759.22,
+        "epochAngle": 0.0,
+        "epochUtc": "2000-01-01T12:00:00Z",
+        "inclination": 2.4899999999999807,
+        "ascendingNode": 0.0
+      },
+      "atmosphere": {
+        "enabled": true,
+        "thickness": 0.5286709,
+        "exposure": 3.25,
+        "intensity": 0.32907173,
+        "rayleighScaleHeight": 0.039951477,
+        "rayleighStrength": 0.20009597,
+        "wavelengths": [
+          1310.5486,
+          1398.7341,
+          929.7468
+        ]
+      },
+      "ring": {
+        "enabled": true,
+        "innerRadius": 596.96204,
+        "outerRadius": 925.23206,
+        "texture": "saturn_ring",
+        "rockTexture": "saturn_ring_rock",
+        "color": "#ffffff",
+        "rotation": {
+          "yaw": 0.0,
+          "pitch": 26.73,
+          "roll": 0.0
+        },
+        "rocksEnabled": true,
+        "rockCount": 40000,
+        "rockMinSize": 0.05,
+        "rockMaxSize": 1.6953586,
+        "rockHeight": 10.759494,
+        "rockOrbitSpeed": 0.001
+      }
+    },
+    {
+      "id": "uranus",
+      "type": "planet",
+      "parentId": "sun",
+      "gravity": 9.81,
+      "oxygen": false,
+      "temperature": -0.8,
+      "radius": 430.0,
+      "texture": "uranus",
+      "color": "#FFFFFF",
+      "rotation": {
+        "yaw": -159.4,
+        "pitch": 12.2,
+        "roll": 105.5
+      },
+      "spinHours": -17.2,
+      "orbit": {
+        "radius": 28481.01265822785,
+        "periodDays": 30688.5,
+        "epochAngle": 0.0,
+        "epochUtc": "2000-01-01T12:00:00Z",
+        "inclination": 0.7699999999999818,
+        "ascendingNode": 0.0
+      },
+      "atmosphere": {
+        "enabled": true,
+        "thickness": 0.20175105,
+        "exposure": 4.7158227,
+        "intensity": 0.34,
+        "rayleighScaleHeight": 0.0913,
+        "rayleighStrength": 0.19505556,
+        "wavelengths": [
+          1178.27,
+          969.83124,
+          1000.0
+        ]
+      },
+      "ring": {
+        "enabled": true,
+        "innerRadius": 578.06964,
+        "outerRadius": 698.5232,
+        "texture": "uranus_ring",
+        "rockTexture": "uranus_ring_rock",
+        "color": "#ffffff",
+        "rotation": {
+          "yaw": -159.4,
+          "pitch": 12.2,
+          "roll": 105.5
+        },
+        "rocksEnabled": true,
+        "rockCount": 50000,
+        "rockMinSize": 0.05,
+        "rockMaxSize": 1.1915612,
+        "rockHeight": 7.3839664,
+        "rockOrbitSpeed": 0.0015
+      }
+    },
+    {
+      "id": "neptune",
+      "type": "planet",
+      "parentId": "sun",
+      "gravity": 9.81,
+      "oxygen": false,
+      "temperature": -0.9,
+      "radius": 496.0,
+      "texture": "neptune",
+      "color": "#a5f0ee",
+      "rotation": {
+        "yaw": 180.0,
+        "pitch": 12.911392,
+        "roll": -3.7974684
+      },
+      "spinHours": 0.0,
+      "orbit": {
+        "radius": 31329.113924050635,
+        "periodDays": 60000.0,
+        "epochAngle": 0.0,
+        "epochUtc": "2000-01-01T12:00:00Z",
+        "inclination": 1.7700000000000102,
+        "ascendingNode": 0.0
+      },
+      "atmosphere": {
+        "enabled": true,
+        "thickness": 0.11373418,
+        "exposure": 2.1259494,
+        "intensity": 0.23251055,
+        "rayleighScaleHeight": 0.11995991,
+        "rayleighStrength": 0.018641414,
+        "wavelengths": [
+          661.18146,
+          1174.2616,
+          1000.0
+        ]
+      }
+    },
+    {
+      "id": "earth_moon",
+      "type": "moon",
+      "parentId": "earth",
+      "dimension": "tsp:moon",
+      "gravity": 1.6,
+      "oxygen": false,
+      "temperature": -0.8,
+      "radius": 60.0,
+      "texture": "moon",
+      "color": "#7fb8ff",
+      "spinHours": 27.3,
+      "sky": {
+        "skyboxRotation": true,
+        "skyboxConstant": true,
+        "skyboxTexture": "milky_way",
+        "starsEnabled": true,
+        "starsAmount": 900,
+        "starsSeed": 0,
+        "color": "#FFFFFF",
+        "groundMode": false
+      },
+      "fog": {
+        "enabled": true,
+        "color": "#000000",
+        "shape": "CYLINDER",
+        "startDistance": -50.0,
+        "endDistance": 200.0,
+        "useRenderDistance": true
+      },
+      "orbit": {
+        "radius": 1799.9999999999998,
+        "periodDays": 27.0,
+        "epochAngle": 0.0,
+        "epochUtc": "2000-01-01T12:00:00Z",
+        "inclination": 0.0,
+        "ascendingNode": 0.0
+      }
+    }
+  ]
+}

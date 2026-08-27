@@ -5,12 +5,25 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "tsp.refmap.json",
   "mixins": [
-    "entity.GravityModifier",
-    "entity.ItemGravity",
-    "entity.NoVoidDamage"
+    "entity.NoVoidDamage",
+
+    "gravity.AbstractArrowGravityMixin",
+    "gravity.FallingBlockEntityGravityMixin",
+    "gravity.ItemEntityGravityMixin",
+    "gravity.PrimedTntGravityMixin",
+    "gravity.ThrowableProjectileGravityMixin"
+
   ],
   "client": [
-    "render.DepthModifier"
+    "render.DepthMixin",
+
+    "render.lighting.GameRendererMixin",
+    "render.lighting.DiffuseLightingMixin",
+    "render.lighting.ShadingLevelMixin",
+
+    "render.LevelRendererCloudsMixin",
+    "render.FPSArmRenderMixin",
+    "other.ReceivingLevelScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

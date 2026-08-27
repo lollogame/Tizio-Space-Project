@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "tsp:item/armor/space_suit_1_blue_chestplate"
+  }
+}

@@ -1,7 +1,0 @@
-{
-  "parent": "tsp:custom/helmet",
-  "textures": {
-    "0": "tsp:item/space_suit_tier_1",
-    "particle": "tsp:item/space_suit_tier_1"
-  }
-}

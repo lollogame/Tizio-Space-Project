@@ -1,0 +1,112 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "tsp:vertex/projection",
+  "fragment": "tsp:fragment/celestial/planet_atmosphere",
+  "attributes": [
+    "Position",
+    "UV0"
+  ],
+  "samplers": [],
+  "uniforms": [
+    {
+      "name": "ModelViewMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    },
+    {
+      "name": "ProjMat",
+      "type": "matrix4x4",
+      "count": 16,
+      "values": [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    },
+    {
+      "name": "PlanetRadius",
+      "type": "float",
+      "count": 1,
+      "values": [2.8]
+    },
+    {
+      "name": "AtmosphereRadius",
+      "type": "float",
+      "count": 1,
+      "values": [4.2]
+    },
+    {
+      "name": "Intensity",
+      "type": "float",
+      "count": 1,
+      "values": [1.0]
+    },
+    {
+      "name": "Exposure",
+      "type": "float",
+      "count": 1,
+      "values": [1.5]
+    },
+    {
+      "name": "RayleighScaleHeight",
+      "type": "float",
+      "count": 1,
+      "values": [0.6]
+    },
+    {
+      "name": "RayleighStrength",
+      "type": "float",
+      "count": 1,
+      "values": [1.0]
+    },
+    {
+      "name": "BaseColor",
+      "type": "float",
+      "count": 3,
+      "values": [0.55, 0.78, 1.0]
+    },
+    {
+      "name": "WaveLengths",
+      "type": "float",
+      "count": 3,
+      "values": [ 780.0, 540.0, 440.0 ]
+    },
+    {
+      "name": "LightDirection",
+      "type": "float",
+      "count": 3,
+      "values": [0.23, 0.19, 0.95]
+    },
+    {
+      "name": "CenterRelative",
+      "type": "float",
+      "count": 3,
+      "values": [0.0, 0.0, 0.0]
+    },
+    {
+      "name": "AxisX",
+      "type": "float",
+      "count": 3,
+      "values": [1.0, 0.0, 0.0]
+    },
+    {
+      "name": "AxisY",
+      "type": "float",
+      "count": 3,
+      "values": [0.0, 1.0, 0.0]
+    },
+    {
+      "name": "AxisZ",
+      "type": "float",
+      "count": 3,
+      "values": [0.0, 0.0, 1.0]
+    },
+    {
+      "name": "CameraLocalPos",
+      "type": "float",
+      "count": 3,
+      "values": [0.0, 0.0, -16.0]
+    }
+  ]
+}

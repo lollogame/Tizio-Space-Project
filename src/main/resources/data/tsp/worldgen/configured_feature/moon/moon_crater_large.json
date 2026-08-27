@@ -1,0 +1,11 @@
+{
+  "type": "tsp:crater",
+  "config": {
+    "min_radius": 9,
+    "max_radius": 12,
+    "rim_width": 3,
+    "max_depth": 12,
+    "rim_height": 4,
+    "max_surface_y": 90
+  }
+}

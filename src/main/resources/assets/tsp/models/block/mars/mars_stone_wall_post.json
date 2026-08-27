@@ -1,6 +1,0 @@
-{
-  "parent": "block/template_wall_post",
-  "textures": {
-    "wall": "tsp:block/mars_stone_texture"
-  }
-}

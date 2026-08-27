@@ -1,0 +1,5 @@
+// 1.20.1	2026-08-26T19:48:57.0382052	Tags for minecraft:block mod id tsp
+42679ee457d7d0eba5485cd91e2cbd385d43baed data/minecraft/tags/blocks/mineable/pickaxe.json
+b02a06e11f80f8e5dc5b2c46944af7a4a86cd242 data/minecraft/tags/blocks/needs_stone_tool.json
+2ea5e88be9cc9fa5a3bb3de3ed200c04a55daaae data/tsp/tags/blocks/mars_stone_ore_replaceable.json
+a15e9dfe667f180ed4d1e7daf3b3aeee8ee931c7 data/tsp/tags/blocks/moon_stone_ore_replaceable.json

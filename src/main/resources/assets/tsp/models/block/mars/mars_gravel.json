@@ -1,8 +1,0 @@
-{
-  "parent": "block/cube_all",
-  "textures": {
-    "all": "tsp:block/mars_gravel",
-    "particle": "tsp:block/mars_gravel"
-  },
-  "render_type": "solid"
-}

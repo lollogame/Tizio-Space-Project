@@ -1,0 +1,22 @@
+{
+  "helmet.equip.no_oxygen": {
+    "sounds": [
+      "tsp:helmet.equip.no_oxygen"
+    ]
+  },
+  "helmet.equip.oxygen": {
+    "sounds": [
+      "tsp:helmet.equip.oxygen"
+    ]
+  },
+  "helmet.remove.no_oxygen": {
+    "sounds": [
+      "tsp:helmet.remove.no_oxygen"
+    ]
+  },
+  "helmet.remove.oxygen": {
+    "sounds": [
+      "tsp:helmet.remove.oxygen"
+    ]
+  }
+}

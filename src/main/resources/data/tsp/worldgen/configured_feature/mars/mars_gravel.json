@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:ore",
+  "config": {
+    "size": 20,
+    "discard_chance_on_air_exposure": 0,
+    "targets": [
+      {
+        "target": {
+          "predicate_type": "blockstate_match",
+          "block_state": {
+            "Name": "tsp:mars_sand"
+          }
+        },
+        "state": {
+          "Name": "tsp:mars_gravel"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "type": "forge:add_features",
+  "biomes": "tsp:venus_plains",
+  "features": [
+    "tsp:rock_1"
+  ],
+  "step": "vegetal_decoration"
+}

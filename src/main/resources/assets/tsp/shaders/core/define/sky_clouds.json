@@ -1,0 +1,29 @@
+{
+  "blend": {
+    "func": "add",
+    "srcrgb": "srcalpha",
+    "dstrgb": "1-srcalpha"
+  },
+  "vertex": "tsp:vertex/sky_clouds",
+  "fragment": "tsp:fragment/environment/sky_clouds",
+  "attributes": [
+    "Position",
+    "UV0"
+  ],
+  "samplers": [
+    {"name": "Sampler0"}
+  ],
+  "uniforms": [
+    {"name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]},
+    {"name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]},
+    {"name": "ColorModulator", "type": "float", "count": 4, "values": [1, 1, 1, 1]},
+    {"name": "Time", "type": "float", "count": 1, "values": [0]},
+    {"name": "CloudWindSpeed", "type": "float", "count": 1, "values": [0]},
+    {"name": "CloudCoverage", "type": "float", "count": 1, "values": [0.5]},
+    {"name": "CloudNoiseScale", "type": "float", "count": 1, "values": [1]},
+    {"name": "CloudColor", "type": "float", "count": 4, "values": [1, 1, 1, 1]},
+    {"name": "LightDirection", "type": "float", "count": 3, "values": [0, 1, 0]},
+    {"name": "CameraPos", "type": "float", "count": 3, "values": [0, 0, 0]},
+    {"name": "MaxDistance", "type": "float", "count": 1, "values": [16]}
+  ]
+}
