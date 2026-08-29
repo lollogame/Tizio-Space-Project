@@ -61,7 +61,7 @@ public final class PlanetRingRenderer {
         VolumeRenderUtil.setVec3(shader, "BaseColor", instance.color());
         VolumeRenderUtil.setVec3(shader, "LightDirection", lightLocal);
 
-        VolumeRenderUtil.setSampler(Materials.resolveTextureLocation(instance.ringTexture()), 0);
+        VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation(instance.ringTexture()), 0);
 
         VolumeRenderUtil.setVec3(shader, "CenterRelative", volume.centerRelativeView());
         VolumeRenderUtil.setVec3(shader, "CameraLocalPos", volume.cameraLocalPos());
@@ -83,10 +83,10 @@ public final class PlanetRingRenderer {
         }
 
         Matrix4f pose = poseStack.last().pose();
-        VertexConsumer consumer = bufferSource.getBuffer(ClientRenderTypes.ring());
+        VertexConsumer consumer = bufferSource.getBuffer(ClientRenderTypes.planetRing());
         VolumeRenderUtil.renderCube(consumer, pose, volume, halfExtent);
 
-        bufferSource.endBatch(ClientRenderTypes.ring());
+        bufferSource.endBatch(ClientRenderTypes.planetRing());
 
         if (VolumeRenderUtil.DEBUG) {
             VertexConsumer lineConsumer = bufferSource.getBuffer(RenderType.lines());

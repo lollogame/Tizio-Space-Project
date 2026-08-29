@@ -55,8 +55,6 @@ public final class CelestialJsonLoader {
     private static volatile ResourceLocation currentDimension = new ResourceLocation(MainClass.MODID, "space");
     private static volatile String activeSelectedSystemId = null;
 
-    private CelestialJsonLoader() {}
-
     public static String getActiveSelectedSystemId() {
         return activeSelectedSystemId;
     }
@@ -1091,7 +1089,6 @@ public final class CelestialJsonLoader {
             PlanetInstance.Config body,
             Vec3 spacePosition,
             double physicalRadius,
-            /** Visual outer radius of the body as rendered by the shader (atmosphere shell or planet surface). */
             double visualRadius,
             String dimension
     ) {}

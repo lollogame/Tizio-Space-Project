@@ -69,13 +69,11 @@ public final class PlanetSurfaceRenderer {
         VolumeRenderUtil.setFloat(shader, "CloudCoverage", instance.cloudCoverage());
         VolumeRenderUtil.setFloat(shader, "CloudWindSpeed", instance.cloudWindSpeed());
         VolumeRenderUtil.setFloat(shader, "CloudNoiseScale", instance.cloudNoiseScale());
-        Vector3f cloudColor = instance.cloudColor();
-        VolumeRenderUtil.setVec4(shader, "CloudColor", cloudColor.x(), cloudColor.y(), cloudColor.z(), instance.cloudAlpha());
+        VolumeRenderUtil.setVec4(shader, "CloudColor", instance.cloudColor().x(), instance.cloudColor().y(), instance.cloudColor().z(), instance.cloudAlpha());
 
-        VolumeRenderUtil.setSampler(Materials.resolveTextureLocation(instance.dayTexture()), 0);
-        VolumeRenderUtil.setSampler(Materials.resolveTextureLocation(instance.hasNightTexture() ? instance.nightTexture() : instance.dayTexture()), 1);
-        String cloudTex = instance.hasClouds() ? instance.cloudTexture() : "noise1";
-        VolumeRenderUtil.setSampler(Materials.resolveTextureLocation(cloudTex), 2);
+        VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation(instance.dayTexture()), 0);
+        VolumeRenderUtil.setSampler(shader, "Sampler1", Materials.resolveTextureLocation(instance.hasNightTexture() ? instance.nightTexture() : instance.dayTexture()), 1);
+        VolumeRenderUtil.setSampler(shader, "Sampler2", Materials.resolveTextureLocation(instance.hasClouds() ? instance.cloudTexture() : "noise1"), 2);
 
         VolumeRenderUtil.setVec3(shader, "CenterRelative", volume.centerRelativeView());
         VolumeRenderUtil.setVec3(shader, "CameraLocalPos", volume.cameraLocalPos());

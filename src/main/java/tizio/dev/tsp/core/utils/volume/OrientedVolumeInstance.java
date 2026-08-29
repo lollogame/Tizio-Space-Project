@@ -156,8 +156,7 @@ public abstract class OrientedVolumeInstance {
         }
 
         public B eulerDegrees(float yaw, float pitch, float roll) {
-            this.orientation = new Quaternionf()
-                    .rotateXYZ((float) Math.toRadians(pitch), (float) Math.toRadians(yaw), (float) Math.toRadians(roll));
+            this.orientation = new Quaternionf().rotateXYZ((float) Math.toRadians(pitch), (float) Math.toRadians(yaw), (float) Math.toRadians(roll));
             return self();
         }
 

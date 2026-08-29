@@ -84,10 +84,10 @@ public final class AtmosphereRenderer {
         }
 
         Matrix4f pose = poseStack.last().pose();
-        VertexConsumer consumer = bufferSource.getBuffer(ClientRenderTypes.atmosphere());
+        VertexConsumer consumer = bufferSource.getBuffer(ClientRenderTypes.planetAtmosphere());
         VolumeRenderUtil.renderCube(consumer, pose, volume, halfExtent);
 
-        bufferSource.endBatch(ClientRenderTypes.atmosphere());
+        bufferSource.endBatch(ClientRenderTypes.planetAtmosphere());
 
         if (VolumeRenderUtil.DEBUG) {
             VertexConsumer lineConsumer = bufferSource.getBuffer(RenderType.lines());

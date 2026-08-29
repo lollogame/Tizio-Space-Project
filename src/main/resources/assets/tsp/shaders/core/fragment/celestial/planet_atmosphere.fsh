@@ -77,11 +77,12 @@ float getDensityAtPoint(vec3 p, float innerRadius, float outerRadius, float fall
     return exp(-height * falloff) * max(1.0 - height, 0.0);
 }
 
-float integrateOpticalDepth(vec3 startPoint, vec3 stepVec, float innerRadius, float outerRadius, float falloff, float scaleCompensation) {
+float integrateOpticalDepth(vec3 startPoint, vec3 stepVec, float innerRadius, float outerRadius, float falloff, float scaleCompensation, int lightSteps) {
     float totalDensity = 0.0;
     float stepLength = length(stepVec) * scaleCompensation;
 
     for (int i = 0; i < LIGHT_SAMPLES; ++i) {
+        if (i >= lightSteps) break;
         totalDensity += getDensityAtPoint(startPoint, innerRadius, outerRadius, falloff) * stepLength;
         startPoint += stepVec;
     }
@@ -98,7 +99,24 @@ vec4 calculateAtmosphereEffect(Ray viewRay, vec3 sunDirection, AtmospherePropert
         return vec4(0.0);
     }
 
-    vec3 viewStep = viewPath / float(VIEW_SAMPLES - 1);
+    float camDist = length(viewRay.origin);
+    float relDist = camDist / max(outerRadius, 0.0001);
+
+    int viewSteps = VIEW_SAMPLES;
+    int lightSteps = LIGHT_SAMPLES;
+
+    if (relDist > 25.0) {
+
+        viewSteps = max(1, VIEW_SAMPLES / 2);
+        lightSteps = max(1, LIGHT_SAMPLES / 2);
+
+    } else if (relDist > 8.0) {
+
+        viewSteps = max(1, (VIEW_SAMPLES * 2) / 3);
+        lightSteps = max(1, (LIGHT_SAMPLES * 2) / 3);
+    }
+
+    vec3 viewStep = viewPath / float(max(viewSteps - 1, 1));
     float scaleCompensation = clamp(
         REFERENCE_ATMOSPHERE_THICKNESS / max(props.atmosphereThickness, 0.0001),
         MIN_SCALE_COMPENSATION,
@@ -113,13 +131,16 @@ vec4 calculateAtmosphereEffect(Ray viewRay, vec3 sunDirection, AtmospherePropert
     vec3 scatterCoefficients = pow(400.0 / props.waveLengths, vec3(4.0)) * props.scatteringStrength;
 
     for (int i = 0; i < VIEW_SAMPLES; ++i) {
+        if (i >= viewSteps) break;
+
         float densityHere = getDensityAtPoint(currentPoint, innerRadius, outerRadius, props.densityFalloff) * viewStepLength;
         viewOpticalDepth += densityHere;
 
         Ray sunRay = Ray(currentPoint, sunDirection);
         vec2 sunRayHits = getRaySphereIntersection(sunRay, outerRadius);
-        vec3 sunStep = sunDirection * (sunRayHits.y - sunRayHits.x) / float(LIGHT_SAMPLES);
-        float sunOpticalDepth = integrateOpticalDepth(currentPoint, sunStep, innerRadius, outerRadius, props.densityFalloff, scaleCompensation);
+        vec3 sunStep = sunDirection * (sunRayHits.y - sunRayHits.x) / float(lightSteps);
+
+        float sunOpticalDepth = integrateOpticalDepth(currentPoint, sunStep, innerRadius, outerRadius, props.densityFalloff, scaleCompensation, lightSteps);
 
         vec3 totalOpticalDepth = (sunOpticalDepth + viewOpticalDepth) * scatterCoefficients;
         vec3 transmittance = exp(-totalOpticalDepth);

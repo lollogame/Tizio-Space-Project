@@ -10,6 +10,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.config.ConfigManager;
+import tizio.dev.tsp.core.celestial.camera.CameraPlanetOrbit;
 import tizio.dev.tsp.core.gui.SystemEditor;
 
 @Mod.EventBusSubscriber(modid = MainClass.MODID, value = Dist.CLIENT)
@@ -41,9 +42,12 @@ public final class RegisterKeybinds {
         while (TOGGLE_EDITOR.consumeClick()) {
             if (mc.screen instanceof SystemEditor) {
                 mc.setScreen(null);
+                CameraPlanetOrbit.deactivate();
             } else if (mc.level != null) {
                 mc.setScreen(new SystemEditor());
             }
         }
     }
 }
+
+

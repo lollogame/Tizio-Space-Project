@@ -4,17 +4,15 @@ uniform float PlanetRadius;
 uniform vec3  CameraLocalPos;
 uniform vec3  LightDirection;
 uniform sampler2D Sampler0;
-uniform float OpaquePass;
 
 in vec3  fragLocalPos;
 in vec2  fragUV;
-in float fragDistAlpha;
+flat in vec3 fragNormal;
 
 out vec4 fragColor;
 
-const float ShadowSoftness   = 0.015;
-const float AmbientLight     = 0.25;
-const float OPAQUE_THRESHOLD = 0.99;
+const float ShadowSoftness = 0.015;
+const float AmbientLight   = 0.25;
 
 float raySphereNearestNormalized(vec3 origin, vec3 dir, float radiusSq) {
     float b = dot(origin, dir);
@@ -51,15 +49,6 @@ void main() {
 
     if (texColor.a < 0.1) discard;
 
-    float finalAlpha = texColor.a * fragDistAlpha;
-
-    if (OpaquePass > 0.5) {
-        if (finalAlpha < OPAQUE_THRESHOLD) discard;
-        finalAlpha = 1.0;
-    } else {
-        if (finalAlpha >= OPAQUE_THRESHOLD || finalAlpha < 0.01) discard;
-    }
-
     if (PlanetRadius > 0.0) {
         float planetRadiusSq = PlanetRadius * PlanetRadius;
         if (dot(CameraLocalPos, CameraLocalPos) < planetRadiusSq) discard;
@@ -76,12 +65,12 @@ void main() {
         }
     }
 
-    vec3 flatNormal = normalize(cross(dFdx(fragLocalPos), dFdy(fragLocalPos)));
+    vec3 flatNormal = normalize(fragNormal);
     vec3 sunDir     = normalize(LightDirection);
     float NdotL     = max(dot(flatNormal, sunDir), 0.0);
 
     float shadow      = computePlanetShadow(fragLocalPos, sunDir);
     float lightFactor = mix(AmbientLight, 1.0, NdotL * shadow);
 
-    fragColor = vec4(texColor.rgb * lightFactor, finalAlpha);
+    fragColor = vec4(texColor.rgb * lightFactor, 1.0);
 }

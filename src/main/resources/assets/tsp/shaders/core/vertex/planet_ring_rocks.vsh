@@ -20,14 +20,11 @@ uniform float RingSeed;
 
 out vec2 fragUV;
 out vec3 fragLocalPos;
-out float fragDistAlpha;
+flat out vec3 fragNormal;
 
 const float TAU = 6.28318530718;
-const int VERTS_PER_CUBE = 24;
 const float SQRT_3 = 1.7320508;
-
-const float MAX_DIST_RATIO   = 0.25; //0.35
-const float FADE_START_RATIO = 0.85; //0.85
+const float MAX_DIST_RATIO = 0.10;
 
 float hash1(float n, float salt) {
     return fract(sin(n * 12.9898 + salt * 78.233) * 43758.5453123);
@@ -46,18 +43,17 @@ mat3 rotationAxis(vec3 axis, float angle) {
 }
 
 void main() {
-    int cubeIndex = gl_VertexID / VERTS_PER_CUBE;
-
+    int cubeIndex = gl_InstanceID;
     float fi = float(cubeIndex) + RingSeed * 1000.0;
 
-    float ringWidth  = max(RingOuterRadius - RingInnerRadius, 0.1);
-    float numTracks  = floor(clamp(ringWidth * 0.5, 8.0, 64.0));
+    float ringWidth    = max(RingOuterRadius - RingInnerRadius, 0.1);
+    float numTracks    = floor(clamp(ringWidth * 0.5, 8.0, 64.0));
     float invNumTracks = 1.0 / numTracks;
 
     float idxOverTracks = float(cubeIndex) * invNumTracks;
-    float slotIdx    = floor(idxOverTracks);
-    float trackIdx   = float(cubeIndex) - numTracks * slotIdx;
-    float trackWidth = ringWidth * invNumTracks;
+    float slotIdx       = floor(idxOverTracks);
+    float trackIdx      = float(cubeIndex) - numTracks * slotIdx;
+    float trackWidth    = ringWidth * invNumTracks;
 
     float rJitter    = (hash1(fi, 1.0) - 0.5) * 0.6 * trackWidth;
     float baseRadius = RingInnerRadius + (trackIdx + 0.5) * trackWidth + rJitter;
@@ -93,27 +89,19 @@ void main() {
     float boundingRadius = size * SQRT_3;
     vec4 centerClip      = ProjMat * vec4(rockCenterCam, 1.0);
 
-
     float marginX = ProjMat[0][0] * boundingRadius;
     float marginY = ProjMat[1][1] * boundingRadius;
     float marginZ = boundingRadius;
-
 
     if (centerClip.x < -centerClip.w - marginX ||
     centerClip.x >  centerClip.w + marginX ||
     centerClip.y < -centerClip.w - marginY ||
     centerClip.y >  centerClip.w + marginY ||
-    centerClip.z < -centerClip.w - marginZ ||
+    centerClip.z < -centerClip.z - marginZ ||
     centerClip.z >  centerClip.w + marginZ) {
         gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         return;
     }
-
-
-    float centerDist = sqrt(centerDistSq);
-    float fadeStart  = maxDist * FADE_START_RATIO;
-    fragDistAlpha    = 1.0 - smoothstep(fadeStart, maxDist, centerDist);
-
 
     vec3 spinAxis = normalize(vec3(
     hash1(fi, 6.0) * 2.0 - 1.0,
@@ -123,6 +111,17 @@ void main() {
     float spinSpeed   = 0.02 + hash1(fi, 9.0) * 0.52;
     float spinAngle   = mod(hash1(fi, 10.0) * TAU + mod(Time * spinSpeed, TAU), TAU);
     mat3 selfRotation = rotationAxis(spinAxis, spinAngle);
+
+    int faceIdx = (gl_VertexID % 36) / 6;
+    vec3 localCubeNormal = vec3(0.0);
+    if (faceIdx == 0)      localCubeNormal = vec3( 1.0,  0.0,  0.0);
+    else if (faceIdx == 1) localCubeNormal = vec3(-1.0,  0.0,  0.0);
+    else if (faceIdx == 2) localCubeNormal = vec3( 0.0,  1.0,  0.0);
+    else if (faceIdx == 3) localCubeNormal = vec3( 0.0, -1.0,  0.0);
+    else if (faceIdx == 4) localCubeNormal = vec3( 0.0,  0.0,  1.0);
+    else if (faceIdx == 5) localCubeNormal = vec3( 0.0,  0.0, -1.0);
+
+    fragNormal = selfRotation * localCubeNormal;
 
     vec3 cubeCorner   = selfRotation * (Position * size);
     vec3 localPos     = ringLocalPos + cubeCorner;

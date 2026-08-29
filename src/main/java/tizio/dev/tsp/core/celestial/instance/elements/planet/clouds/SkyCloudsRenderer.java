@@ -71,11 +71,7 @@ public final class SkyCloudsRenderer {
             RenderSystem.depthMask(false);
 
             RenderSystem.setShader(ClientShaderRegistry::skyClouds);
-            RenderSystem.setShaderTexture(0, Materials.resolveTextureLocation(clouds.texture));
-            RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-            RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  0);
+            VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation(clouds.texture), 0);
 
             VolumeRenderUtil.setFloat(shader, "Time", time);
             VolumeRenderUtil.setFloat(shader, "CloudWindSpeed", clouds.windSpeed);

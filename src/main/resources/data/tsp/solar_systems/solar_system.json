@@ -255,10 +255,10 @@
       "atmosphere": {
         "enabled": true,
         "thickness": 0.324346,
-        "exposure": 3.3582277,
+        "exposure": 3.25,
         "intensity": 0.43822786,
         "rayleighScaleHeight": 0.085219406,
-        "rayleighStrength": 0.20261616,
+        "rayleighStrength": 0.0942,
         "wavelengths": [
           913.7131,
           977.8481,
@@ -292,11 +292,11 @@
       },
       "atmosphere": {
         "enabled": true,
-        "thickness": 0.5286709,
-        "exposure": 3.25,
-        "intensity": 0.32907173,
-        "rayleighScaleHeight": 0.039951477,
-        "rayleighStrength": 0.20009597,
+        "thickness": 0.095641024,
+        "exposure": 2.9462025,
+        "intensity": 0.5497992,
+        "rayleighScaleHeight": 0.0913,
+        "rayleighStrength": 0.0942,
         "wavelengths": [
           1310.5486,
           1398.7341,
@@ -316,10 +316,10 @@
           "roll": 0.0
         },
         "rocksEnabled": true,
-        "rockCount": 40000,
+        "rockCount": 150000,
         "rockMinSize": 0.05,
-        "rockMaxSize": 1.6953586,
-        "rockHeight": 10.759494,
+        "rockMaxSize": 1.1205128,
+        "rockHeight": 8.620689,
         "rockOrbitSpeed": 0.001
       }
     },
@@ -349,11 +349,11 @@
       },
       "atmosphere": {
         "enabled": true,
-        "thickness": 0.20175105,
-        "exposure": 4.7158227,
-        "intensity": 0.34,
+        "thickness": 0.22679487,
+        "exposure": 3.25,
+        "intensity": 0.7,
         "rayleighScaleHeight": 0.0913,
-        "rayleighStrength": 0.19505556,
+        "rayleighStrength": 0.0942,
         "wavelengths": [
           1178.27,
           969.83124,
@@ -429,7 +429,7 @@
       "radius": 60.0,
       "texture": "moon",
       "color": "#7fb8ff",
-      "spinHours": 27.3,
+      "spinHours": 655.2,
       "sky": {
         "skyboxRotation": true,
         "skyboxConstant": true,
@@ -450,7 +450,7 @@
       },
       "orbit": {
         "radius": 1799.9999999999998,
-        "periodDays": 27.0,
+        "periodDays": 27.3,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
         "inclination": 0.0,

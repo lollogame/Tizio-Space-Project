@@ -5,9 +5,10 @@ import net.minecraft.resources.ResourceLocation;
 import tizio.dev.tsp.MainClass;
 
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Materials {
-
 
     public static final ResourceLocation DEFAULT_DEBUG_TEXTURE = Texture.add("textures/engine/no_texture");
 
@@ -19,10 +20,22 @@ public class Materials {
     public static final ResourceLocation OVERWORLD_MAT = Texture.add("textures/planets/overworld");
     public static final ResourceLocation OVERWORLD_NIGHT_MAT = Texture.add("textures/planets/overworld_night");
 
+    // Cache per evitare I/O e allocazioni di stringhe ad ogni frame
+    private static final Map<String, ResourceLocation> TEXTURE_CACHE = new ConcurrentHashMap<>();
+    private static final Map<String, ResourceLocation> SKY_TEXTURE_CACHE = new ConcurrentHashMap<>();
+
     private Materials() {}
 
     public static ResourceLocation getNoTexture() {
         return DEFAULT_DEBUG_TEXTURE;
+    }
+
+    /**
+     * Da chiamare quando il client ricarica le risorse (F3 + T) per svuotare la cache.
+     */
+    public static void clearCache() {
+        TEXTURE_CACHE.clear();
+        SKY_TEXTURE_CACHE.clear();
     }
 
     protected static class Texture {
@@ -36,77 +49,34 @@ public class Materials {
         }
     }
 
-    /**
-     * Resolves a texture location from a raw path string.
-     * Uses DEFAULT_DEBUG_TEXTURE ("textures/planets/no_texture.png") as static hardcoded fallback
-     * whenever rawTexture is null, blank, or fails resolution.
-     */
-
     public static ResourceLocation resolveTextureLocation(String rawTexture) {
         if (rawTexture == null || rawTexture.isBlank()) {
             return DEFAULT_DEBUG_TEXTURE;
         }
-
-        try {
-
-            String path = rawTexture.trim().replace('\\', '/').toLowerCase(Locale.ROOT);
-
-            if (path.startsWith("/")) { path = path.substring(1); }
-
-            String namespace = MainClass.MODID;
-
-            if (path.contains(":")) {
-                String[] parts = path.split(":", 2);
-                namespace = parts[0];
-                path = parts[1];
-            }
-
-            if (path.isEmpty() || path.endsWith("/")) {
-                return DEFAULT_DEBUG_TEXTURE;
-            }
-
-            if (!path.startsWith("textures/")) {
-                if (path.contains("/")) {
-                    path = "textures/" + path;
-                } else {
-                    path = "textures/planets/" + path;
-                }
-            }
-
-            if (!path.endsWith(".png")) {
-                path = path + ".png";
-            }
-
-            ResourceLocation candidateLocation = new ResourceLocation(namespace, path);
-
-            if (textureExists(candidateLocation)) {
-                return candidateLocation;
-            }
-
-        } catch (Exception e) {
-            return DEFAULT_DEBUG_TEXTURE;
-        }
-
-        return DEFAULT_DEBUG_TEXTURE;
+        return TEXTURE_CACHE.computeIfAbsent(rawTexture, key -> resolveInternal(key, "planets"));
     }
 
     public static ResourceLocation resolveSkyTextureLocation(String rawTexture) {
         if (rawTexture == null || rawTexture.isBlank()) {
             return DEFAULT_DEBUG_TEXTURE;
         }
+        return SKY_TEXTURE_CACHE.computeIfAbsent(rawTexture, key -> resolveInternal(key, "environment"));
+    }
 
+    private static ResourceLocation resolveInternal(String rawTexture, String defaultSubFolder) {
         try {
-
             String path = rawTexture.trim().replace('\\', '/').toLowerCase(Locale.ROOT);
 
-            if (path.startsWith("/")) { path = path.substring(1); }
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+            }
 
             String namespace = MainClass.MODID;
 
-            if (path.contains(":")) {
-                String[] parts = path.split(":", 2);
-                namespace = parts[0];
-                path = parts[1];
+            int colonIndex = path.indexOf(':');
+            if (colonIndex != -1) {
+                namespace = path.substring(0, colonIndex);
+                path = path.substring(colonIndex + 1);
             }
 
             if (path.isEmpty() || path.endsWith("/")) {
@@ -117,7 +87,7 @@ public class Materials {
                 if (path.contains("/")) {
                     path = "textures/" + path;
                 } else {
-                    path = "textures/environment/" + path;
+                    path = "textures/" + defaultSubFolder + "/" + path;
                 }
             }
 

@@ -18,8 +18,6 @@ public final class CelestialJsonExporter {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    private CelestialJsonExporter() {}
-
     public static JsonObject toJson(SolarSystemData system) {
         JsonObject root = new JsonObject();
         root.addProperty("id", system.id);

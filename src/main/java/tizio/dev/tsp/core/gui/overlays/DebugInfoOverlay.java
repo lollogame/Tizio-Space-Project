@@ -4,19 +4,23 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import tizio.dev.tsp.core.utils.Color;
+import tizio.dev.tsp.core.utils.volume.VolumeRenderUtil;
 
 import java.text.DecimalFormat;
 
-//@Mod.EventBusSubscriber(value = Dist.CLIENT)
+@Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class DebugInfoOverlay {
 
     private static final Minecraft mc = Minecraft.getInstance();
     private static final DecimalFormat DF  = new DecimalFormat("0.0");
     private static final DecimalFormat DF2 = new DecimalFormat("0.000");
 
-    //@SubscribeEvent
+    @SubscribeEvent
     public static void onRenderOverlay(RenderGuiOverlayEvent.Post event) {
         if (mc.options.hideGui) return;
         if (mc.level == null) return;
@@ -38,19 +42,6 @@ public class DebugInfoOverlay {
 
         y = drawTextWithBackground(g, font, "[Graphics Stats]", startX, y, titleColor);
         y = drawTextWithBackground(g, font, "FPS: " + DF.format(Minecraft.getInstance().getFps()), startX, y, textColor);
-
-        if (mc.player != null) {
-            float oxygen = tizio.dev.tsp.core.handlers.oxygen.OxygenManager.getOxygen(mc.player);
-            float temperature = tizio.dev.tsp.core.handlers.temperature.TemperatureManager.getTemperature(mc.player);
-            boolean fullSuit = tizio.dev.tsp.core.handlers.oxygen.OxygenManager.hasFullSpaceSuit(mc.player);
-
-            int oxyColor = oxygen > 0.6F ? Color.colorHex(0, 255, 0) : (oxygen > 0.25F ? Color.colorHex(255, 200, 0) : Color.colorHex(255, 50, 50));
-            int tempColor = temperature < -0.3F ? Color.colorHex(100, 200, 255) : (temperature > 0.3F ? Color.colorHex(255, 120, 50) : Color.colorHex(200, 255, 200));
-
-            y = drawTextWithBackground(g, font, String.format("Oxygen: %.0f%%", oxygen * 100.0F), startX, y, oxyColor);
-            y = drawTextWithBackground(g, font, String.format("Temperature: %.2f", temperature), startX, y, tempColor);
-            y = drawTextWithBackground(g, font, "Suit: " + (fullSuit ? "Protected" : "Exposed"), startX, y, fullSuit ? Color.colorHex(100, 255, 100) : warnColor);
-        }
 
         RenderSystem.disableBlend();
     }

@@ -15,6 +15,7 @@ import org.joml.Vector3f;
 import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.client.ClientRenderRegistries;
 import tizio.dev.tsp.core.client.ClientRenderTypes;
+import tizio.dev.tsp.core.utils.Materials;
 import tizio.dev.tsp.core.utils.volume.PreparedVolume;
 import tizio.dev.tsp.core.utils.volume.VolumeRenderUtil;
 
@@ -42,7 +43,7 @@ public final class BlackHoleRenderer {
         PreparedVolume volume = VolumeRenderUtil.prepareVolume(instance, camera, poseStack);
 
         VolumeRenderUtil.setFloat(shader, "Time", timeSeconds);
-        VolumeRenderUtil.setSampler(ResourceLocation.fromNamespaceAndPath(MainClass.MODID, "textures/planets/noise1.png"), 0);
+        VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation("noise4"), 0);
 
         VolumeRenderUtil.setFloat(shader, "EffectRadius", instance.radius());
         VolumeRenderUtil.setFloat(shader, "DiskRotationSpeed", instance.diskRotationSpeed());

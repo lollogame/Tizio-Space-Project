@@ -11,6 +11,8 @@ import net.minecraft.client.renderer.culling.Frustum;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import org.lwjgl.opengl.GL11C;
+import org.lwjgl.opengl.GL31C;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
 import tizio.dev.tsp.core.client.ClientRenderRegistries;
 import tizio.dev.tsp.core.client.ClientRenderTypes;
@@ -20,13 +22,11 @@ import tizio.dev.tsp.core.utils.volume.VolumeRenderUtil;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public final class PlanetRingRockRenderer {
 
-    private static final Map<PlanetInstance.RingInstance.RocksInstance, VertexBuffer> MESH_CACHE = new ConcurrentHashMap<>();
+    private static VertexBuffer SINGLE_CUBE_MESH = null;
 
     public static List<VolumeRenderUtil.RenderTask> buildTasks(ShaderInstance shader, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float timeSeconds) {
         if (shader == null) return List.of();
@@ -40,23 +40,16 @@ public final class PlanetRingRockRenderer {
 
     private static void renderInstance(ShaderInstance shader, PlanetInstance.RingInstance.RocksInstance instance, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float timeSeconds) {
 
-        float halfExtent = instance.quadRadius();
-        if (!VolumeRenderUtil.isVisible(frustum, instance.position(), halfExtent)) {
+        float maxDist = Math.max(instance.ringOuterRadius() * 0.10f, 20.0f);
+        double cameraDistCenter = instance.position().distanceTo(camera.getPosition());
+
+        if (cameraDistCenter - instance.ringOuterRadius() > maxDist) {
             return;
         }
-
-        double cameraDist = instance.position().distanceTo(camera.getPosition());
-        float maxDist = Math.max(instance.ringOuterRadius() * 0.215f, 20.0f);
-
-        if (cameraDist - instance.ringOuterRadius() > maxDist) {
-            return;
-        }
-
-        float planetRadius = instance.planetRadius() / 2.0f;
-
-        VertexBuffer mesh = MESH_CACHE.computeIfAbsent(instance, inst -> buildMesh(inst.rockCount()));
 
         PreparedVolume volume = VolumeRenderUtil.prepareVolume(instance, camera, poseStack);
+        VertexBuffer mesh = getOrCreateSingleCubeMesh();
+
         Matrix3f localFromWorld = new Matrix3f().rotation(instance.orientation()).invert();
         Vector3f lightLocal = localFromWorld.transform(instance.lightDirection()).normalize();
 
@@ -77,17 +70,12 @@ public final class PlanetRingRockRenderer {
         VolumeRenderUtil.setVec3(shader, "AxisY", volume.axisYView());
         VolumeRenderUtil.setVec3(shader, "AxisZ", volume.axisZView());
 
-//        ResourceLocation textureLocation = Materials.resolveTextureLocation(instance.rockTexture());
-//        Minecraft.getInstance().getTextureManager().bindForSetup(textureLocation);
-//        RenderSystem.setShaderTexture(0, textureLocation);
-//        VolumeRenderUtil.setSampler(textureLocation, 0);
-
-        VolumeRenderUtil.setSampler(Materials.resolveTextureLocation(instance.rockTexture()), 0);
+        VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation(instance.rockTexture()), 0);
 
         Matrix4f projection = RenderSystem.getProjectionMatrix();
         int vpWidth = Minecraft.getInstance().getWindow().getWidth();
         int vpHeight = Minecraft.getInstance().getWindow().getHeight();
-        VolumeRenderUtil.ScissorRect scissor = VolumeRenderUtil.computeScissorRect(volume, halfExtent, projection, vpWidth, vpHeight);
+        VolumeRenderUtil.ScissorRect scissor = VolumeRenderUtil.computeScissorRect(volume, instance.quadRadius(), projection, vpWidth, vpHeight);
 
         if (scissor != null && (scissor.width() == 0 || scissor.height() == 0)) {
             return;
@@ -97,57 +85,51 @@ public final class PlanetRingRockRenderer {
             VolumeRenderUtil.enableScissor(scissor);
         }
 
-        mesh.bind();
-
-        VolumeRenderUtil.setFloat(shader, "OpaquePass", 1.0f);
-        RenderType opaqueType = ClientRenderTypes.planetRingRocksOpaque();
-        opaqueType.setupRenderState(); mesh.drawWithShader(poseStack.last().pose(), projection, shader); opaqueType.clearRenderState();
-
-        VolumeRenderUtil.setFloat(shader, "OpaquePass", 0.0f);
-        RenderType transparentType = ClientRenderTypes.planetRingRocksTransparent();
-        transparentType.setupRenderState(); mesh.drawWithShader(poseStack.last().pose(), projection, shader); transparentType.clearRenderState();
-
-        VertexBuffer.unbind();
-
-        if (VolumeRenderUtil.DEBUG) {
-            VertexConsumer lineConsumer = bufferSource.getBuffer(RenderType.lines());
-            VolumeRenderUtil.renderCubeLines(lineConsumer, poseStack.last().pose(), volume, halfExtent, new Vector3f(50, 100, 255));
-            bufferSource.endBatch(RenderType.lines());
-        }
+        RenderType renderType = ClientRenderTypes.planetRingRocks();
+        renderType.setupRenderState();
+        drawInstancedWithShader(mesh, poseStack.last().pose(), projection, shader, instance.rockCount());
+        renderType.clearRenderState();
 
         if (scissor != null) {
             VolumeRenderUtil.disableScissor();
         }
     }
 
-    public static void cleanupCache(Collection<PlanetInstance.RingInstance.RocksInstance> activeInstances) {
-        MESH_CACHE.entrySet().removeIf(entry -> {
-            boolean obsolete = !activeInstances.contains(entry.getKey());
-            if (obsolete) {
-                entry.getValue().close();
-            }
-            return obsolete;
-        });
+    private static void drawInstancedWithShader(VertexBuffer mesh, Matrix4f modelView, Matrix4f projection, ShaderInstance shader, int instanceCount) {
+        if (shader.MODEL_VIEW_MATRIX != null) {
+            shader.MODEL_VIEW_MATRIX.set(modelView);
+        }
+        if (shader.PROJECTION_MATRIX != null) {
+            shader.PROJECTION_MATRIX.set(projection);
+        }
+        shader.apply();
+        mesh.bind();
+        GL31C.glDrawArraysInstanced(GL11C.GL_TRIANGLES, 0, 36, instanceCount);
+        VertexBuffer.unbind();
+        shader.clear();
     }
+
+    public static void cleanupCache(Collection<PlanetInstance.RingInstance.RocksInstance> activeInstances) {}
 
     public static void clearCache() {
-        MESH_CACHE.values().forEach(VertexBuffer::close);
-        MESH_CACHE.clear();
+        if (SINGLE_CUBE_MESH != null) {
+            SINGLE_CUBE_MESH.close();
+            SINGLE_CUBE_MESH = null;
+        }
     }
 
-    private static VertexBuffer buildMesh(int rockCount) {
-        BufferBuilder builder = Tesselator.getInstance().getBuilder();
-        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-
-        for (int i = 0; i < rockCount; i++) {
+    private static synchronized VertexBuffer getOrCreateSingleCubeMesh() {
+        if (SINGLE_CUBE_MESH == null) {
+            BufferBuilder builder = Tesselator.getInstance().getBuilder();
+            builder.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX);
             addCube(builder);
-        }
 
-        VertexBuffer vertexBuffer = new VertexBuffer(VertexBuffer.Usage.STATIC);
-        vertexBuffer.bind();
-        vertexBuffer.upload(builder.end());
-        VertexBuffer.unbind();
-        return vertexBuffer;
+            SINGLE_CUBE_MESH = new VertexBuffer(VertexBuffer.Usage.STATIC);
+            SINGLE_CUBE_MESH.bind();
+            SINGLE_CUBE_MESH.upload(builder.end());
+            VertexBuffer.unbind();
+        }
+        return SINGLE_CUBE_MESH;
     }
 
     private static void addCube(BufferBuilder builder) {
@@ -163,7 +145,9 @@ public final class PlanetRingRockRenderer {
         builder.vertex(ax, ay, az).uv(0.0F, 0.0F).endVertex();
         builder.vertex(bx, by, bz).uv(1.0F, 0.0F).endVertex();
         builder.vertex(cx, cy, cz).uv(1.0F, 1.0F).endVertex();
+
+        builder.vertex(ax, ay, az).uv(0.0F, 0.0F).endVertex();
+        builder.vertex(cx, cy, cz).uv(1.0F, 1.0F).endVertex();
         builder.vertex(dx, dy, dz).uv(0.0F, 1.0F).endVertex();
     }
-
 }

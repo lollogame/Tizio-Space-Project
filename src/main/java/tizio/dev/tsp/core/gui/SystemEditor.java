@@ -6,7 +6,9 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.phys.Vec3;
 import tizio.dev.tsp.config.ConfigManager;
+import tizio.dev.tsp.core.celestial.camera.CameraPlanetOrbit;
 import tizio.dev.tsp.core.celestial.instance.elements.SolarSystemData;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
 import tizio.dev.tsp.core.celestial.instance.elements.sun.SunInstance;
@@ -16,9 +18,12 @@ import tizio.dev.tsp.core.gui.widgets.*;
 import tizio.dev.tsp.core.handlers.gravity.GravityManager;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class SystemEditor extends Screen {
@@ -138,6 +143,44 @@ public class SystemEditor extends Screen {
         buildLayout();
     }
 
+    @Override
+    public void tick() {
+        super.tick();
+        if (CameraPlanetOrbit.isActive() && selectedBody != null) {
+            getSpatialInfoForSelectedBody().ifPresent(CameraPlanetOrbit::updateFocus);
+        }
+    }
+
+    private Optional<CelestialJsonLoader.BodySpatialInfo> getSpatialInfoForSelectedBody() {
+        if (selectedBody == null) {
+            return Optional.empty();
+        }
+
+        Optional<CelestialJsonLoader.BodySpatialInfo> baseInfo = CelestialJsonLoader.getDimensionBodiesInSpace(Instant.now()).stream()
+                .filter(info -> selectedBody.id.equals(info.body().id))
+                .findFirst()
+                .or(this::buildFallbackSpatialInfo);
+
+        if (baseInfo.isEmpty()) {
+            return Optional.empty();
+        }
+
+        CelestialJsonLoader.BodySpatialInfo existing = baseInfo.get();
+
+        double scaleRatio = (existing.physicalRadius() > 0) ? (existing.visualRadius() / existing.physicalRadius()) : 1.0D;
+        double liveVisualRadius = Math.max(existing.visualRadius(), selectedBody.radius * scaleRatio);
+
+        return Optional.of(new CelestialJsonLoader.BodySpatialInfo(
+                existing.system(),
+                selectedBody,
+                existing.spacePosition(),
+                selectedBody.radius,
+                liveVisualRadius,
+                existing.dimension()
+        ));
+    }
+
+
     private SolarSystemData createDefaultSystem() {
         SolarSystemData system = new SolarSystemData("new_system", "tsp:space");
         system.star = new SunInstance.Config("sun", 2000.0F, "#ffd48a");
@@ -147,6 +190,35 @@ public class SystemEditor extends Screen {
         earth.atmosphere.enabled = true;
         system.bodies.add(earth);
         return system;
+    }
+
+    private void focusCameraOnSelectedBody() {
+        getSpatialInfoForSelectedBody().ifPresent(CameraPlanetOrbit::activate);
+    }
+
+    private Optional<CelestialJsonLoader.BodySpatialInfo> buildFallbackSpatialInfo() {
+        if (activeSystem == null || selectedBody == null) {
+            return Optional.empty();
+        }
+        Map<String, Vec3> positions = CelestialJsonLoader.calculateBodyPositions(activeSystem, Instant.now());
+        Vec3 pos = positions.get(selectedBody.id);
+        if (pos == null) {
+            return Optional.empty();
+        }
+        float globalScale = Math.max(0.0001F, activeSystem.globalScale <= 0.0F ? 1.0F : activeSystem.globalScale);
+        double physRadius = Math.max(0.05, selectedBody.radius * globalScale);
+        double visualRadius = CelestialJsonLoader.resolveAtmosphereRadiusConfig(selectedBody.atmosphere, (float) physRadius);
+        return Optional.of(new CelestialJsonLoader.BodySpatialInfo(
+                activeSystem, selectedBody, pos, physRadius, visualRadius, selectedBody.dimension));
+    }
+
+    private boolean isInViewport(double mouseX, double mouseY) {
+        if (hideUI) {
+            return mouseY >= 0;
+        }
+        int leftBound = leftPanelCollapsed ? 0 : getPanelLeftWidth();
+        int rightBound = rightPanelCollapsed ? this.width : this.width - getPanelRightWidth();
+        return mouseX >= leftBound && mouseX <= rightBound && mouseY >= HEADER_H && mouseY <= this.height;
     }
 
     private void showStatus(String msg, boolean error) {
@@ -253,6 +325,7 @@ public class SystemEditor extends Screen {
                 } else if (activeTab == Tab.SYSTEM || activeTab == Tab.STAR) {
                     activeTab = Tab.GENERAL;
                 }
+                focusCameraOnSelectedBody();
             }
             buildLayout();
         });
@@ -549,7 +622,7 @@ public class SystemEditor extends Screen {
         int relY = 0;
         int formY = HEADER_H + 44;
 
-        addInspectorSliderWithReset(x, relY, width, "Body Radius", selectedBody.radius, 150.0, 1.0, 5000.0, val -> { selectedBody.radius = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Body Radius", selectedBody.radius, 150.0, 1.0, 1800.0, val -> { selectedBody.radius = val.floatValue(); notifyChanged(); }); relY += 22;
         addInspectorSliderWithReset(x, relY, width, "Gravity", selectedBody.gravity, GravityManager.EARTH_GRAVITY_MS2, 0.0, 50.0, val -> {selectedBody.gravity = val.floatValue();notifyChanged();});relY += 22;
 
         Button oxygenBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Oxygen: " + (selectedBody.oxygen ? "True" : "False")), b -> {
@@ -646,9 +719,9 @@ public class SystemEditor extends Screen {
         addInspectorSliderWithReset(x, relY, width, "Intensity",    selectedBody.atmosphere.intensity,          0.34,   0.15,  0.7,    val -> { selectedBody.atmosphere.intensity         = val.floatValue(); notifyChanged(); }); relY += 22;
         addInspectorSliderWithReset(x, relY, width, "Rayleigh H",   selectedBody.atmosphere.rayleighScaleHeight,0.0913, 0.0913, 0.20,    val -> { selectedBody.atmosphere.rayleighScaleHeight= val.floatValue(); notifyChanged(); }); relY += 22;
         addInspectorSliderWithReset(x, relY, width, "Rayleigh Str", selectedBody.atmosphere.rayleighStrength,   0.0856, 0.0035, 0.0942,    val -> { selectedBody.atmosphere.rayleighStrength  = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "λ Red",        selectedBody.atmosphere.wavelengthR,        1000.0, 380.0, 1000.0, val -> { selectedBody.atmosphere.wavelengthR       = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "λ Green",      selectedBody.atmosphere.wavelengthG,        1000.0, 380.0, 1000.0, val -> { selectedBody.atmosphere.wavelengthG       = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "λ Blue",       selectedBody.atmosphere.wavelengthB,        1000.0, 380.0, 1000.0, val -> { selectedBody.atmosphere.wavelengthB       = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "λ Red",        selectedBody.atmosphere.wavelengthR,        1000.0, 380.0, 2000.0, val -> { selectedBody.atmosphere.wavelengthR       = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "λ Green",      selectedBody.atmosphere.wavelengthG,        1000.0, 380.0, 2000.0, val -> { selectedBody.atmosphere.wavelengthG       = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "λ Blue",       selectedBody.atmosphere.wavelengthB,        1000.0, 380.0, 2000.0, val -> { selectedBody.atmosphere.wavelengthB       = val.floatValue(); notifyChanged(); }); relY += 22;
 
         atmosColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
         atmosColorEditBox.setValue(selectedBody.atmosphere.colorHex != null ? selectedBody.atmosphere.colorHex : "#ffffff");
@@ -715,11 +788,11 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(rkBtn, relY, ROW_H, null); relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Rock Count",    selectedBody.ring.rockCount,   4000.0, 0.0,   100000.0, val -> { selectedBody.ring.rockCount   = val.intValue();   notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rock Min Size", selectedBody.ring.rockMinSize,  0.5,   0.05,  10.0,    val -> { selectedBody.ring.rockMinSize  = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rock Max Size", selectedBody.ring.rockMaxSize,  2.0,   0.1,   20.0,    val -> { selectedBody.ring.rockMaxSize  = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rock Height",   selectedBody.ring.rockHeight,   5.0,   0.0,   100.0,   val -> { selectedBody.ring.rockHeight   = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Orbit Speed",   selectedBody.ring.rockOrbitSpeed,1.0,   0.0,   10.0,    val -> { selectedBody.ring.rockOrbitSpeed= val.floatValue(); notifyChanged(); });
+        addInspectorSliderWithReset(x, relY, width, "Rock Count",    selectedBody.ring.rockCount,   4000.0, 0.0,   150000.0, val -> { selectedBody.ring.rockCount   = val.intValue();   notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rock Min Size", selectedBody.ring.rockMinSize,  0.5,   0.05,  4.0,    val -> { selectedBody.ring.rockMinSize  = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rock Max Size", selectedBody.ring.rockMaxSize,  2.0,   0.1,   4.0,    val -> { selectedBody.ring.rockMaxSize  = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Rock Height",   selectedBody.ring.rockHeight,   5.0,   0.0,   20.0,   val -> { selectedBody.ring.rockHeight   = val.floatValue(); notifyChanged(); }); relY += 22;
+        addInspectorSliderWithReset(x, relY, width, "Orbit Speed",   selectedBody.ring.rockOrbitSpeed,0.0,   -0.10,   0.10,    val -> { selectedBody.ring.rockOrbitSpeed= val.floatValue(); notifyChanged(); });
     }
 
     private void buildSkyTab(int x, int y, int width) {
@@ -833,6 +906,11 @@ public class SystemEditor extends Screen {
             int maxScroll = getMaxInspectorScroll();
             this.rightScrollOffset = Math.max(0, Math.min(maxScroll, this.rightScrollOffset - (int) (amount * 18)));
             updateInspectorScrollPositions();
+            return true;
+        }
+
+        if (CameraPlanetOrbit.isActive() && isInViewport(mouseX, mouseY)) {
+            CameraPlanetOrbit.handleScroll(amount);
             return true;
         }
 
@@ -1099,6 +1177,10 @@ public class SystemEditor extends Screen {
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         ColorPreviewWidget openPicker = findOpenColorPicker();
         if (openPicker != null && openPicker.handlePaletteDrag(mouseX, mouseY)) {
+            return true;
+        }
+        if (button == 0 && CameraPlanetOrbit.isActive() && isInViewport(mouseX, mouseY)) {
+            CameraPlanetOrbit.handleDrag(dragX, dragY);
             return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);

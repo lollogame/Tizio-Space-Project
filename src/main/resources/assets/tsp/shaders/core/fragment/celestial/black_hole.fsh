@@ -42,6 +42,10 @@ vec4 raymarchDisk(vec3 ray, vec3 zeroPos) {
     vec3 darkColor = BaseColor * 0.095;
     float disMix = clamp((lengthPos - EffectRadius * 2.0) * (1.0 / EffectRadius) * 0.24, 0.0, 1.0);
     vec3 insideCol = mix(hotColor, darkColor, disMix);
+
+    float innerHeat = 1.0 - clamp((lengthPos - EffectRadius * 0.75) * (1.0 / EffectRadius) * 1.2, 0.0, 1.0);
+    insideCol = mix(insideCol, vec3(1.0, 0.98, 0.92), innerHeat * 0.35);
+
     vec3 shiftLow = BaseColor * vec3(0.45, 0.28, 0.18) + vec3(0.04);
     vec3 shiftHigh = mix(BaseColor * vec3(1.6, 1.8, 2.2), vec3(1.0, 1.1, 1.3), 0.22);
     insideCol *= mix(shiftLow, shiftHigh, redShift);
@@ -74,11 +78,13 @@ vec4 raymarchDisk(vec3 ray, vec3 zeroPos) {
         float angle = 0.02 * atan(x);
 
         const float noiseFrequency = 70.0;
-        vec2 noiseUV = vec2(angle, u * (2.0 / EffectRadius) * 0.035);
+        vec2 baseUV = vec2(angle, u * (2.0 / EffectRadius) * 0.035) * noiseFrequency;
 
-        float n1 = textureLod(Sampler0, noiseUV * noiseFrequency * 0.05, 0.0).r;
-        float n2 = textureLod(Sampler0, noiseUV * noiseFrequency * 0.10, 0.0).r;
-        float noise = n1 * 0.66 + 0.33 * n2;
+        float n1 = textureLod(Sampler0, baseUV * 0.05, 0.0).r;
+        vec2 warpUV = baseUV + vec2(n1 - 0.5, n1 - 0.5);
+        float n2 = textureLod(Sampler0, warpUV * 0.10, 0.0).r;
+        float n3 = textureLod(Sampler0, warpUV * 0.21, 0.0).r;
+        float noise = n1 * 0.55 + n2 * 0.30 + n3 * 0.15;
 
         float extraWidth = noise * (1.0 - clamp(fi * (1.0 / float(DISK_LAYERS)) * 2.0 - 1.0, 0.0, 1.0));
         float alpha = clamp(noise * (intensity + extraWidth) * ((1.0 / EffectRadius) * 10.0 + 0.01) * dist * distMult, 0.0, 1.0);
@@ -92,6 +98,21 @@ vec4 raymarchDisk(vec3 ray, vec3 zeroPos) {
 
     accumulated.rgb = clamp(accumulated.rgb - 0.005, 0.0, 1.0);
     return accumulated;
+}
+
+float hash12(vec2 p) {
+    vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+    p3 += dot(p3, p3.yzx + 33.33);
+    return fract((p3.x + p3.y) * p3.z);
+}
+
+vec3 acesFilm(vec3 x) {
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
 }
 
 void main() {
@@ -143,7 +164,10 @@ void main() {
         finalColor = vec4(rgb, alpha);
     }
 
+    finalColor.rgb = acesFilm(finalColor.rgb);
+    finalColor.rgb += (hash12(gl_FragCoord.xy) - 0.5) * (1.0 / 255.0);
     finalColor.rgb = clamp(finalColor.rgb, 0.0, 1.0);
+
     if (finalColor.a <= 0.001) {
         discard;
     }

@@ -16,6 +16,7 @@ import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.client.ClientRenderRegistries;
 import tizio.dev.tsp.core.client.ClientRenderTypes;
 import tizio.dev.tsp.core.client.ClientShaderRegistry;
+import tizio.dev.tsp.core.utils.Materials;
 import tizio.dev.tsp.core.utils.volume.PreparedVolume;
 import tizio.dev.tsp.core.utils.volume.VolumeRenderUtil;
 
@@ -25,10 +26,10 @@ import java.util.stream.Collectors;
 public final class SunRenderer {
 
     private static final float FLARE_SIZE_MULTIPLIER = 6.0F;
-    private static final float FLARE_FADE_NEAR_MULTIPLIER = 1.5F;
+    private static final float FLARE_FADE_NEAR_MULTIPLIER = 1.0F;
     private static final float FLARE_FADE_FAR_MULTIPLIER  = 10.0F;
     private static final float FLARE_VIEW_FADE_START = 1.0F;
-    private static final float FLARE_VIEW_FADE_END   = 0.15F;
+    private static final float FLARE_VIEW_FADE_END   = 0.35F;
 
 
     public static List<VolumeRenderUtil.RenderTask> buildTasks(ShaderInstance shader, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float timeSeconds) {
@@ -68,7 +69,7 @@ public final class SunRenderer {
         VolumeRenderUtil.setFloat(shader, "ScatteringStrength", instance.scatteringStrength());
         VolumeRenderUtil.setVec3(shader, "SunTint", instance.color());
 
-        VolumeRenderUtil.setSampler(ResourceLocation.fromNamespaceAndPath(MainClass.MODID, "textures/planets/noise1.png"), 0);
+        VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation("noise1"), 0);
 
         VolumeRenderUtil.setVec3(shader, "CenterRelative", volume.centerRelativeView());
         VolumeRenderUtil.setVec3(shader, "CameraLocalPos", volume.cameraLocalPos());
@@ -92,6 +93,12 @@ public final class SunRenderer {
     }
 
     private static void renderFlare(SunInstance instance, Camera camera, Frustum frustum, Matrix4f pose, float timeSeconds) {
+        float size = instance.sunRadius() * FLARE_SIZE_MULTIPLIER;
+
+        if (!VolumeRenderUtil.isVisible(frustum, instance.position(), size)) {
+            return;
+        }
+
         ShaderInstance flareShader = ClientShaderRegistry.sunFlareShader();
         if (flareShader == null) return;
 
@@ -115,10 +122,6 @@ public final class SunRenderer {
 
         float alpha = distanceAlpha * viewAlpha;
 
-        float size = instance.sunRadius() * FLARE_SIZE_MULTIPLIER;
-        if (!VolumeRenderUtil.isVisible(frustum, instance.position(), size)) {
-            return;
-        }
 
         Vector3f worldUp = new Vector3f(0.0F, 1.0F, 0.0F);
         if (Math.abs(dirToSun.y) > 0.999F) {

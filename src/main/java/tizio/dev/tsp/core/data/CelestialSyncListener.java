@@ -13,9 +13,6 @@ import tizio.dev.tsp.core.network.SyncSystemDataPacket;
 @Mod.EventBusSubscriber(modid = MainClass.MODID)
 public final class CelestialSyncListener {
 
-    private CelestialSyncListener() {
-    }
-
     @SubscribeEvent
     public static void onDatapackSync(OnDatapackSyncEvent event) {
         ResourceManager resourceManager = event.getPlayerList().getServer().getResourceManager();

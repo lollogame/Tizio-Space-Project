@@ -25,6 +25,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL12.GL_TEXTURE_BASE_LEVEL;
 import static org.lwjgl.opengl.GL12.GL_TEXTURE_MAX_LEVEL;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
+import static org.lwjgl.opengl.GL30C.glGenerateMipmap;
 
 public final class VolumeRenderUtil {
 
@@ -33,13 +34,12 @@ public final class VolumeRenderUtil {
 
     public enum RenderPass {
         PLANET_SURFACE(0),
-        PLANET_RING(1),
-        PLANET_ROCKS_RING(2),
-        SUN(3),
-        ATMOSPHERE(4),
-        BLACK_HOLE(5),
-        CLOUDS(6);
-
+        ATMOSPHERE(1),
+        PLANET_RING(2),
+        PLANET_ROCKS_RING(3),
+        SUN(4),
+        BLACK_HOLE(4),
+        CLOUDS(5);
 
         private final int priority;
 
@@ -209,18 +209,21 @@ public final class VolumeRenderUtil {
         return new ScissorRect(x, y, width, height);
     }
 
-    public static void setSampler(ResourceLocation textureLocation, int textureUnit) {
-        RenderSystem.setShaderTexture(textureUnit, textureLocation);
+    public static void setSampler(ShaderInstance shader, String samplerName, ResourceLocation textureLocation, int textureUnit) {
         AbstractTexture texture = Minecraft.getInstance().getTextureManager().getTexture(textureLocation);
-        if (texture == null) {return;}
+        if (texture == null) { return; }
+
+        RenderSystem.setShaderTexture(textureUnit, textureLocation);
         RenderSystem.activeTexture(GL_TEXTURE0 + textureUnit);
         RenderSystem.bindTexture(texture.getId());
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+//        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+//        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+
+        shader.setSampler(samplerName, texture.getId());
     }
 
     private static void renderCube(VertexConsumer consumer, Matrix4f pose, Vec3 center, Vector3f axisX, Vector3f axisY, Vector3f axisZ, float halfExtent) {
@@ -267,9 +270,8 @@ public final class VolumeRenderUtil {
     }
 
     private static void addLine(VertexConsumer consumer, Matrix4f pose, Vector3f a, Vector3f b, Vector3f color) {
-        Vector3f normal = new Vector3f(b).sub(a).normalize();
-        consumer.vertex(pose, a.x(), a.y(), a.z()).color((int) color.x(), (int) color.y(), (int) color.z(), 255).normal(normal.x(), normal.y(), normal.z()).endVertex();
-        consumer.vertex(pose, b.x(), b.y(), b.z()).color((int) color.x(), (int) color.y(), (int) color.z(), 255).normal(normal.x(), normal.y(), normal.z()).endVertex();
+        consumer.vertex(pose, a.x(), a.y(), a.z()).color((int) color.x(), (int) color.y(), (int) color.z(), 255).normal(new Vector3f(b).sub(a).normalize().x(), new Vector3f(b).sub(a).normalize().y(), new Vector3f(b).sub(a).normalize().z()).endVertex();
+        consumer.vertex(pose, b.x(), b.y(), b.z()).color((int) color.x(), (int) color.y(), (int) color.z(), 255).normal(new Vector3f(b).sub(a).normalize().x(), new Vector3f(b).sub(a).normalize().y(), new Vector3f(b).sub(a).normalize().z()).endVertex();
     }
 
     private static Vector3f vertex(Vec3 center, Vector3f axisX, Vector3f axisY, Vector3f axisZ, float sx, float sy, float sz) {

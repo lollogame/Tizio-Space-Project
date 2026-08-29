@@ -23,9 +23,7 @@ public class MainClass {
         PacketsRegistry.register();
 
         loadRegisters(modEventBus);
-
         MinecraftForge.EVENT_BUS.register(this);
-
     }
 
     private void loadRegisters(IEventBus bus) {

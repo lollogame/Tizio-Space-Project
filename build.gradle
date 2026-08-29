@@ -5,6 +5,7 @@ buildscript {
     }
     dependencies {
         classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+        classpath 'com.guardsquare:proguard-gradle:7.4.2'
     }
 }
 
@@ -31,9 +32,7 @@ minecraft {
     mappings channel: mapping_channel, version: mapping_version
     copyIdeResources = true
 
-
     runs {
-
         configureEach {
             workingDirectory project.file('run')
             property 'forge.logging.markers', 'REGISTRIES'
@@ -68,7 +67,6 @@ minecraft {
 
 mixin {
     add sourceSets.main, "${mod_id}.refmap.json"
-
     config "${mod_id}.mixins.json"
 }
 
@@ -82,46 +80,14 @@ repositories {
 }
 
 dependencies {
-
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    //implementation fg.deobf("curse.maven:free-cam-557076:4643128")
-
-//    implementation fg.deobf("curse.maven:viltrumite-1553010:8677178")
-//    implementation fg.deobf("curse.maven:viltrumite-flight-1528087:8642587")
+//    implementation fg.deobf("curse.maven:viltrumite-1553010:8745127")
+//    implementation fg.deobf("curse.maven:viltrumite-flight-1528087:8745022")
 
     implementation fg.deobf("curse.maven:worldedit-225608:4586218")
-
-    //simple clouds test
-    //implementation fg.deobf("curse.maven:simple-clouds-1121215:6928978")
-    //implementation fg.deobf("curse.maven:better-clouds-1285973:7074847")
-
-    //testing with other mods
-//    implementation fg.deobf("curse.maven:jade-324717:8479276")
-    //implementation fg.deobf("curse.maven:embeddium-908741:5681725")
-    //runtimeOnly("curse.maven:oculus-581495:6020961")
-
-
 }
-
-//processResources {
-//
-//    doLast {
-//        def source = file("$destinationDir/assets/tsp/shaders/include/shading/light.glsl")
-//        def targetDir = file("$destinationDir/assets/minecraft/shaders/include")
-//        def target = file("$targetDir/light.glsl")
-//
-//        if (source.exists()) {
-//            targetDir.mkdirs()
-//            target.text = source.text
-//            println "[TSP] light.glsl duplicato in assets/minecraft/shaders/include/ per l'override vanilla"
-//        } else {
-//            println "[TSP] Và CHIaaannne': la sorgente light.glsl non trovata in ${source} - override NON applicato"
-//        }
-//    }
-//}
-
 
 tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
@@ -154,3 +120,79 @@ tasks.named('jar', Jar).configure {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+//tasks.register('obfuscateJar', proguard.gradle.ProGuardTask) {
+//    group = 'build'
+//    dependsOn 'reobfJar'
+//
+//    def inputFile = tasks.named('jar', Jar).get().archiveFile.get().asFile
+//    def outputFile = file("${buildDir}/libs/${inputFile.name.replace('.jar', '-obf.jar')}")
+//    def dictFile = file("${buildDir}/proguard/dictionary.txt")
+//
+//    doFirst {
+//        dictFile.parentFile.mkdirs()
+//        def words = []
+//        def chars = ['I', 'l', '1']
+//        def random = new Random()
+//
+//        while (words.size() < 2000) {
+//            def sb = new StringBuilder("l")
+//            for (int i = 0; i < 12; i++) {
+//                sb.append(chars[random.nextInt(chars.size())])
+//            }
+//            words.add(sb.toString())
+//        }
+//        dictFile.text = words.join("\n")
+//    }
+//
+//    injars inputFile
+//    outjars outputFile
+//
+//    def javaHome = System.getProperty('java.home')
+//    libraryjars "${javaHome}/jmods"
+//    libraryjars sourceSets.main.compileClasspath
+//
+//    dontwarn
+//    dontnote
+//    dontshrink
+//
+//    obfuscationdictionary dictFile.absolutePath
+//    classobfuscationdictionary dictFile.absolutePath
+//    packageobfuscationdictionary dictFile.absolutePath
+//
+//    overloadaggressively
+//    useuniqueclassmembernames
+//
+//    keepattributes '*Annotation*,Signature,InnerClasses,EnclosingMethod'
+//    renamesourcefileattribute 'SourceFile'
+//    keepattributes '!LocalVariableTable,!LocalVariableTypeTable,!LineNumberTable'
+//
+//    // --- PROTEZIONE PUNTI CRITICI MINECRAFT ---
+//
+//    keep 'class tizio.dev.tsp.MainClass'
+//
+//    // Mantiene integri i Mixin
+//    keep 'class tizio.dev.tsp.mixin.** { *; }'
+//
+//    // Mantiene i campi di registrazione di Forge
+//    keepclassmembers '''class tizio.dev.tsp.registry.** {
+//        public static final net.minecraftforge.registries.DeferredRegister *;
+//        public static final net.minecraftforge.registries.RegistryObject *;
+//    }'''
+//
+//    // Mantiene gli eventi Forge
+//    keepclassmembers '''class tizio.dev.tsp.** {
+//        @net.minecraftforge.eventbus.api.SubscribeEvent <methods>;
+//        @net.minecraftforge.eventbus.api.SubscribeEvent static <methods>;
+//    }'''
+//
+//    // --- PROTEZIONE METODI EREDITATI DA MINECRAFT E FORGE ---
+//    // Impedisce a ProGuard di rinominare metodi che sovrascrivono classi o interfacce Vanilla/Forge
+//    keepclassmembers 'class * extends net.minecraft.server.packs.resources.SimplePreparableReloadListener { *; }'
+//    keepclassmembers 'class * implements net.minecraft.server.packs.resources.PreparableReloadListener { *; }'
+//
+//    keepclassmembers 'class * extends net.minecraft.** { <methods>; }'
+//    keepclassmembers 'class * implements net.minecraft.** { <methods>; }'
+//    keepclassmembers 'class * extends net.minecraftforge.** { <methods>; }'
+//    keepclassmembers 'class * implements net.minecraftforge.** { <methods>; }'
+//}
