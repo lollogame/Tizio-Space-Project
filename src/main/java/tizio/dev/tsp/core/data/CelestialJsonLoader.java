@@ -636,8 +636,6 @@ public final class CelestialJsonLoader {
                             .planetRadius(radius)
                             .sunRadius(radius * 1.95F)
                             .quadRadius(radius * 1.8F)
-                            .densityFalloff(30.0F)
-                            .scatteringStrength(0.5F)
                             .color(color)
                             .eulerDegrees((float) rotation.x, (float) rotation.y, (float) rotation.z)
                             .build()

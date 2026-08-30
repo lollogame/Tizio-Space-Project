@@ -11,12 +11,11 @@ import tizio.dev.tsp.MainClass;
 
 @Mod.EventBusSubscriber(modid = MainClass.MODID)
 public final class CelestialDataReloadListener {
-    private CelestialDataReloadListener() {
-    }
 
     @SubscribeEvent
     public static void addReloadListener(AddReloadListenerEvent event) {
         event.addListener(new SimplePreparableReloadListener<CelestialJsonLoader.LoadedData>() {
+
             @Override
             protected CelestialJsonLoader.LoadedData prepare(ResourceManager resourceManager, ProfilerFiller profiler) {
                 return CelestialJsonLoader.loadFromDatapacks(resourceManager);

@@ -453,7 +453,7 @@
         "periodDays": 27.3,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
-        "inclination": 0.0,
+        "inclination": 5.144999999999996,
         "ascendingNode": 0.0
       }
     }

@@ -14,9 +14,6 @@ import tizio.dev.tsp.core.utils.Materials;
 
 @Mod.EventBusSubscriber(modid = MainClass.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class ClientCelestialReloadListener {
-    private ClientCelestialReloadListener() {
-    }
-
     @SubscribeEvent
     public static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
 

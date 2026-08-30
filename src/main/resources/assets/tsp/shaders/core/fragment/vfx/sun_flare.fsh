@@ -11,6 +11,7 @@ uniform float FlareAlpha;
 out vec4 fragColor;
 
 void main() {
+
     vec2 uv = (texCoord - vec2(0.5)) * 2.0;
     float dist = length(uv);
 
@@ -19,7 +20,6 @@ void main() {
     }
 
     float angle = atan(uv.y, uv.x);
-
     float core = exp(-dist * 12.0) * 3.0;
 
     float pulse = sin(Time * 1.2) * 0.04;
@@ -27,14 +27,18 @@ void main() {
 
     float spikeMod1 = 0.85 + 0.15 * sin(angle * 2.0 + Time * 0.3);
     float spikeMod2 = 0.75 + 0.25 * cos(angle * 3.0 - Time * 0.2);
+    float spikeCenterFade = smoothstep(0.03, 0.25, dist);
 
-    float primarySpikes = pow(abs(cos(angle * 2.0 + Time * 0.04)), 40.0) * exp(-dist * 2.5) * 0.7 * spikeMod1;
+    float primarySpikes   = pow(abs(cos(angle * 2.0 + Time * 0.04)), 40.0) * exp(-dist * 2.5) * 0.7 * spikeMod1;
     float secondarySpikes = pow(abs(cos(angle * 2.0 - Time * 0.07)), 16.0) * exp(-dist * 4.0) * 0.4 * spikeMod2;
+
+    primarySpikes   *= spikeCenterFade;
+    secondarySpikes *= spikeCenterFade;
 
     float mask = smoothstep(1.0, 0.6, dist);
 
     vec3 coreColor = mix(vec3(1.0), SunTint, smoothstep(0.0, 0.35, dist));
-    vec3 finalRGB = (coreColor * core) + (SunTint * (halo + primarySpikes + secondarySpikes));
+    vec3 finalRGB  = (coreColor * core) + (SunTint * (halo + primarySpikes + secondarySpikes));
 
     finalRGB *= mask;
 

@@ -88,8 +88,6 @@ public final class PlanetSkyRenderer {
                     .planetRadius(r)
                     .sunRadius(r * 1.95f)
                     .quadRadius(r * 1.8f)
-                    .densityFalloff(30.0f)
-                    .scatteringStrength(0.5f)
                     .color(starColor)
                     .eulerDegrees(0, 0, 0)
                     .build();

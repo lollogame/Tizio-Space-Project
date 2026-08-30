@@ -15,7 +15,6 @@ import net.minecraftforge.fml.common.Mod;
 import org.slf4j.Logger;
 import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
-import tizio.dev.tsp.core.gui.SystemEditor;
 
 import java.lang.reflect.Method;
 
@@ -71,7 +70,14 @@ public final class CameraPlanetOrbit {
     }
 
     public static boolean activate(CelestialJsonLoader.BodySpatialInfo target) {
-        if (target == null || !reflectionAvailable || !isInSpaceDimension()) {
+        if (target == null) {
+            return false;
+        }
+        return activate(target.body().id, target.spacePosition(), target.visualRadius());
+    }
+
+    public static boolean activate(String targetId, Vec3 position, double visualRadius) {
+        if (targetId == null || position == null || !reflectionAvailable || !isInSpaceDimension()) {
             return false;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -79,10 +85,10 @@ public final class CameraPlanetOrbit {
             return false;
         }
 
-        focusedBodyId = target.body().id;
-        focusPoint = target.spacePosition();
+        focusedBodyId = targetId;
+        focusPoint = position;
 
-        double radius = Math.max(0.1D, target.visualRadius());
+        double radius = Math.max(0.1D, visualRadius);
         minDistance = Math.max(1.0D, radius * MIN_DISTANCE_MULTIPLIER);
         maxDistance = Math.max(minDistance + 5.0D, radius * MAX_DISTANCE_MULTIPLIER);
 
@@ -95,13 +101,20 @@ public final class CameraPlanetOrbit {
     }
 
     public static void updateFocus(CelestialJsonLoader.BodySpatialInfo target) {
-        if (!active || target == null || focusedBodyId == null || !focusedBodyId.equals(target.body().id)) {
+        if (target == null) {
+            return;
+        }
+        updateFocus(target.body().id, target.spacePosition(), target.visualRadius());
+    }
+
+    public static void updateFocus(String targetId, Vec3 position, double visualRadius) {
+        if (!active || targetId == null || focusedBodyId == null || !focusedBodyId.equals(targetId)) {
             return;
         }
 
-        focusPoint = target.spacePosition();
+        focusPoint = position;
 
-        double currentRadius = Math.max(0.1D, target.visualRadius());
+        double currentRadius = Math.max(0.1D, visualRadius);
         double newMin = Math.max(1.0D, currentRadius * MIN_DISTANCE_MULTIPLIER);
         double newMax = Math.max(newMin + 5.0D, currentRadius * MAX_DISTANCE_MULTIPLIER);
 
@@ -148,7 +161,7 @@ public final class CameraPlanetOrbit {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        if (!(mc.screen instanceof SystemEditor) || !isInSpaceDimension()) {
+        if (mc.screen == null || !isInSpaceDimension()) {
             deactivate();
         }
     }

@@ -146,8 +146,17 @@ public class SystemEditor extends Screen {
     @Override
     public void tick() {
         super.tick();
-        if (CameraPlanetOrbit.isActive() && selectedBody != null) {
+        if (!CameraPlanetOrbit.isActive()) {
+            return;
+        }
+        if (selectedNode == NodeType.BODY && selectedBody != null) {
             getSpatialInfoForSelectedBody().ifPresent(CameraPlanetOrbit::updateFocus);
+        } else if (selectedNode == NodeType.STAR && activeSystem != null && activeSystem.star != null) {
+            SunInstance.Config star = activeSystem.star;
+            Vec3 pos = new Vec3(activeSystem.originX, activeSystem.originY, activeSystem.originZ);
+            float globalScale = Math.max(0.0001F, activeSystem.globalScale <= 0.0F ? 1.0F : activeSystem.globalScale);
+            double visualRadius = Math.max(0.05D, Math.min(100000.0D, star.radius * globalScale));
+            CameraPlanetOrbit.updateFocus(star.id, pos, visualRadius);
         }
     }
 
@@ -194,6 +203,17 @@ public class SystemEditor extends Screen {
 
     private void focusCameraOnSelectedBody() {
         getSpatialInfoForSelectedBody().ifPresent(CameraPlanetOrbit::activate);
+    }
+
+    private void focusCameraOnSelectedStar() {
+        if (activeSystem == null || activeSystem.star == null) {
+            return;
+        }
+        SunInstance.Config star = activeSystem.star;
+        Vec3 pos = new Vec3(activeSystem.originX, activeSystem.originY, activeSystem.originZ);
+        float globalScale = Math.max(0.0001F, activeSystem.globalScale <= 0.0F ? 1.0F : activeSystem.globalScale);
+        double visualRadius = Math.max(0.05D, Math.min(100000.0D, star.radius * globalScale));
+        CameraPlanetOrbit.activate(star.id, pos, visualRadius);
     }
 
     private Optional<CelestialJsonLoader.BodySpatialInfo> buildFallbackSpatialInfo() {
@@ -315,6 +335,7 @@ public class SystemEditor extends Screen {
             } else if (item.bodyConfig == null && ("star".equalsIgnoreCase(item.type) || "blackhole".equalsIgnoreCase(item.type))) {
                 selectedNode = NodeType.STAR;
                 activeTab    = Tab.STAR;
+                focusCameraOnSelectedStar();
             } else if (item.bodyConfig != null) {
                 selectedNode = NodeType.BODY;
                 selectedBody = item.bodyConfig;
@@ -536,17 +557,13 @@ public class SystemEditor extends Screen {
             if (starColorEditBox != null) starColorEditBox.setValue(hex);
             notifyChanged();
         });
-        addInspectorWidget(starColorPicker, relY, ROW_H, null); relY += 22;
 
+        addInspectorWidget(starColorPicker, relY, ROW_H, null); relY += 22;
         addInspectorSliderWithReset(x, relY, width, "Radius", star.radius, 2000.0, 100.0, 100000.0, val -> { star.radius = val.floatValue(); notifyChanged(); }); relY += 22;
 
         if (star.isBlackHole()) {
             addInspectorSliderWithReset(x, relY, width, "Disk Speed", star.diskRotationSpeed, 0.20, 0.0, 5.0, val -> { star.diskRotationSpeed = val.floatValue(); notifyChanged(); }); relY += 22;
             addInspectorSliderWithReset(x, relY, width, "Intensity", star.intensity, 1.0, 0.0, 10.0, val -> { star.intensity = val.floatValue(); notifyChanged(); }); relY += 22;
-        } else {
-            addInspectorSliderWithReset(x, relY, width, "Sun R Factor", star.sunRadiusFactor, 1.3, 0.5, 5.0, val -> { star.sunRadiusFactor = val.floatValue(); notifyChanged(); }); relY += 22;
-            addInspectorSliderWithReset(x, relY, width, "Scatter Str", star.scatteringStrength, 0.5, 0.0, 2.0, val -> { star.scatteringStrength = val.floatValue(); notifyChanged(); }); relY += 22;
-            addInspectorSliderWithReset(x, relY, width, "Density Fall", star.densityFalloff, 5.0, 1.0, 20.0, val -> { star.densityFalloff = val.floatValue(); notifyChanged(); }); relY += 22;
         }
 
         addInspectorSliderWithReset(x, relY, width, "Yaw (°)", star.yaw, 0.0, -180.0, 180.0, val -> { star.yaw = val.floatValue(); notifyChanged(); }); relY += 22;
@@ -558,12 +575,6 @@ public class SystemEditor extends Screen {
         totalInspectorHeight = 0;
         int relY = 0;
         int formY = HEADER_H + 44;
-
-        bodyIdEditBox = addLabeledEditBox(x, relY, width, "ID:", selectedBody.id, val -> {
-            selectedBody.id = val;
-            notifyChanged();
-            if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, val);
-        }); relY += 22;
 
         Button typeBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Type: " + selectedBody.type), b -> {
             selectedBody.type = switch (selectedBody.type.toLowerCase(Locale.ROOT)) {
@@ -580,6 +591,12 @@ public class SystemEditor extends Screen {
             buildLayout();
         });
         addInspectorWidget(typeBtn, relY, ROW_H, null); relY += 22;
+
+        bodyIdEditBox = addLabeledEditBox(x, relY, width, "ID:", selectedBody.id, val -> {
+            selectedBody.id = val;
+            notifyChanged();
+            if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, val);
+        }); relY += 22;
 
         bodyParentEditBox = addLabeledEditBox(x, relY, width, "Parent:", selectedBody.parentId != null ? selectedBody.parentId : "sun", val -> {
             selectedBody.parentId = val;
@@ -614,7 +631,7 @@ public class SystemEditor extends Screen {
 
         epochUtcEditBox = addLabeledEditBox(x, relY, width, "Epoch:", selectedBody.orbit.epochUtc != null ? selectedBody.orbit.epochUtc : "2000-01-01T12:00:00Z", val -> { selectedBody.orbit.epochUtc = val; notifyChanged(); }); relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Spin (Hours)", selectedBody.spinHours, 24.0, 0.0, 120.0, val -> { selectedBody.spinHours = val; notifyChanged(); });
+        addInspectorSliderWithReset(x, relY, width, "Spin (Hours)", selectedBody.spinHours, 24.0, 0.0, 1000.0, val -> { selectedBody.spinHours = val; notifyChanged(); });
     }
 
     private void buildSurfaceTab(int x, int y, int width) {

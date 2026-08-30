@@ -68,25 +68,12 @@ public final class SuitHudOverlay {
         float envTemp = TemperatureManager.getEnvironmentTemperature(player.level());
         boolean hasSuit = OxygenManager.hasFullSpaceSuit(player);
 
-        // 0. Fullscreen Visor Background Overlay Texture
         drawVisorBackgroundOverlay(g, screenW, screenH);
-
-        // 1. Visor Screen Outer Brackets
         drawVisorFrame(g, screenW, screenH);
-
-        // 2. Top Navigation Compass Tape & Heading Indicator
         drawTopCompassTape(g, font, player, screenW);
-
-        // 3. Top-Left: Vector Telemetry Block
         drawTopLeftTelemetry(g, font, player);
-
-        // 4. Mid-Left: Life Support & Vitals (Vector Style)
         drawMidLeftVitals(g, font, player, oxygen, temperature, envTemp, hasSuit);
-
-        // 6. Right Side: Vertical Altitude Ladder (ALT - Y)
         drawRightAltitudeLadder(g, font, player, screenW, screenH);
-
-        // 7. Bottom-Right: Armor & Systems Integrity
         drawBottomRightArmorIntegrity(g, font, player, screenW, screenH, hasSuit);
 
         RenderSystem.disableBlend();

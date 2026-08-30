@@ -7,16 +7,14 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
-import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.client.ClientRenderRegistries;
 import tizio.dev.tsp.core.client.ClientRenderTypes;
 import tizio.dev.tsp.core.client.ClientShaderRegistry;
-import tizio.dev.tsp.core.utils.Materials;
 import tizio.dev.tsp.core.utils.volume.PreparedVolume;
 import tizio.dev.tsp.core.utils.volume.VolumeRenderUtil;
 
@@ -25,12 +23,9 @@ import java.util.stream.Collectors;
 
 public final class SunRenderer {
 
-    private static final float FLARE_SIZE_MULTIPLIER = 6.0F;
-    private static final float FLARE_FADE_NEAR_MULTIPLIER = 1.0F;
-    private static final float FLARE_FADE_FAR_MULTIPLIER  = 10.0F;
-    private static final float FLARE_VIEW_FADE_START = 1.0F;
-    private static final float FLARE_VIEW_FADE_END   = 0.35F;
-
+    private static final float FLARE_SIZE_MULT     = 6.0F;  // Dimensione rispetto al raggio
+    private static final float FLARE_FADE_FAR_MULT = 5.0F; // Distanza massima di dissolvenza (x sunRadius)
+    private static final float FLARE_VIEW_CUTOFF   = 0.15F; // Limite di angolo visuale per il fade
 
     public static List<VolumeRenderUtil.RenderTask> buildTasks(ShaderInstance shader, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float timeSeconds) {
         if (shader == null) return List.of();
@@ -42,7 +37,6 @@ public final class SunRenderer {
                 )).collect(Collectors.toList());
     }
 
-    /** Overload that renders an explicit list of instances instead of the global registry. */
     public static List<VolumeRenderUtil.RenderTask> buildTasks(ShaderInstance shader, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float timeSeconds, List<SunInstance> instances) {
         if (shader == null || instances == null) return List.of();
         return instances.stream()
@@ -54,6 +48,7 @@ public final class SunRenderer {
     }
 
     private static void renderInstance(ShaderInstance shader, SunInstance instance, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float timeSeconds) {
+
         float halfExtent = instance.quadRadius();
         if (!VolumeRenderUtil.isVisible(frustum, instance.position(), halfExtent)) {
             return;
@@ -61,15 +56,9 @@ public final class SunRenderer {
 
         PreparedVolume volume = VolumeRenderUtil.prepareVolume(instance, camera, poseStack);
 
-        VolumeRenderUtil.setFloat(shader, "Time", timeSeconds);
         VolumeRenderUtil.setFloat(shader, "PlanetRadius", instance.planetRadius());
-        VolumeRenderUtil.setFloat(shader, "SunRadius", instance.sunRadius());
-        VolumeRenderUtil.setFloat(shader, "BloomRadius", instance.sunRadius() * 1.12F);
-        VolumeRenderUtil.setFloat(shader, "Density", instance.densityFalloff());
-        VolumeRenderUtil.setFloat(shader, "ScatteringStrength", instance.scatteringStrength());
+        VolumeRenderUtil.setFloat(shader, "BloomRadius", instance.planetRadius() * 2.0F);
         VolumeRenderUtil.setVec3(shader, "SunTint", instance.color());
-
-        VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation("noise1"), 0);
 
         VolumeRenderUtil.setVec3(shader, "CenterRelative", volume.centerRelativeView());
         VolumeRenderUtil.setVec3(shader, "CameraLocalPos", volume.cameraLocalPos());
@@ -93,22 +82,19 @@ public final class SunRenderer {
     }
 
     private static void renderFlare(SunInstance instance, Camera camera, Frustum frustum, Matrix4f pose, float timeSeconds) {
-        float size = instance.sunRadius() * FLARE_SIZE_MULTIPLIER;
+        float sunRadius = instance.sunRadius();
+        float size = sunRadius * FLARE_SIZE_MULT;
+        ShaderInstance flareShader = ClientShaderRegistry.sunFlareShader();
 
         if (!VolumeRenderUtil.isVisible(frustum, instance.position(), size)) {
             return;
         }
 
-        ShaderInstance flareShader = ClientShaderRegistry.sunFlareShader();
         if (flareShader == null) return;
 
         Vec3 toSun = instance.position().subtract(camera.getPosition());
         double distance = toSun.length();
-
-        float fadeNear = instance.sunRadius() * FLARE_FADE_NEAR_MULTIPLIER;
-        float fadeFar  = instance.sunRadius() * FLARE_FADE_FAR_MULTIPLIER;
-        float distanceAlpha = (float) ((distance - fadeNear) / (fadeFar - fadeNear));
-        distanceAlpha = Math.max(0.0F, Math.min(1.0F, distanceAlpha));
+        float distanceAlpha = Mth.clampedMap((float) distance, sunRadius, sunRadius * FLARE_FADE_FAR_MULT, 0.0F, 1.0F);
         if (distanceAlpha <= 0.0F) return;
 
         Vector3f dirToSun = new Vector3f((float) toSun.x, (float) toSun.y, (float) toSun.z);
@@ -116,12 +102,11 @@ public final class SunRenderer {
         dirToSun.normalize();
 
         float dot = camera.getLookVector().dot(dirToSun);
-        float viewAlpha = (dot - FLARE_VIEW_FADE_END) / (FLARE_VIEW_FADE_START - FLARE_VIEW_FADE_END);
-        viewAlpha = Math.max(0.0F, Math.min(1.0F, viewAlpha));
+        float viewAlpha = Mth.clampedMap(dot, FLARE_VIEW_CUTOFF, 1.0F, 0.0F, 1.0F);
+
         if (viewAlpha <= 0.0F) return;
 
         float alpha = distanceAlpha * viewAlpha;
-
 
         Vector3f worldUp = new Vector3f(0.0F, 1.0F, 0.0F);
         if (Math.abs(dirToSun.y) > 0.999F) {
