@@ -5,6 +5,7 @@ import net.minecraft.world.level.Level;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import tizio.dev.tsp.core.data.CelestialJsonLoader;
 
 @Mixin({Entity.class})
 public abstract class NoVoidDamage {
@@ -20,7 +21,7 @@ public abstract class NoVoidDamage {
 
     @Overwrite
     public void checkBelowWorld() {
-        if (this.getY() < (double) (this.level.getMinBuildHeight() - 64) && !this.level.dimension().location().toString().contains("tsp:space")) {
+        if (this.getY() < (double) (this.level.getMinBuildHeight() - 64) && !CelestialJsonLoader.isSpaceDimension(this.level)) {
             this.onBelowWorld();
         }
     }

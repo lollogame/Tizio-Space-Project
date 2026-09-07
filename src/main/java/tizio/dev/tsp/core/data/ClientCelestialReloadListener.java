@@ -11,7 +11,6 @@ import net.minecraftforge.fml.common.Mod;
 import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.utils.Materials;
 
-
 @Mod.EventBusSubscriber(modid = MainClass.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class ClientCelestialReloadListener {
     @SubscribeEvent

@@ -2,7 +2,9 @@ package tizio.dev.tsp.core.celestial.instance.elements.planet;
 
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
+import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.core.utils.volume.OrientedVolumeInstance;
+import tizio.dev.tsp.core.utils.Utils;
 
 public final class PlanetInstance {
 
@@ -35,24 +37,24 @@ public final class PlanetInstance {
     }
 
     public static final class Config {
-        public String id = "unnamed_body";
-        public String type = "planet";
-        public String parentId = "sun";
-        public String dimension = "";
-        public float radius = 100.0F;
-        public String texture = "";
-        public String nightTexture = "";
-        public String colorHex = "#7fb8ff";
-        public float yaw = 0.0F;
-        public float pitch = 0.0F;
-        public float roll = 0.0F;
-        public boolean surfaceEnabled = true;
-        public float diskRotationSpeed = 0.20F;
-        public float intensity = 1.0F;
-        public double spinHours = 24.0;
-        public float gravity = 9.81F;
-        public boolean oxygen = false;
-        public float temperature = 0.0F;
+        public String id = DataConfig.Body.UNNAMED_BODY_ID;
+        public String type = DataConfig.Body.TYPE_DEF;
+        public String parentId = DataConfig.Body.PARENT_ID_DEF;
+        public String dimension = DataConfig.Body.DIMENSION_DEF;
+        public float radius = DataConfig.Body.PLANET_INSTANCE_RADIUS;
+        public String texture = DataConfig.Body.TEXTURE_NONE;
+        public String nightTexture = DataConfig.Body.NIGHT_TEXTURE_DEF;
+        public String colorHex = DataConfig.Body.COLOR_HEX_DEF;
+        public float yaw = DataConfig.Body.ROT_YAW.defF();
+        public float pitch = DataConfig.Body.ROT_PITCH.defF();
+        public float roll = DataConfig.Body.ROT_ROLL.defF();
+        public boolean surfaceEnabled = DataConfig.Body.SURFACE_ENABLED_DEF;
+        public float diskRotationSpeed = DataConfig.Body.DISK_ROTATION_SPEED.defF();
+        public float intensity = DataConfig.Body.INTENSITY.defF();
+        public double spinHours = DataConfig.Body.SPIN_HOURS.def();
+        public float gravity = (float) DataConfig.Body.GRAVITY_FALLBACK;
+        public boolean oxygen = DataConfig.Body.OXYGEN_DEF;
+        public float temperature = DataConfig.Body.TEMPERATURE.defF();
 
         public Orbit orbit = new Orbit();
         public Atmosphere atmosphere = new Atmosphere();
@@ -73,7 +75,7 @@ public final class PlanetInstance {
         }
 
         public boolean isBlackHole() {
-            return "blackhole".equalsIgnoreCase(this.type);
+            return Utils.isBlackHole(this.type);
         }
 
         public Config copy() {
@@ -107,14 +109,14 @@ public final class PlanetInstance {
     }
 
     public static final class Sky {
-        public boolean skyboxRotation = false;
-        public boolean skyboxConstant = false;
-        public String skyboxTexture = "milky_way";
-        public boolean starsEnabled = false;
-        public int starsAmount = 5000;
-        public int starsSeed = 0;
-        public String starsColorHex = "#ffffff";
-        public boolean groundMode = false;
+        public boolean skyboxRotation = DataConfig.Sky.SKYBOX_ROTATION_DEF;
+        public boolean skyboxConstant = DataConfig.Sky.SKYBOX_CONSTANT_DEF;
+        public String skyboxTexture = DataConfig.Sky.SKYBOX_TEXTURE_LOADER_DEF;
+        public boolean starsEnabled = DataConfig.Sky.STARS_ENABLED_DEF;
+        public int starsAmount = DataConfig.Sky.STARS_AMOUNT.defI();
+        public int starsSeed = DataConfig.Sky.STARS_SEED.defI();
+        public String starsColorHex = DataConfig.Sky.STARS_COLOR_HEX_DEF;
+        public boolean groundMode = DataConfig.Sky.GROUND_MODE_DEF;
 
         public Sky() {}
 
@@ -133,14 +135,14 @@ public final class PlanetInstance {
     }
 
     public static final class Clouds {
-        public boolean enabled = false;
-        public String texture = "noise1";
-        public float height = 0.03F;
-        public float density = 0.5F;
-        public float windSpeed = 0.02F;
-        public String colorHex = "#ffffff";
-        public float alpha = 1.0F;
-        public float noiseScale = 1.0F;
+        public boolean enabled = DataConfig.Clouds.ENABLED_DEF;
+        public String texture = DataConfig.Clouds.TEXTURE_DEF;
+        public float height = DataConfig.Clouds.HEIGHT.defF();
+        public float density = DataConfig.Clouds.DENSITY.defF();
+        public float windSpeed = DataConfig.Clouds.WIND_SPEED_INSTANCE_DEF;
+        public String colorHex = DataConfig.Clouds.COLOR_HEX_DEF;
+        public float alpha = DataConfig.Clouds.ALPHA_DEF;
+        public float noiseScale = DataConfig.Clouds.NOISE_SCALE.defF();
 
         public Clouds() {}
 
@@ -170,14 +172,14 @@ public final class PlanetInstance {
     }
 
     public static final class Orbit {
-        public boolean enabled = true;
-        public double radius = 0.0;
-        public double periodDays = 0.0;
-        public double epochAngle = 0.0;
-        public String epochUtc = "2000-01-01T12:00:00Z";
-        public double inclination = 0.0;
-        public double ascendingNode = 0.0;
-        public double verticalOffset = 0.0;
+        public boolean enabled = DataConfig.Orbit.ENABLED_DEF;
+        public double radius = DataConfig.Orbit.RADIUS_FALLBACK;
+        public double periodDays = DataConfig.Orbit.PERIOD_DAYS_FALLBACK;
+        public double epochAngle = DataConfig.Orbit.EPOCH_ANGLE.def();
+        public String epochUtc = DataConfig.Orbit.EPOCH_UTC_DEF;
+        public double inclination = DataConfig.Orbit.INCLINATION.def();
+        public double ascendingNode = DataConfig.Orbit.ASCENDING_NODE.def();
+        public double verticalOffset = DataConfig.Orbit.VERTICAL_OFFSET.def();
 
         public Orbit() {}
 
@@ -185,7 +187,7 @@ public final class PlanetInstance {
             this.radius = radius;
             this.periodDays = periodDays;
             this.epochAngle = epochAngle;
-            this.epochUtc = epochUtc != null ? epochUtc : "2000-01-01T12:00:00Z";
+            this.epochUtc = epochUtc != null ? epochUtc : DataConfig.Orbit.EPOCH_UTC_DEF;
             this.inclination = inclination;
             this.ascendingNode = ascendingNode;
         }
@@ -205,16 +207,16 @@ public final class PlanetInstance {
     }
 
     public static final class Atmosphere {
-        public boolean enabled = false;
-        public float thickness = 0.23F;
-        public float exposure = 3.25F;
-        public float intensity = 0.34F;
-        public float rayleighScaleHeight = 0.0913F;
-        public float rayleighStrength = 0.0856F;
-        public float wavelengthR = 1000.0F;
-        public float wavelengthG = 1000.0F;
-        public float wavelengthB = 1000.0F;
-        public String colorHex = "#ffffff";
+        public boolean enabled = DataConfig.Atmosphere.ENABLED_DEF;
+        public float thickness = DataConfig.Atmosphere.THICKNESS.defF();
+        public float exposure = DataConfig.Atmosphere.EXPOSURE.defF();
+        public float intensity = DataConfig.Atmosphere.INTENSITY.defF();
+        public float rayleighScaleHeight = DataConfig.Atmosphere.RAYLEIGH_SCALE_HEIGHT.defF();
+        public float rayleighStrength = DataConfig.Atmosphere.RAYLEIGH_STRENGTH.defF();
+        public float wavelengthR = DataConfig.Atmosphere.WAVELENGTH_R.defF();
+        public float wavelengthG = DataConfig.Atmosphere.WAVELENGTH_G.defF();
+        public float wavelengthB = DataConfig.Atmosphere.WAVELENGTH_B.defF();
+        public String colorHex = DataConfig.Atmosphere.COLOR_HEX_DEF;
 
         public Atmosphere() {}
 
@@ -235,21 +237,22 @@ public final class PlanetInstance {
     }
 
     public static final class Ring {
-        public boolean enabled = false;
-        public float innerRadius = 180.0F;
-        public float outerRadius = 300.0F;
-        public String texture = "saturn_ring";
-        public String rockTexture = "debug";
-        public String colorHex = "#ffffff";
-        public float yaw = 0.0F;
-        public float pitch = 0.0F;
-        public float roll = 0.0F;
-        public boolean rocksEnabled = false;
-        public int rockCount = 4000;
-        public float rockMinSize = -1.0F;
-        public float rockMaxSize = -1.0F;
-        public float rockHeight = -1.0F;
-        public float rockOrbitSpeed = 0.015F;
+
+        public boolean enabled = DataConfig.Ring.ENABLED_DEF;
+        public float innerRadius = DataConfig.Ring.INNER_RADIUS_INSTANCE_DEF;
+        public float outerRadius = DataConfig.Ring.OUTER_RADIUS_INSTANCE_DEF;
+        public String texture = DataConfig.Ring.TEXTURE_DEF;
+        public String rockTexture = DataConfig.Ring.ROCK_TEXTURE_INSTANCE_DEF;
+        public String colorHex = DataConfig.Ring.COLOR_HEX_DEF;
+        public float yaw = DataConfig.Ring.YAW.defF();
+        public float pitch = DataConfig.Ring.PITCH.defF();
+        public float roll = DataConfig.Ring.ROLL.defF();
+        public boolean rocksEnabled = DataConfig.Ring.ROCKS_ENABLED_DEF;
+        public int rockCount = DataConfig.Ring.ROCK_COUNT.defI();
+        public float rockMinSize = DataConfig.Ring.ROCK_MIN_SIZE.defF();
+        public float rockMaxSize = DataConfig.Ring.ROCK_MAX_SIZE.defF();
+        public float rockHeight = DataConfig.Ring.ROCK_HEIGHT_FALLBACK;
+        public float rockOrbitSpeed = DataConfig.Ring.ROCK_ORBIT_SPEED_FALLBACK;
 
         public Ring() {}
 
@@ -383,10 +386,8 @@ public final class PlanetInstance {
             this.spinHours = spinPeriodDays * 24.0;
         }
 
-        /** Returns surface rotation angle in radians for the given time in seconds. */
         public float surfaceRotationAngle(float timeSeconds) {
             if (this.spinHours == 0.0) return 0.0F;
-            // 1 in-game day (24.0 hours) = 1 Minecraft day cycle (1200 seconds / 24000 ticks = 50s per hour)
             double periodSeconds = this.spinHours * 50.0;
             return (float) (((timeSeconds / periodSeconds) * 2.0 * Math.PI) % (2.0 * Math.PI));
         }
@@ -405,19 +406,19 @@ public final class PlanetInstance {
             private String dayTexture = TEXTURE_BASE_PATH;
             private String nightTexture = TEXTURE_BASE_PATH;
             private float emissiveStrength;
-            private boolean cloudsEnabled = false;
-            private String cloudTexture = TEXTURE_BASE_PATH + "noise1";
-            private float cloudHeight = 0.03F;
-            private float cloudCoverage = 0.5F;
-            private float cloudWindSpeed = 0.02F;
-            private Vector3f cloudColor = new Vector3f(1.0F, 1.0F, 1.0F);
-            private float cloudAlpha = 1.0F;
-            private float cloudNoiseScale = 1.0F;
-            private double spinHours = 24.0;
+            private boolean cloudsEnabled = DataConfig.Clouds.ENABLED_DEF;
+            private String cloudTexture = TEXTURE_BASE_PATH + DataConfig.Clouds.TEXTURE_DEF;
+            private float cloudHeight = DataConfig.Clouds.HEIGHT.defF();
+            private float cloudCoverage = DataConfig.Clouds.DENSITY.defF();
+            private float cloudWindSpeed = DataConfig.Clouds.SURFACE_WIND_SPEED_DEF;
+            private Vector3f cloudColor = new Vector3f(DataConfig.Clouds.COLOR_RGB_DEF);
+            private float cloudAlpha = DataConfig.Clouds.ALPHA_DEF;
+            private float cloudNoiseScale = DataConfig.Clouds.NOISE_SCALE.defF();
+            private double spinHours = DataConfig.Body.SPIN_HOURS.def();
 
             private Builder(Vec3 position) {
                 super(position);
-                this.color = new Vector3f(0.55F, 0.78F, 1.0F);
+                this.color = new Vector3f(DataConfig.Body.SURFACE_COLOR_RGB_DEF);
             }
 
             public Builder planetRadius(float planetRadius) {
@@ -507,19 +508,19 @@ public final class PlanetInstance {
         }
 
         public static final class SurfaceFog {
-            public boolean enabled = false;
-            public String colorHex = "#000000";
-            public String shape = "CYLINDER";
-            public float startDistance = 0.0F;
-            public float endDistance = 192.0F;
-            public boolean useRenderDistance = false;
+            public boolean enabled = DataConfig.Fog.SURFACE_FOG_ENABLED_DEF;
+            public String colorHex = DataConfig.Fog.COLOR_HEX_DEF;
+            public String shape = DataConfig.Fog.SHAPE_DEF;
+            public float startDistance = DataConfig.Fog.START_DISTANCE.defF();
+            public float endDistance = DataConfig.Fog.END_DISTANCE_LOADER_FALLBACK;
+            public boolean useRenderDistance = DataConfig.Fog.USE_RENDER_DISTANCE_DEF;
 
             public SurfaceFog() {}
 
             public SurfaceFog(boolean enabled, String colorHex, String shape, float startDistance, float endDistance, boolean useRenderDistance) {
                 this.enabled = enabled;
-                this.colorHex = colorHex != null ? colorHex : "#000000";
-                this.shape = shape != null ? shape : "CYLINDER";
+                this.colorHex = colorHex != null ? colorHex : DataConfig.Fog.COLOR_HEX_DEF;
+                this.shape = shape != null ? shape : DataConfig.Fog.SHAPE_DEF;
                 this.startDistance = startDistance;
                 this.endDistance = endDistance;
                 this.useRenderDistance = useRenderDistance;
@@ -597,13 +598,13 @@ public final class PlanetInstance {
         }
 
         public static final class Builder extends OrientedVolumeInstance.Builder<AtmosphereInstance, Builder> {
-            private float planetRadius = 1.0F;
-            private float atmosphereRadius = 1.3F;
-            private float intensity = 0.34F;
-            private float exposure = 3.25F;
-            private float rayleighScaleHeight = 0.1142F;
-            private float rayleighStrength = 2.56F;
-            private Vector3f waveLengths = new Vector3f(1000F, 1000F, 1000F);
+            private float planetRadius = DataConfig.Atmosphere.BUILDER_PLANET_RADIUS_DEF;
+            private float atmosphereRadius = DataConfig.Atmosphere.BUILDER_ATMOSPHERE_RADIUS_DEF;
+            private float intensity = DataConfig.Atmosphere.INTENSITY.defF();
+            private float exposure = DataConfig.Atmosphere.EXPOSURE.defF();
+            private float rayleighScaleHeight = DataConfig.Atmosphere.BUILDER_RAYLEIGH_SCALE_HEIGHT_DEF;
+            private float rayleighStrength = DataConfig.Atmosphere.BUILDER_RAYLEIGH_STRENGTH_DEF;
+            private Vector3f waveLengths = new Vector3f(DataConfig.Atmosphere.WAVELENGTHS_DEF);
 
             private Builder(Vec3 position) {
                 super(position);
@@ -810,14 +811,14 @@ public final class PlanetInstance {
 
             public static final class Builder extends OrientedVolumeInstance.Builder<RocksInstance, Builder> {
                 private float planetRadius;
-                private float ringInnerRadius = 120.0F;
-                private float ringOuterRadius = 200.0F;
-                private int rockCount = 1000;
-                private float rockMinSize = 1.0F;
-                private float rockMaxSize = 3.0F;
-                private float rockHeight = 2.0F;
-                private float orbitSpeed = 0.01F;
-                private float seed = 42.0F;
+                private float ringInnerRadius = DataConfig.Ring.ROCKS_BUILDER_INNER_RADIUS_DEF;
+                private float ringOuterRadius = DataConfig.Ring.ROCKS_BUILDER_OUTER_RADIUS_DEF;
+                private int rockCount = DataConfig.Ring.ROCKS_BUILDER_ROCK_COUNT_DEF;
+                private float rockMinSize = DataConfig.Ring.ROCKS_BUILDER_MIN_SIZE_DEF;
+                private float rockMaxSize = DataConfig.Ring.ROCKS_BUILDER_MAX_SIZE_DEF;
+                private float rockHeight = DataConfig.Ring.ROCKS_BUILDER_HEIGHT_DEF;
+                private float orbitSpeed = DataConfig.Ring.ROCKS_BUILDER_ORBIT_SPEED_DEF;
+                private float seed = DataConfig.Ring.ROCKS_BUILDER_SEED_DEF;
                 private String rockTexture = TEXTURE_BASE_PATH;
 
                 public Builder(Vec3 position) {

@@ -5,6 +5,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import tizio.dev.tsp.core.gui.theme.SystemEditorTheme;
 
 import java.util.function.Consumer;
@@ -12,19 +13,29 @@ import java.util.function.Consumer;
 public class ColorPreviewWidget extends AbstractWidget {
 
     private static final int POPUP_W = 140;
-    private static final int POPUP_H = 116;
+    private static final int POPUP_H = 138;
     private static final int FIELD_H = 76;
-    private static final int FIELD_STEP = 4;
+    private static final int FIELD_STEP = 1;
     private static final int TEXT_COLOR = 0xFFE0E0E0;
+
+    private float currentHue = 0.0f;
+    private float currentSat = 1.0f;
+    private float currentVal = 1.0f;
 
     private int currentColor = 0xFFFFFFFF;
     private final Consumer<String> onColorSelected;
 
     private boolean paletteOpen = false;
 
+    private final LabeledSlider vSlider;
+    private boolean updatingSlider = false;
+
     public ColorPreviewWidget(int x, int y, int width, int height, String initialHex, Consumer<String> onColorSelected) {
+
         super(x, y, width, height, Component.literal("Color Swatch"));
         this.onColorSelected = onColorSelected;
+        this.vSlider = new LabeledSlider(0, 0, 124, 16, "V", 1.0, 0.0, 1.0, this::onVSliderChanged);
+
         setHexColor(initialHex);
     }
 
@@ -33,7 +44,36 @@ public class ColorPreviewWidget extends AbstractWidget {
             try {
                 int rgb = Integer.parseInt(hex.substring(1), 16);
                 this.currentColor = 0xFF000000 | rgb;
+
+                float[] hsb = rgbToHsb((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
+                if (hsb[1] > 0f || hsb[2] > 0f) {
+                    this.currentHue = hsb[0];
+                    this.currentSat = hsb[1];
+                }
+                this.currentVal = hsb[2];
+
+                syncSliderWithColor();
             } catch (NumberFormatException ignored) {}
+        }
+    }
+
+    private void syncSliderWithColor() {
+        if (vSlider == null) return;
+        updatingSlider = true;
+        vSlider.setValue(this.currentVal);
+        updatingSlider = false;
+    }
+
+    private void onVSliderChanged(double newV) {
+        if (updatingSlider) return;
+
+        this.currentVal = (float) newV;
+        int rgb = hsbToRgb(this.currentHue, this.currentSat, this.currentVal);
+        this.currentColor = rgb;
+
+        String hex = toHex(rgb);
+        if (onColorSelected != null) {
+            onColorSelected.accept(hex);
         }
     }
 
@@ -70,6 +110,10 @@ public class ColorPreviewWidget extends AbstractWidget {
         return new int[]{popX, popY, POPUP_W, POPUP_H};
     }
 
+    public int getPopupBottomOffset() {
+        return this.height + 2 + POPUP_H;
+    }
+
     public int[] getFieldBounds() {
         int[] pb = getPopupBounds();
         int fx = pb[0] + 8;
@@ -78,15 +122,41 @@ public class ColorPreviewWidget extends AbstractWidget {
         return new int[]{fx, fy, fw, FIELD_H};
     }
 
+    public int[] getSliderBounds() {
+        int[] pb = getPopupBounds();
+        int[] fb = getFieldBounds();
+        int sx = fb[0];
+        int sy = fb[1] + fb[3] + 6;
+        int sw = fb[2];
+        int sh = 16;
+        return new int[]{sx, sy, sw, sh};
+    }
+
+    private void updateSliderBounds() {
+        int[] sb = getSliderBounds();
+        vSlider.setX(sb[0]);
+        vSlider.setY(sb[1]);
+        vSlider.setWidth(sb[2]);
+    }
+
     public boolean handlePaletteClick(double mouseX, double mouseY) {
+        return handlePaletteClick(mouseX, mouseY, 0);
+    }
+
+    public boolean handlePaletteClick(double mouseX, double mouseY, int button) {
         if (!paletteOpen) return false;
 
-        // If clicking on the swatch itself, let mouseClicked handle toggle
         if (isMouseOverSwatch(mouseX, mouseY)) {
             return false;
         }
 
         if (isMouseOverPopup(mouseX, mouseY)) {
+            updateSliderBounds();
+            int[] sb = getSliderBounds();
+            if (mouseX >= sb[0] && mouseX <= sb[0] + sb[2] && mouseY >= sb[1] && mouseY <= sb[1] + sb[3]) {
+                return vSlider.mouseClicked(mouseX, mouseY, button);
+            }
+
             pickFromField(mouseX, mouseY);
             return true;
         }
@@ -98,6 +168,12 @@ public class ColorPreviewWidget extends AbstractWidget {
     public boolean handlePaletteDrag(double mouseX, double mouseY) {
         if (!paletteOpen) return false;
         if (isMouseOverPopup(mouseX, mouseY)) {
+            updateSliderBounds();
+            int[] sb = getSliderBounds();
+            if (mouseY >= sb[1] - 4 && mouseY <= sb[1] + sb[3] + 4 && mouseX >= sb[0] && mouseX <= sb[0] + sb[2]) {
+                vSlider.mouseDragged(mouseX, mouseY, 0, 0, 0);
+                return true;
+            }
             return pickFromField(mouseX, mouseY);
         }
         return false;
@@ -108,8 +184,8 @@ public class ColorPreviewWidget extends AbstractWidget {
         int fx = fb[0], fy = fb[1], fw = fb[2], fh = fb[3];
         if (mouseX < fx || mouseX > fx + fw || mouseY < fy || mouseY > fy + fh) return false;
 
-        float hue = (float) Math.max(0.0, Math.min(0.999999, (mouseX - fx) / (double) fw));
-        float ty = (float) Math.max(0.0, Math.min(1.0, (mouseY - fy) / (double) fh));
+        float hue = Mth.clamp((float) ((mouseX - fx) / (double) fw), 0.0f, 0.999999f);
+        float ty = Mth.clamp((float) ((mouseY - fy) / (double) fh), 0.0f, 1.0f);
 
         float s, v;
         if (ty <= 0.5f) {
@@ -122,9 +198,15 @@ public class ColorPreviewWidget extends AbstractWidget {
             v = 1f - t;
         }
 
+        this.currentHue = hue;
+        this.currentSat = s;
+        this.currentVal = v;
+
         int rgb = hsbToRgb(hue, s, v);
+        this.currentColor = rgb;
+        syncSliderWithColor();
+
         String hex = toHex(rgb);
-        setHexColor(hex);
         if (onColorSelected != null) {
             onColorSelected.accept(hex);
         }
@@ -188,13 +270,17 @@ public class ColorPreviewWidget extends AbstractWidget {
         g.fill(fx - 1, fy - 1, fx, fy + fh + 1, SystemEditorTheme.PALETTE_SWATCH_BORDER);
         g.fill(fx + fw, fy - 1, fx + fw + 1, fy + fh + 1, SystemEditorTheme.PALETTE_SWATCH_BORDER);
 
+        updateSliderBounds();
+        vSlider.render(g, mouseX, mouseY, 0);
+
         float[] hsb = rgbToHsb((currentColor >> 16) & 0xFF, (currentColor >> 8) & 0xFF, currentColor & 0xFF);
-        float markerTy = hsb[2] >= 0.999f ? hsb[1] * 0.5f : 0.5f + (1f - hsb[2]) * 0.5f;
-        int markerX = fx + Math.round(hsb[0] * fw);
-        int markerY = fy + Math.round(markerTy * fh);
+        float markerTy = this.currentVal >= 0.999f ? this.currentSat * 0.5f : 0.5f + (1f - this.currentVal) * 0.5f;
+        int markerX = fx + Mth.clamp(Math.round(this.currentHue * fw), 0, fw);
+        int markerY = fy + Mth.clamp(Math.round(markerTy * fh), 0, fh);
         drawMarker(g, markerX, markerY);
 
-        int rowY = fy + fh + 8;
+        int[] sb = getSliderBounds();
+        int rowY = sb[1] + sb[3] + 8;
         int swW = 14;
         g.fill(fx, rowY, fx + swW, rowY + swW, currentColor);
         g.fill(fx, rowY, fx + swW, rowY + 1, SystemEditorTheme.PALETTE_SWATCH_BORDER);
@@ -224,25 +310,25 @@ public class ColorPreviewWidget extends AbstractWidget {
         if (s <= 0f) {
             r = g = b = v;
         } else {
-            float hh = h * 6f;
-            if (hh >= 6f) hh = 0f;
+            float hh = (h % 1.0f) * 6f;
+            if (hh < 0f) hh += 6f;
             int i = (int) hh;
             float f = hh - i;
             float p = v * (1f - s);
             float q = v * (1f - s * f);
             float t = v * (1f - s * (1f - f));
-            switch (i) {
-                case 0: r = v; g = t; b = p; break;
-                case 1: r = q; g = v; b = p; break;
-                case 2: r = p; g = v; b = t; break;
-                case 3: r = p; g = q; b = v; break;
-                case 4: r = t; g = p; b = v; break;
-                default: r = v; g = p; b = q; break;
+            switch (i % 6) {
+                case 0 -> { r = v; g = t; b = p; }
+                case 1 -> { r = q; g = v; b = p; }
+                case 2 -> { r = p; g = v; b = t; }
+                case 3 -> { r = p; g = q; b = v; }
+                case 4 -> { r = t; g = p; b = v; }
+                default -> { r = v; g = p; b = q; }
             }
         }
-        int ri = Math.round(r * 255f);
-        int gi = Math.round(g * 255f);
-        int bi = Math.round(b * 255f);
+        int ri = Mth.clamp(Math.round(r * 255f), 0, 255);
+        int gi = Mth.clamp(Math.round(g * 255f), 0, 255);
+        int bi = Mth.clamp(Math.round(b * 255f), 0, 255);
         return 0xFF000000 | (ri << 16) | (gi << 8) | bi;
     }
 

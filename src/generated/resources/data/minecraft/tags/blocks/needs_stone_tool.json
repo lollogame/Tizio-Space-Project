@@ -1,5 +1,10 @@
 {
   "values": [
-    "tsp:mars_iron_ore"
+    "tsp:mars_iron_ore",
+    "tsp:moon_iron_ore",
+    "tsp:venus_iron_ore",
+    "tsp:mars_lead_ore",
+    "tsp:moon_lead_ore",
+    "tsp:venus_lead_ore"
   ]
 }

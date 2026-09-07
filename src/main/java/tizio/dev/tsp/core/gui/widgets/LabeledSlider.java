@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import tizio.dev.tsp.core.gui.theme.SystemEditorTheme;
+import tizio.dev.tsp.core.utils.Utils;
 
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -78,7 +79,7 @@ public class LabeledSlider extends AbstractSliderButton {
         int t2 = getTrackX2();
         if (t2 > t1) {
             double newValue = (mouseX - t1) / (double) (t2 - t1);
-            this.value = Math.max(0.0, Math.min(1.0, newValue));
+            this.value = Utils.clamp(newValue, 0.0, 1.0);
             updateMessage();
             applyValue();
         }
@@ -102,7 +103,7 @@ public class LabeledSlider extends AbstractSliderButton {
     }
 
     public void setValue(double newValue) {
-        double clamped = Math.max(min, Math.min(max, newValue));
+        double clamped = Utils.clamp(newValue, min, max);
         this.value = (clamped - min) / (max - min);
         updateMessage();
         applyValue();

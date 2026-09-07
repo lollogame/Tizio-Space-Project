@@ -95,7 +95,7 @@ float sampleCloudNoise(vec3 n, float time, float speed, float coverage) {
     if (coverage <= 0.001) return 0.0;
 
     vec3 rotN = (SurfaceRotation != 0.0) ? rotateY(n, -SurfaceRotation) : n;
-    float wind = time * speed;
+    float wind = time * (clamp(speed, -1.0, 1.0) * 0.0050);
     float sc = max(CloudNoiseScale, 0.001);
 
     vec3 p1 = rotateY(rotN, wind * 0.5);

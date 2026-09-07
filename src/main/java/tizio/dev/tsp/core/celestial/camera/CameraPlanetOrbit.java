@@ -1,6 +1,5 @@
 package tizio.dev.tsp.core.celestial.camera;
 
-import com.mojang.logging.LogUtils;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -12,41 +11,23 @@ import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.slf4j.Logger;
 import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
+import tizio.dev.tsp.core.utils.Utils;
+import tizio.dev.tsp.mixin.render.camera.CameraInvoker;
 
 import java.lang.reflect.Method;
 
 @Mod.EventBusSubscriber(modid = MainClass.MODID, value = Dist.CLIENT)
 public final class CameraPlanetOrbit {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
-    private static final ResourceLocation SPACE_DIMENSION = new ResourceLocation(MainClass.MODID, "space");
-
     private static final float MIN_DISTANCE_MULTIPLIER = 1.15F;
     private static final float INITIAL_DISTANCE_MULTIPLIER = 5.0F;
     private static final float MAX_DISTANCE_MULTIPLIER = 60.0F;
     private static final double DRAG_SENSITIVITY = 0.4D;
-    private static final double ZOOM_STEP_FACTOR = 0.9D;
-    private static final double ZOOM_LERP_ALPHA = 0.25D;
+    private static final double ZOOM_STEP_FACTOR = 0.90D;
+    private static final double ZOOM_LERP_ALPHA = 0.015D;
     private static final double ZOOM_SNAP_EPSILON = 0.001D;
-
-    private static Method setPositionMethod;
-    private static Method setRotationMethod;
-    private static boolean reflectionAvailable;
-
-    static {
-        try {
-            setPositionMethod = Camera.class.getDeclaredMethod("setPosition", Vec3.class);
-            setPositionMethod.setAccessible(true);
-            setRotationMethod = Camera.class.getDeclaredMethod("setRotation", float.class, float.class);
-            setRotationMethod.setAccessible(true);
-            reflectionAvailable = true;
-        } catch (NoSuchMethodException e) {
-            reflectionAvailable = false;
-        }
-    }
 
     private static boolean active = false;
     private static String focusedBodyId = null;
@@ -66,7 +47,7 @@ public final class CameraPlanetOrbit {
 
     public static boolean isInSpaceDimension() {
         Minecraft mc = Minecraft.getInstance();
-        return mc.level != null && SPACE_DIMENSION.equals(mc.level.dimension().location());
+        return mc.level != null && CelestialJsonLoader.isSpaceDimension(mc.level.dimension().location());
     }
 
     public static boolean activate(CelestialJsonLoader.BodySpatialInfo target) {
@@ -77,7 +58,7 @@ public final class CameraPlanetOrbit {
     }
 
     public static boolean activate(String targetId, Vec3 position, double visualRadius) {
-        if (targetId == null || position == null || !reflectionAvailable || !isInSpaceDimension()) {
+        if (targetId == null || position == null || !isInSpaceDimension()) {
             return false;
         }
         Minecraft mc = Minecraft.getInstance();
@@ -92,7 +73,7 @@ public final class CameraPlanetOrbit {
         minDistance = Math.max(1.0D, radius * MIN_DISTANCE_MULTIPLIER);
         maxDistance = Math.max(minDistance + 5.0D, radius * MAX_DISTANCE_MULTIPLIER);
 
-        distance = clamp(radius * INITIAL_DISTANCE_MULTIPLIER, minDistance, maxDistance);
+        distance = Utils.clamp(radius * INITIAL_DISTANCE_MULTIPLIER, minDistance, maxDistance);
         targetDistance = distance;
         orbitYaw = 0.0D;
         orbitPitch = 20.0D;
@@ -127,11 +108,11 @@ public final class CameraPlanetOrbit {
             maxDistance = newMax;
 
             double newRange = maxDistance - minDistance;
-            targetDistance = clamp(minDistance + relTarget * newRange, minDistance, maxDistance);
-            distance = clamp(minDistance + relDistance * newRange, minDistance, maxDistance);
+            targetDistance = Utils.clamp(minDistance + relTarget * newRange, minDistance, maxDistance);
+            distance = Utils.clamp(minDistance + relDistance * newRange, minDistance, maxDistance);
         } else {
-            targetDistance = clamp(targetDistance, minDistance, maxDistance);
-            distance = clamp(distance, minDistance, maxDistance);
+            targetDistance = Utils.clamp(targetDistance, minDistance, maxDistance);
+            distance = Utils.clamp(distance, minDistance, maxDistance);
         }
     }
 
@@ -144,7 +125,7 @@ public final class CameraPlanetOrbit {
         if (!active) {
             return;
         }
-        targetDistance = clamp(targetDistance * Math.pow(ZOOM_STEP_FACTOR, scrollDelta), minDistance, maxDistance);
+        targetDistance = Utils.clamp(targetDistance * Math.pow(ZOOM_STEP_FACTOR, scrollDelta), minDistance, maxDistance);
     }
 
     public static void handleDrag(double dragX, double dragY) {
@@ -152,7 +133,7 @@ public final class CameraPlanetOrbit {
             return;
         }
         orbitYaw += dragX * DRAG_SENSITIVITY;
-        orbitPitch = clamp(orbitPitch + dragY * DRAG_SENSITIVITY, -89.0D, 89.0D);
+        orbitPitch = Utils.clamp(orbitPitch + dragY * DRAG_SENSITIVITY, -89.0D, 89.0D);
     }
 
     @SubscribeEvent
@@ -180,10 +161,8 @@ public final class CameraPlanetOrbit {
         }
     }
 
-    @SubscribeEvent
-    public static void onComputeCameraAngles(ViewportEvent.ComputeCameraAngles event) {
-
-        if (!active || !reflectionAvailable) {
+    public static void applyCameraTransform(Camera camera) {
+        if (!active) {
             return;
         }
 
@@ -206,19 +185,8 @@ public final class CameraPlanetOrbit {
         float lookYaw = (float) Math.toDegrees(Math.atan2(-dir.x, dir.z));
         float lookPitch = (float) Math.toDegrees(-Math.atan2(dir.y, horizontalDist));
 
-        try {
-            setPositionMethod.invoke(event.getCamera(), cameraPos);
-            setRotationMethod.invoke(event.getCamera(), lookYaw, lookPitch);
-        } catch (Exception e) {
-            deactivate();
-            return;
-        }
-
-        event.setYaw(lookYaw);
-        event.setPitch(lookPitch);
-    }
-
-    private static double clamp(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
+        CameraInvoker invoker = (CameraInvoker) camera;
+        invoker.callSetPosition(cameraPos.x, cameraPos.y, cameraPos.z);
+        invoker.callSetRotation(lookYaw, lookPitch);
     }
 }

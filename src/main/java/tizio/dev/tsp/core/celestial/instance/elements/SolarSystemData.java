@@ -1,5 +1,6 @@
 package tizio.dev.tsp.core.celestial.instance.elements;
 
+import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
 import tizio.dev.tsp.core.celestial.instance.elements.sun.SunInstance;
 
@@ -8,13 +9,15 @@ import java.util.List;
 
 public class SolarSystemData {
 
-    public String id = "new_system";
-    public String dimension = "tsp:space";
-    public double originX = 0.0;
-    public double originY = 500.0;
-    public double originZ = 0.0;
-    public float globalScale = 5.5F;
-    public float gravity = 0.0F;
+    public static final String DEFAULT_SPACE_DIMENSION = DataConfig.System.DEFAULT_SPACE_DIMENSION;
+
+    public String id = DataConfig.System.DEFAULT_SYSTEM_ID;
+    public String dimension = DEFAULT_SPACE_DIMENSION;
+    public double originX = DataConfig.System.ORIGIN_DEF.x;
+    public double originY = DataConfig.System.ORIGIN_DEF.y;
+    public double originZ = DataConfig.System.ORIGIN_DEF.z;
+    public float globalScale = DataConfig.System.SCALE.defF();
+    public float gravity = (float) DataConfig.System.GRAVITY_DEF;
 
     public SunInstance.Config star = new SunInstance.Config();
     public List<PlanetInstance.Config> bodies = new ArrayList<>();

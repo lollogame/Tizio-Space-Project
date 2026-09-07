@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:blasting",
+  "category": "misc",
+  "cookingtime": 60,
+  "experience": 1.0,
+  "ingredient": {
+    "item": "tsp:venus_alluminium_ore"
+  },
+  "result": "tsp:alluminium_ingot"
+}

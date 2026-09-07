@@ -9,15 +9,14 @@ import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
+import tizio.dev.tsp.core.utils.Utils;
 
 import java.util.HashMap;
 import java.util.Map;
 
-
 public final class GravityManager {
 
-    /** Standard gravitational acceleration on Earth (9.80665 m/s²). */
-    public static final double EARTH_GRAVITY_MS2 = 9.80665D;
+    public static final double EARTH_GRAVITY_MS2 = 9.80665D; //dio bon
 
     public static final double VANILLA_LIVING_GRAVITY = 0.08D;
     public static final double VANILLA_ITEM_GRAVITY = 0.04D;
@@ -31,20 +30,23 @@ public final class GravityManager {
         DEFAULT_GRAVITY_MAP.put("tsp:space", 0.0D);
         DEFAULT_GRAVITY_MAP.put("tsp:moon", 1.62D);
         DEFAULT_GRAVITY_MAP.put("tsp:mars", 3.72D);
+        DEFAULT_GRAVITY_MAP.put("tsp:venus", 8.87D);
     }
-
-    private GravityManager() {}
 
     public static double getGravityMs2(Level level) {
         if (level == null) return EARTH_GRAVITY_MS2;
 
         CelestialJsonLoader.ensureLoaded();
 
-        String dimId = level.dimension().location().toString();
+        String dimId = Utils.getDimensionId(level);
 
         Float jsonGravity = CelestialJsonLoader.getGravityForDimension(dimId);
         if (jsonGravity != null) {
             return Math.max(0.0D, jsonGravity.doubleValue());
+        }
+
+        if (CelestialJsonLoader.isSpaceDimension(dimId)) {
+            return 0.0D;
         }
 
         return DEFAULT_GRAVITY_MAP.getOrDefault(dimId, EARTH_GRAVITY_MS2);

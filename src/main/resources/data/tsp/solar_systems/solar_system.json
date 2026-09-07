@@ -11,13 +11,8 @@
   "star": {
     "id": "sun",
     "type": "star",
-    "radius": 2000.0,
-    "color": "#FFF1B7",
-    "rotation": {
-      "yaw": -31.5,
-      "pitch": 14.594595,
-      "roll": -12.0
-    }
+    "radius": 1000.0,
+    "color": "#FFF1B7"
   },
   "bodies": [
     {
@@ -36,7 +31,7 @@
         "periodDays": 87.97,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
-        "inclination": 7.0,
+        "inclination": 7.004999999999981,
         "ascendingNode": 0.0
       }
     },
@@ -50,7 +45,7 @@
       "temperature": 1.0,
       "radius": 320.0,
       "texture": "venus",
-      "color": "#a5f0ee",
+      "color": "#FFBB22",
       "spinHours": 24.0,
       "sky": {
         "skyboxRotation": true,
@@ -67,35 +62,37 @@
         "color": "#B77C00",
         "shape": "CYLINDER",
         "startDistance": -20.39801,
-        "endDistance": 280.88
+        "endDistance": 280.88,
+        "useRenderDistance": true
       },
       "orbit": {
         "radius": 14556.962025316438,
         "periodDays": 224.7,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
-        "inclination": 3.3900000000000006,
+        "inclination": 3.394999999999996,
         "ascendingNode": 0.0
       },
       "atmosphere": {
         "enabled": true,
-        "thickness": 0.33691984,
-        "exposure": 2.6063292,
-        "intensity": 0.42563292,
-        "rayleighScaleHeight": 0.06942827,
+        "thickness": 0.14995727,
+        "exposure": 2.1962025,
+        "intensity": 0.7,
+        "rayleighScaleHeight": 0.0913,
         "rayleighStrength": 0.0312,
+        "color": "#FFB35C",
         "wavelengths": [
-          601.0549,
-          745.35864,
-          865.6118
+          686.6667,
+          614.7826,
+          504.6154
         ]
       },
       "clouds": {
         "enabled": true,
         "texture": "noise2",
         "height": 0.008035353,
-        "density": 0.87777776,
-        "windSpeed": 0.0045,
+        "density": 0.8388889,
+        "windSpeed": 0.1780822,
         "color": "#FFBF4B",
         "noiseScale": 0.3
       }
@@ -111,7 +108,7 @@
       "radius": 335.0,
       "texture": "earth_mat_0",
       "nightTexture": "earth_mat_1",
-      "color": "#a5f0ee",
+      "color": "#00F42F",
       "rotation": {
         "yaw": 0.0,
         "pitch": 23.5,
@@ -146,15 +143,16 @@
       },
       "atmosphere": {
         "enabled": true,
-        "thickness": 0.16402954,
-        "exposure": 3.25,
-        "intensity": 0.49678716,
-        "rayleighScaleHeight": 0.0913,
-        "rayleighStrength": 0.0312,
+        "thickness": 0.07444444,
+        "exposure": 2.1962025,
+        "intensity": 0.67128515,
+        "rayleighScaleHeight": 0.1351614,
+        "rayleighStrength": 0.03190101,
+        "color": "#FFFFFF",
         "wavelengths": [
-          661.46,
-          543.4,
-          446.6
+          833.3333,
+          614.7826,
+          497.69232
         ]
       },
       "clouds": {
@@ -162,7 +160,7 @@
         "texture": "noise1",
         "height": 0.007030303,
         "density": 0.6666667,
-        "windSpeed": 0.0025,
+        "windSpeed": 0.10502283,
         "color": "#ffffff",
         "noiseScale": 0.35
       }
@@ -177,7 +175,7 @@
       "temperature": 0.0176,
       "radius": 300.0,
       "texture": "mars",
-      "color": "#a5f0ee",
+      "color": "#FF4D26",
       "spinHours": 24.6,
       "sky": {
         "skyboxRotation": true,
@@ -202,29 +200,30 @@
         "periodDays": 686.98,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
-        "inclination": 1.8499999999999943,
+        "inclination": 1.850999999999999,
         "ascendingNode": 0.0
       },
       "atmosphere": {
         "enabled": true,
-        "thickness": 0.14516878,
-        "exposure": 2.7525315,
-        "intensity": 0.413038,
+        "thickness": 0.087692305,
+        "exposure": 2.3481014,
+        "intensity": 0.43493977,
         "rayleighScaleHeight": 0.0913,
-        "rayleighStrength": 0.07912626,
+        "rayleighStrength": 0.039230302,
+        "color": "#FFD3C7",
         "wavelengths": [
-          721.30804,
-          761.3924,
-          629.11395
+          600.0,
+          575.65216,
+          490.76923
         ]
       },
       "clouds": {
         "enabled": true,
         "texture": "noise3",
-        "height": 0.014065657,
+        "height": 0.001,
         "density": 0.7,
-        "windSpeed": 0.0025,
-        "color": "#ffffff",
+        "windSpeed": 0.15981735,
+        "color": "#FFFFFF",
         "noiseScale": 0.1
       }
     },
@@ -237,7 +236,7 @@
       "temperature": -0.5,
       "radius": 486.0,
       "texture": "jupiter",
-      "color": "#a5f0ee",
+      "color": "#FFD96B",
       "rotation": {
         "yaw": 0.0,
         "pitch": 8.35443,
@@ -249,20 +248,21 @@
         "periodDays": 4332.59,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
-        "inclination": 1.2999999999999972,
+        "inclination": 1.3040000000000163,
         "ascendingNode": 0.0
       },
       "atmosphere": {
         "enabled": true,
-        "thickness": 0.324346,
-        "exposure": 3.25,
-        "intensity": 0.43822786,
-        "rayleighScaleHeight": 0.085219406,
-        "rayleighStrength": 0.0942,
+        "thickness": 0.051923078,
+        "exposure": 2.699367,
+        "intensity": 0.55200803,
+        "rayleighScaleHeight": 0.2,
+        "rayleighStrength": 0.053430807,
+        "color": "#C0F5FF",
         "wavelengths": [
-          913.7131,
-          977.8481,
-          1070.0422
+          660.0,
+          755.65216,
+          830.0
         ]
       }
     },
@@ -287,26 +287,27 @@
         "periodDays": 10759.22,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
-        "inclination": 2.4899999999999807,
+        "inclination": 2.4849999999999994,
         "ascendingNode": 0.0
       },
       "atmosphere": {
         "enabled": true,
-        "thickness": 0.095641024,
-        "exposure": 2.9462025,
-        "intensity": 0.5497992,
+        "thickness": 0.08239316,
+        "exposure": 3.25,
+        "intensity": 0.49678716,
         "rayleighScaleHeight": 0.0913,
-        "rayleighStrength": 0.0942,
+        "rayleighStrength": 0.01999091,
+        "color": "#FFFEFE",
         "wavelengths": [
-          1310.5486,
-          1398.7341,
-          929.7468
+          760.0,
+          646.087,
+          573.8461
         ]
       },
       "ring": {
         "enabled": true,
-        "innerRadius": 596.96204,
-        "outerRadius": 925.23206,
+        "innerRadius": 1.2844445,
+        "outerRadius": 2.0967836,
         "texture": "saturn_ring",
         "rockTexture": "saturn_ring_rock",
         "color": "#ffffff",
@@ -318,8 +319,8 @@
         "rocksEnabled": true,
         "rockCount": 150000,
         "rockMinSize": 0.05,
-        "rockMaxSize": 1.1205128,
-        "rockHeight": 8.620689,
+        "rockMaxSize": 0.3525862,
+        "rockHeight": 2.2,
         "rockOrbitSpeed": 0.001
       }
     },
@@ -332,7 +333,7 @@
       "temperature": -0.8,
       "radius": 430.0,
       "texture": "uranus",
-      "color": "#FFFFFF",
+      "color": "#60FFFC",
       "rotation": {
         "yaw": -159.4,
         "pitch": 12.2,
@@ -344,26 +345,27 @@
         "periodDays": 30688.5,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
-        "inclination": 0.7699999999999818,
+        "inclination": 0.7729999999999819,
         "ascendingNode": 0.0
       },
       "atmosphere": {
         "enabled": true,
-        "thickness": 0.22679487,
+        "thickness": 0.06252137,
         "exposure": 3.25,
         "intensity": 0.7,
-        "rayleighScaleHeight": 0.0913,
+        "rayleighScaleHeight": 0.15470834,
         "rayleighStrength": 0.0942,
+        "color": "#87DCFF",
         "wavelengths": [
-          1178.27,
-          969.83124,
-          1000.0
+          1066.6666,
+          951.3043,
+          968.46155
         ]
       },
       "ring": {
         "enabled": true,
-        "innerRadius": 578.06964,
-        "outerRadius": 698.5232,
+        "innerRadius": 1.3055556,
+        "outerRadius": 1.6780702,
         "texture": "uranus_ring",
         "rockTexture": "uranus_ring_rock",
         "color": "#ffffff",
@@ -375,8 +377,8 @@
         "rocksEnabled": true,
         "rockCount": 50000,
         "rockMinSize": 0.05,
-        "rockMaxSize": 1.1915612,
-        "rockHeight": 7.3839664,
+        "rockMaxSize": 0.5,
+        "rockHeight": 3.0,
         "rockOrbitSpeed": 0.0015
       }
     },
@@ -389,7 +391,7 @@
       "temperature": -0.9,
       "radius": 496.0,
       "texture": "neptune",
-      "color": "#a5f0ee",
+      "color": "#2200EB",
       "rotation": {
         "yaw": 180.0,
         "pitch": 12.911392,
@@ -406,15 +408,16 @@
       },
       "atmosphere": {
         "enabled": true,
-        "thickness": 0.11373418,
-        "exposure": 2.1259494,
-        "intensity": 0.23251055,
-        "rayleighScaleHeight": 0.11995991,
-        "rayleighStrength": 0.018641414,
+        "thickness": 0.102264956,
+        "exposure": 3.25,
+        "intensity": 0.5188755,
+        "rayleighScaleHeight": 0.13849868,
+        "rayleighStrength": 0.044727273,
+        "color": "#61E3FF",
         "wavelengths": [
-          661.18146,
-          1174.2616,
-          1000.0
+          846.6667,
+          1045.2174,
+          871.53845
         ]
       }
     },
@@ -428,7 +431,7 @@
       "temperature": -0.8,
       "radius": 60.0,
       "texture": "moon",
-      "color": "#7fb8ff",
+      "color": "#0DFF04",
       "spinHours": 655.2,
       "sky": {
         "skyboxRotation": true,

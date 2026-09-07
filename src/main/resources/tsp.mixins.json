@@ -15,14 +15,16 @@
 
   ],
   "client": [
-    "render.DepthMixin",
 
+    "render.DepthMixin",
     "render.lighting.GameRendererMixin",
     "render.lighting.DiffuseLightingMixin",
     "render.lighting.ShadingLevelMixin",
-
+    "render.camera.CameraInvoker",
+    "render.camera.CameraMixin",
     "render.LevelRendererCloudsMixin",
     "render.FPSArmRenderMixin",
+
     "other.ReceivingLevelScreenMixin"
   ],
   "injectors": {

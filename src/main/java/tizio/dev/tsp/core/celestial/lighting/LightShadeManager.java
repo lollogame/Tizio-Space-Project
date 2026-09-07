@@ -10,6 +10,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.joml.Vector3f;
 import tizio.dev.tsp.core.celestial.instance.elements.sun.SunInstance;
 import tizio.dev.tsp.core.client.ClientRenderRegistries;
+import tizio.dev.tsp.core.data.CelestialJsonLoader;
 import tizio.dev.tsp.core.utils.Utils;
 
 import java.util.ArrayList;
@@ -19,64 +20,32 @@ import java.util.List;
 @OnlyIn(Dist.CLIENT)
 public final class LightShadeManager {
 
-    /**
-     * 1. INTENSITÀ DELLA LUCE EMESSA DAL SOLE (Luce diretta)
-     * - SUN_BASE_INTENSITY: moltiplicatore generale della luminosità della luce del Sole (default: 1.2F).
-     * - SUN_DIRECT_MIN_SHADE: luminosità base della faccia quando è colpita dal Sole (default: 0.50F).
-     * - SUN_DIRECT_FACTOR: fattore di incidenza angolare (Legge di Lambert, default: 0.50F).
-     *   (La luce della faccia esposta al Sole sarà: SUN_DIRECT_MIN_SHADE + SUN_DIRECT_FACTOR * dot, fino a 1.0F).
-     */
     public static float SUN_BASE_INTENSITY = 2.5F;
     public static float SUN_DIRECT_MIN_SHADE = 0.50F;
     public static float SUN_DIRECT_FACTOR = 0.50F;
 
-    /**
-     * 2. LIVELLO DI BUIO NELLE ZONE NON ILLUMINATE (Ombre nello spazio)
-     * - SHADOW_FACE_SHADE: luminosità delle facce dei blocchi non esposte al Sole / in ombra (default: 0.45F).
-     *   (Valori più bassi = ombre più scure/marcate, es. 0.30F; Valori più alti = ombre più chiare/morbide, es. 0.60F).
-     * - VOID_AMBIENT_R / G / B: luminosità minima assoluta del vuoto cosmico quando non c'è luce né Sole né torce.
-     */
-    public static float SHADOW_FACE_SHADE = 0.1F;
-    public static float VOID_AMBIENT_R = 0.020F;
-    public static float VOID_AMBIENT_G = 0.022F;
-    public static float VOID_AMBIENT_B = 0.035F;
+    public static float SHADOW_FACE_SHADE = 0.50F;
+    public static float VOID_AMBIENT_R = 0.05F;
+    public static float VOID_AMBIENT_G = 0.05F;
+    public static float VOID_AMBIENT_B = 0.05F;
 
-    /**
-     * 3. INTENSITÀ E POTENZA DELLE TORCE / LUCI ARTIFICIALI (Block Light)
-     * - TORCH_INTENSITY: moltiplicatore generale della potenza di illuminazione delle torce (default: 1.0F).
-     * - TORCH_BOOST_R / G / B: colore e forza del bagliore della torcia aggiunto alla lightmap.
-     * - TORCH_FALLOFF_EXPONENT: curva di attenuazione della torcia (default: 1.3F).
-     */
     public static float TORCH_INTENSITY = 1.0F;
-    public static float TORCH_BOOST_R = 0.70F;
-    public static float TORCH_BOOST_G = 0.50F;
-    public static float TORCH_BOOST_B = 0.30F;
+    public static float TORCH_BOOST_R = 0.0F;
+    public static float TORCH_BOOST_G = 0.0F;
+    public static float TORCH_BOOST_B = 0.0F;
     public static float TORCH_FALLOFF_EXPONENT = 1.3F;
 
-    /**
-     * 4. SHADING DELLE ENTITÀ E DEL GIOCATORE (Armature 3D, Mob, Oggetti in mano, Veicoli)
-     * - ENTITY_SUN_INTENSITY: forza della luce solare diretta sul lato esposto delle entità (default: 1.0F).
-     *   (Valori più alti, es. 1.3F o 1.5F, rendono il lato esposto al Sole più vivido e brillante).
-     * - ENTITY_SHADOW_FILL_INTENSITY: luce ambientale sul lato in ombra del giocatore/entità (default: 0.0F per ombra totale).
-     *   (Imposta a 0.2F - 0.4F se vuoi che il retro dell'armatura non sia completamente nero ma leggermente leggibile).
-     * - ENTITY_SECONDARY_STAR_INTENSITY: forza della seconda stella su entità nei sistemi binari/multi-stella (default: 0.5F).
-     */
     public static float ENTITY_SUN_INTENSITY = 1.0F;
     public static float ENTITY_SHADOW_FILL_INTENSITY = 0.0F;
     public static float ENTITY_SECONDARY_STAR_INTENSITY = 0.5F;
 
-    // =========================================================================================
+    public static final Vector3f primarySunDirection = new Vector3f(0.0F, 1.0F, 0.0F);
+    public static final Vector3f primarySunColor = new Vector3f(1.0F, 1.0F, 1.0F);
+    public static float primarySunIntensity = 1.0F;
 
-    private static final Vector3f DEFAULT_LIGHT_0 = new Vector3f(0.2F, 1.0F, -0.7F).normalize();
-    private static final Vector3f DEFAULT_LIGHT_1 = new Vector3f(0.0F, 0.0F, 0.0F);
-
-    private static final Vector3f primarySunDirection = new Vector3f(DEFAULT_LIGHT_0);
-    private static final Vector3f primarySunColor = new Vector3f(1.0F, 1.0F, 1.0F);
-    private static float primarySunIntensity = 1.0F;
-
-    private static final Vector3f secondarySunDirection = new Vector3f(DEFAULT_LIGHT_1);
-    private static final Vector3f secondarySunColor = new Vector3f(0.0F, 0.0F, 0.0F);
-    private static float secondarySunIntensity = 0.0F;
+    public static final Vector3f secondarySunDirection = new Vector3f(0.0F, 1.0F, 0.0F);
+    public static final Vector3f secondarySunColor = new Vector3f(0.0F, 0.0F, 0.0F);
+    public static float secondarySunIntensity = 0.0F;
 
     private static boolean spaceLightingActive = false;
     private static boolean renderingLevel = false;
@@ -87,7 +56,7 @@ public final class LightShadeManager {
     public static boolean isSpaceLightingActive() {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return false;
-        return Utils.inDimension("tsp:space");
+        return CelestialJsonLoader.isSpaceDimension(mc.level.dimension().location());
     }
 
     public static boolean isRenderingLevel() {
@@ -124,7 +93,6 @@ public final class LightShadeManager {
             return -((double) s.sunRadius() / Math.sqrt(distSq));
         }));
 
-
         SunInstance mainSun = suns.get(0);
         Vec3 toMainSun = mainSun.position().subtract(camPos);
         if (toMainSun.lengthSqr() < 1e-4) {
@@ -155,11 +123,13 @@ public final class LightShadeManager {
         }
     }
 
+    @Deprecated
     public static Vector3f getPrimarySunDirection() {
         ensureUpdated();
         return primarySunDirection;
     }
 
+    @Deprecated
     public static Vector3f getSecondarySunDirection() {
         ensureUpdated();
         return secondarySunDirection;
@@ -186,11 +156,11 @@ public final class LightShadeManager {
             return new Vector3f(0.0F, 0.0F, 0.0F);
         }
     }
-
+    @Deprecated
     public static Vector3f getPrimarySunColor() {
         return primarySunColor;
     }
-
+    @Deprecated
     public static float getPrimarySunIntensity() {
         return primarySunIntensity;
     }

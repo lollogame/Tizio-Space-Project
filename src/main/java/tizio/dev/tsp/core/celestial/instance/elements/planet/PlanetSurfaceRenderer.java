@@ -61,7 +61,6 @@ public final class PlanetSurfaceRenderer {
         VolumeRenderUtil.setFloat(shader, "UseNightTexture", instance.hasNightTexture() ? 1.0F : 0.0F);
         VolumeRenderUtil.setFloat(shader, "EmissiveStrength", instance.emissiveStrength());
         VolumeRenderUtil.setVec3(shader, "LightDirection", lightLocal);
-
         VolumeRenderUtil.setFloat(shader, "Time", timeSeconds);
         VolumeRenderUtil.setFloat(shader, "SurfaceRotation", instance.surfaceRotationAngle(timeSeconds));
         VolumeRenderUtil.setFloat(shader, "CloudsEnabled", instance.hasClouds() ? 1.0F : 0.0F);
@@ -70,7 +69,6 @@ public final class PlanetSurfaceRenderer {
         VolumeRenderUtil.setFloat(shader, "CloudWindSpeed", instance.cloudWindSpeed());
         VolumeRenderUtil.setFloat(shader, "CloudNoiseScale", instance.cloudNoiseScale());
         VolumeRenderUtil.setVec4(shader, "CloudColor", instance.cloudColor().x(), instance.cloudColor().y(), instance.cloudColor().z(), instance.cloudAlpha());
-
         VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation(instance.dayTexture()), 0);
         VolumeRenderUtil.setSampler(shader, "Sampler1", Materials.resolveTextureLocation(instance.hasNightTexture() ? instance.nightTexture() : instance.dayTexture()), 1);
         VolumeRenderUtil.setSampler(shader, "Sampler2", Materials.resolveTextureLocation(instance.hasClouds() ? instance.cloudTexture() : "noise1"), 2);
@@ -87,6 +85,8 @@ public final class PlanetSurfaceRenderer {
         if (VolumeRenderUtil.PLANET_SHADOW_CAST) {
             Vector3f lightWorldDir = new Vector3f(instance.lightDirection()).normalize();
 
+            double distanceToSun = instance.position().length();
+
             for (PlanetInstance.SurfaceInstance other : ClientRenderRegistries.PLANETS_SURFACES.instances()) {
                 if (other == instance) continue;
                 if (shadowCount >= maxShadows) break;
@@ -94,7 +94,8 @@ public final class PlanetSurfaceRenderer {
                 net.minecraft.world.phys.Vec3 relPos = other.position().subtract(instance.position());
 
                 float dotLight = (float) (relPos.x * lightWorldDir.x() + relPos.y * lightWorldDir.y() + relPos.z * lightWorldDir.z());
-                if (dotLight <= 0.0F) continue;
+
+                if (dotLight <= 0.0F || dotLight >= distanceToSun) continue;
 
                 float relDistSq = (float) relPos.lengthSqr();
                 float distSq = relDistSq - dotLight * dotLight;
@@ -126,7 +127,6 @@ public final class PlanetSurfaceRenderer {
         Matrix4f pose = poseStack.last().pose();
         VertexConsumer consumer = bufferSource.getBuffer(ClientRenderTypes.planetSurface());
         VolumeRenderUtil.renderCube(consumer, pose, volume, halfExtent);
-
 
         bufferSource.endBatch(ClientRenderTypes.planetSurface());
 

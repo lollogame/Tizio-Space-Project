@@ -9,10 +9,8 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.culling.Frustum;
-import net.minecraft.resources.ResourceLocation;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
-import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.client.ClientRenderRegistries;
 import tizio.dev.tsp.core.client.ClientRenderTypes;
 import tizio.dev.tsp.core.utils.Materials;
@@ -43,19 +41,16 @@ public final class BlackHoleRenderer {
         PreparedVolume volume = VolumeRenderUtil.prepareVolume(instance, camera, poseStack);
 
         VolumeRenderUtil.setFloat(shader, "Time", timeSeconds);
-        VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation("noise4"), 0);
-
+        VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation("blackhole_noise"), 0);
         VolumeRenderUtil.setFloat(shader, "EffectRadius", instance.radius());
         VolumeRenderUtil.setFloat(shader, "DiskRotationSpeed", instance.diskRotationSpeed());
         VolumeRenderUtil.setFloat(shader, "Intensity", instance.intensity());
         VolumeRenderUtil.setVec3(shader, "BaseColor", instance.color());
         VolumeRenderUtil.setVec3(shader, "CameraLocalPos", volume.cameraLocalPos());
-
         VolumeRenderUtil.setVec3(shader, "CenterRelative", volume.centerRelativeView());
         VolumeRenderUtil.setVec3(shader, "AxisX", volume.axisXView());
         VolumeRenderUtil.setVec3(shader, "AxisY", volume.axisYView());
         VolumeRenderUtil.setVec3(shader, "AxisZ", volume.axisZView());
-
 
         Matrix4f projection = RenderSystem.getProjectionMatrix();
         int vpWidth = Minecraft.getInstance().getWindow().getWidth();
@@ -69,7 +64,6 @@ public final class BlackHoleRenderer {
         if (scissor != null) {
             VolumeRenderUtil.enableScissor(scissor);
         }
-
 
         Matrix4f pose = poseStack.last().pose();
         VertexConsumer consumer = bufferSource.getBuffer(ClientRenderTypes.blackHole());

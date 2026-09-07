@@ -14,8 +14,6 @@ import tizio.dev.tsp.core.network.SyncPlayerStatusPacket;
 @Mod.EventBusSubscriber(modid = MainClass.MODID)
 public final class OxygenEventHandler {
 
-    private OxygenEventHandler() {}
-
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide()) {

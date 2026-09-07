@@ -19,5 +19,4 @@ public class SandBlock extends FallingBlock {
         return adiacentsBlocks.getBlock() == this || super.skipRendering(state, adiacentsBlocks, dir);
     }
 
-
 }

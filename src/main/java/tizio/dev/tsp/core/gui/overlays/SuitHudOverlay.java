@@ -79,9 +79,6 @@ public final class SuitHudOverlay {
         RenderSystem.disableBlend();
     }
 
-    /* ========================================================================= */
-    /* 0. FULLSCREEN VISOR BACKGROUND OVERLAY                                    */
-    /* ========================================================================= */
     private static void drawVisorBackgroundOverlay(GuiGraphics g, int screenW, int screenH) {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
@@ -89,33 +86,23 @@ public final class SuitHudOverlay {
         g.blit(VISOR_BACKGROUND_OVERLAY, 0, 0, 0.0F, 0.0F, screenW, screenH, screenW, screenH);
     }
 
-    /* ========================================================================= */
-    /* 1. VISOR FRAME BRACKETS                                                   */
-    /* ========================================================================= */
     private static void drawVisorFrame(GuiGraphics g, int screenW, int screenH) {
         int color = SuitHudTheme.VISOR_BRACKET;
         int len = 20;
 
-        // Top-Left
         g.fill(6, 6, 6 + len, 7, color);
         g.fill(6, 6, 7, 6 + len, color);
 
-        // Top-Right
         g.fill(screenW - 6 - len, 6, screenW - 6, 7, color);
         g.fill(screenW - 7, 6, screenW - 6, 6 + len, color);
 
-        // Bottom-Left
         g.fill(6, screenH - 7, 6 + len, screenH - 6, color);
         g.fill(6, screenH - 6 - len, 7, screenH - 6, color);
 
-        // Bottom-Right
         g.fill(screenW - 6 - len, screenH - 7, screenW - 6, screenH - 6, color);
         g.fill(screenW - 7, screenH - 6 - len, screenW - 6, screenH - 6, color);
     }
 
-    /* ========================================================================= */
-    /* 2. TOP COMPASS TAPE & HEADING (NSWE + Degrees)                            */
-    /* ========================================================================= */
     private static void drawTopCompassTape(GuiGraphics g, Font font, Player player, int screenW) {
         int tapeW = 200;
         int tapeH = 12;
@@ -127,15 +114,12 @@ public final class SuitHudOverlay {
 
         int centerX = tapeX + (tapeW / 2);
 
-        // Heading digital readout above tape
         String headNum = String.format("%03.0f°", northYaw);
         int hnW = font.width(headNum);
-        g.drawString(font, headNum, centerX - (hnW / 2), tapeY - 1, SuitHudTheme.AMBER_BRIGHT, SuitHudTheme.TEXT_SHADOW);
 
-        // Horizontal tape baseline
+        g.drawString(font, headNum, centerX - (hnW / 2), tapeY - 1, SuitHudTheme.AMBER_BRIGHT, SuitHudTheme.TEXT_SHADOW);
         g.fill(tapeX, tapeY + 9, tapeX + tapeW, tapeY + 10, SuitHudTheme.AMBER_SUB);
 
-        // Fast scissor bounds
         double scale = mc.getWindow().getGuiScale();
         int scissorX = (int) (tapeX * scale);
         int scissorY = (int) ((mc.getWindow().getGuiScaledHeight() - (tapeY + tapeH + 9)) * scale);
@@ -169,14 +153,10 @@ public final class SuitHudOverlay {
 
         RenderSystem.disableScissor();
 
-        // Center reticle marker
         g.fill(centerX - 1, tapeY + 7, centerX + 1, tapeY + 8, SuitHudTheme.TEXT_HIGHLIGHT);
         g.fill(centerX, tapeY + 8, centerX + 1, tapeY + 11, SuitHudTheme.TEXT_HIGHLIGHT);
     }
 
-    /* ========================================================================= */
-    /* 3. TOP-LEFT: VECTOR TELEMETRY BLOCK                                       */
-    /* ========================================================================= */
     private static void drawTopLeftTelemetry(GuiGraphics g, Font font, Player player) {
         int x = 14;
         int y = 14;
@@ -229,16 +209,11 @@ public final class SuitHudOverlay {
         return "NW";
     }
 
-    /* ========================================================================= */
-    /* 4. MID-LEFT: LIFE SUPPORT & VITALS (VECTOR STYLE)                         */
-    /* ========================================================================= */
     private static void drawMidLeftVitals(GuiGraphics g, Font font, Player player, float oxygen, float temperature, float envTemp, boolean hasSuit) {
         int x = 14;
         int y = 78;
 
-        // Header + Vector mini lines
         g.drawString(font, "▶ [ Life Support ]", x, y, SuitHudTheme.AMBER_PRIMARY, SuitHudTheme.TEXT_SHADOW);
-
         g.fill(x, y + 9, x + 118, y + 10, SuitHudTheme.AMBER_DIM);
 
         int rowY = y + 13;
@@ -250,25 +225,21 @@ public final class SuitHudOverlay {
         g.drawString(font, o2Pct, x + 104, rowY, o2Col, SuitHudTheme.TEXT_SHADOW);
         rowY += 9;
 
-        // Body Temp in °C
         float coreC = SuitHudTheme.toCelsiusBody(temperature);
         int tempCol = SuitHudTheme.getTemperatureColor(temperature);
         drawTelemetryRow(g, font, "BODY", String.format("%.1f°C", coreC), x, rowY, tempCol);
         rowY += 9;
 
-        // Ambient Temp in °C
         float ambC = SuitHudTheme.toCelsiusAmbient(envTemp);
         int ambCol = SuitHudTheme.getTemperatureColor(envTemp);
         drawTelemetryRow(g, font, "AMB", String.format("%.0f°C", ambC), x, rowY, ambCol);
         rowY += 9;
 
-        // Pulse (BPM)
         int bpm = calculatePlayerHeartRate(player, oxygen);
         int pulseCol = SuitHudTheme.getHeartRateColor(bpm);
         drawTelemetryRow(g, font, "PULSE", bpm + " BPM", x, rowY, pulseCol);
         rowY += 9;
 
-        // Suit Seal Status
         String sealStr = hasSuit ? "SEALED" : "BREACH / EXPOSED";
         int sealCol = hasSuit ? SuitHudTheme.EMERALD_GREEN : SuitHudTheme.ALERT_RED;
         drawTelemetryRow(g, font, "SUIT", sealStr, x, rowY, sealCol);
@@ -279,7 +250,6 @@ public final class SuitHudOverlay {
         g.drawString(font, val, x + 44, y, valColor, SuitHudTheme.TEXT_SHADOW);
     }
 
-
     private static void drawVectorBar(GuiGraphics g, int x, int y, int w, int h, float percent, int fgColor) {
         g.fill(x, y, x + w, y + h, SuitHudTheme.AMBER_FAINT);
 
@@ -288,23 +258,17 @@ public final class SuitHudOverlay {
             g.fill(x, y, x + filledW, y + h, fgColor);
         }
 
-        // Segment dividers
         for (int i = 1; i <= 4; i++) {
             int divX = x + (i * w / 5);
             g.fill(divX, y, divX + 1, y + h, SuitHudTheme.AMBER_SUB);
         }
 
-        // 1px Border
         g.fill(x, y, x + w, y + 1, SuitHudTheme.AMBER_DIM);
         g.fill(x, y + h - 1, x + w, y + h, SuitHudTheme.AMBER_DIM);
         g.fill(x, y, x + 1, y + h, SuitHudTheme.AMBER_DIM);
         g.fill(x + w - 1, y, x + w, y + h, SuitHudTheme.AMBER_DIM);
     }
 
-
-    /* ========================================================================= */
-    /* 6. RIGHT SIDE: VERTICAL ALTITUDE LADDER (ALT - Y)                         */
-    /* ========================================================================= */
     private static void drawRightAltitudeLadder(GuiGraphics g, Font font, Player player, int screenW, int screenH) {
         int ladderX = screenW - 38;
         int ladderY = (screenH / 2) - 40;
@@ -312,7 +276,6 @@ public final class SuitHudOverlay {
 
         g.drawString(font, "ALT - Y", ladderX - 14, ladderY - 12, SuitHudTheme.AMBER_DIM, SuitHudTheme.TEXT_SHADOW);
 
-        // Vertical tape line
         g.fill(ladderX, ladderY, ladderX + 1, ladderY + ladderH, SuitHudTheme.AMBER_SUB);
 
         int playerY = (int) player.getY();
@@ -349,9 +312,6 @@ public final class SuitHudOverlay {
         return String.valueOf(altitude);
     }
 
-    /* ========================================================================= */
-    /* 7. BOTTOM-RIGHT: ARMOR & SYSTEMS INTEGRITY                                */
-    /* ========================================================================= */
     private static void drawBottomRightArmorIntegrity(GuiGraphics g, Font font, Player player, int screenW, int screenH, boolean hasSuit) {
         int x = screenW - 116;
         int y = screenH - 75;
@@ -361,14 +321,12 @@ public final class SuitHudOverlay {
 
         int rowY = y + 13;
 
-        // Overall Suit Durability Bar
         int suitPct = calculateAverageSuitDurability(player);
         int barCol = suitPct > 50 ? SuitHudTheme.AMBER_PRIMARY : (suitPct > 20 ? SuitHudTheme.ALERT_AMBER : SuitHudTheme.ALERT_RED);
         drawVectorBar(g, x, rowY + 1, 60, 5, suitPct / 100.0F, barCol);
         g.drawString(font, suitPct + "%", x + 66, rowY, barCol, SuitHudTheme.TEXT_SHADOW);
         rowY += 9;
 
-        // Individual Armor Pieces Readout
         drawArmorPieceRow(g, font, "HELM", player.getItemBySlot(EquipmentSlot.HEAD), x, rowY); rowY += 8;
         drawArmorPieceRow(g, font, "CHEST", player.getItemBySlot(EquipmentSlot.CHEST), x, rowY); rowY += 8;
         drawArmorPieceRow(g, font, "LEGS", player.getItemBySlot(EquipmentSlot.LEGS), x, rowY); rowY += 8;

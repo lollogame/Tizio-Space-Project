@@ -28,9 +28,17 @@ public class TSPBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
+
+        java.util.Set<String> oreNames = new java.util.HashSet<>();
+        for (OreProperties oreProps : RegisterBlocks.RegisterOres.ORES.keySet()) {
+            oreNames.add(oreProps.name());
+        }
+
         for (BlockFactory builder : RegisterBlocks.BUILDERS.values()) {
 
             String name = builder.getName();
+            if (oreNames.contains(name)) continue;
+
             Block mainBlock = ForgeRegistries.BLOCKS.getValue(ResourceLocation.fromNamespaceAndPath(MainClass.MODID, name));
 
             if (mainBlock == null) continue;

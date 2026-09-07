@@ -16,6 +16,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
+import tizio.dev.tsp.core.utils.Utils;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,22 +29,8 @@ public final class SpaceTransitionHandler {
     public static final float REENTRY_ALTITUDE = 490.0f;
     public static final int TELEPORT_COOLDOWN_TICKS = 80;
 
-    /**
-     * Where in the atmosphere the transition triggers (for planets with atmosphere):
-     *  0.0 = At the planet SURFACE (ground level, exact physical surface).
-     *  0.5 = Halfway through the atmosphere.
-     *  1.0 = At the top / outer edge of the visual atmosphere.
-     */
     public static double ATMOSPHERE_ENTRY_PERCENT = 0.0;
-
-    /**
-     * Multiplier on the planet surface radius (proportional to every planet/moon):
-     *  1.0 = Exactly at the visual surface (touching surface).
-     *  0.98 = Slightly clipped into the surface (2% inside).
-     */
     public static double SURFACE_ENTRY_FACTOR = 1.0;
-
-
     public static double SPACE_SPAWN_BUFFER = 0.01;
 
     public static final String COOLDOWN_TAG = "tsp_teleport_cooldown";
@@ -52,7 +39,6 @@ public final class SpaceTransitionHandler {
 
     private SpaceTransitionHandler() {}
 
-
     public static double getEntryRadius(CelestialJsonLoader.BodySpatialInfo bodyInfo) {
         double physRadius = bodyInfo.physicalRadius();
         var body = bodyInfo.body();
@@ -60,7 +46,7 @@ public final class SpaceTransitionHandler {
 
         if (hasAtmosphere && ATMOSPHERE_ENTRY_PERCENT > 0.0) {
             double visualRadius = bodyInfo.visualRadius();
-            double targetRadius = physRadius + (visualRadius - physRadius) * Math.min(1.0, Math.max(0.0, ATMOSPHERE_ENTRY_PERCENT));
+            double targetRadius = physRadius + (visualRadius - physRadius) * Utils.clamp(ATMOSPHERE_ENTRY_PERCENT, 0.0, 1.0);
             return targetRadius * SURFACE_ENTRY_FACTOR;
         }
 
@@ -108,7 +94,7 @@ public final class SpaceTransitionHandler {
             return;
         }
 
-        if (living.isVehicle() || living.getY() >= ESCAPE_ALTITUDE || (MainClass.MODID+":space").equals(living.level().dimension().location().toString())) {
+        if (living.isVehicle() || living.getY() >= ESCAPE_ALTITUDE || CelestialJsonLoader.isSpaceDimension(living.level().dimension().location())) {
             checkTransition(living);
         }
     }
@@ -128,7 +114,7 @@ public final class SpaceTransitionHandler {
         }
 
         ResourceLocation currentDim = serverLevel.dimension().location();
-        boolean inSpace = (MainClass.MODID+":space").equals(currentDim.toString());
+        boolean inSpace = CelestialJsonLoader.isSpaceDimension(currentDim);
         Instant now = Instant.now();
 
         if (inSpace) {
@@ -146,7 +132,12 @@ public final class SpaceTransitionHandler {
         entity.getPersistentData().putDouble(LAST_PLANET_X_TAG, entity.getX());
         entity.getPersistentData().putDouble(LAST_PLANET_Z_TAG, entity.getZ());
 
-        ResourceKey<Level> spaceDimKey = ResourceKey.create(Registries.DIMENSION, new ResourceLocation(MainClass.MODID, "space"));
+        String targetSpaceDim = CelestialJsonLoader.getSpaceDimensionForBodyDimension(currentDim.toString());
+        ResourceLocation spaceDimLoc = ResourceLocation.tryParse(targetSpaceDim);
+        if (spaceDimLoc == null) {
+            spaceDimLoc = new ResourceLocation(MainClass.MODID, "space");
+        }
+        ResourceKey<Level> spaceDimKey = ResourceKey.create(Registries.DIMENSION, spaceDimLoc);
         ServerLevel spaceLevel = server.getLevel(spaceDimKey);
         if (spaceLevel == null) {
             return;
@@ -156,6 +147,7 @@ public final class SpaceTransitionHandler {
 
         Vec3 spawnPos;
         Vec3 spaceVel;
+
         if (bodyInfo != null) {
             Vec3 planetPos = bodyInfo.spacePosition();
             double spawnRadius = getSpaceSpawnRadius(bodyInfo);
@@ -166,12 +158,13 @@ public final class SpaceTransitionHandler {
             spawnPos = planetPos.add(unitDir.scale(spawnRadius));
 
             Vec3 curVel = entity.getDeltaMovement();
-            double speed = Math.max(0.15, Math.min(1.2, curVel.length() > 0.05 ? curVel.length() * 0.5 : 0.25));
+            double speed = Utils.clamp(curVel.length() > 0.05 ? curVel.length() * 0.5 : 0.25, 0.15, 1.2);
             spaceVel = unitDir.scale(speed);
+
         } else {
             spawnPos = new Vec3(0.0, 500.0, 0.0);
             Vec3 curVel = entity.getDeltaMovement();
-            spaceVel = new Vec3(curVel.x * 0.5, Math.max(0.1, Math.min(1.0, curVel.y * 0.5)), curVel.z * 0.5);
+            spaceVel = new Vec3(curVel.x * 0.5, Utils.clamp(curVel.y * 0.5, 0.1, 1.0), curVel.z * 0.5);
         }
 
         SpaceTeleporter teleporter = new SpaceTeleporter(spawnPos, spaceVel, entity.getYRot(), entity.getXRot(), true);
@@ -179,27 +172,54 @@ public final class SpaceTransitionHandler {
     }
 
     private static void handleSpaceToPlanet(Entity entity, ServerLevel spaceLevel, MinecraftServer server, Instant now) {
-        List<CelestialJsonLoader.BodySpatialInfo> dimensionBodies = CelestialJsonLoader.getDimensionBodiesInSpace(now);
-        if (dimensionBodies.isEmpty()) {
+
+        String currentSpaceDimId = spaceLevel.dimension().location().toString();
+        List<CelestialJsonLoader.BodySpatialInfo> spaceBodies = CelestialJsonLoader.getDimensionBodiesInSpace(currentSpaceDimId, now);
+        if (spaceBodies.isEmpty()) {
             return;
         }
 
-        Vec3 entityPos = entity.position();
+        Entity rootEntity = entity.getRootVehicle();
+        Vec3 entityPos = rootEntity.position();
 
-        for (CelestialJsonLoader.BodySpatialInfo bodyInfo : dimensionBodies) {
+        for (CelestialJsonLoader.BodySpatialInfo bodyInfo : spaceBodies) {
             double entryRadius = getEntryRadius(bodyInfo);
             double distSq = entityPos.distanceToSqr(bodyInfo.spacePosition());
 
             if (distSq <= entryRadius * entryRadius) {
-                ResourceLocation targetDimLoc = ResourceLocation.tryParse(bodyInfo.dimension());
-                if (targetDimLoc == null) {
-                    continue;
+
+                ServerLevel targetLevel = null;
+                if (bodyInfo.dimension() != null && !bodyInfo.dimension().isBlank()) {
+                    ResourceLocation targetDimLoc = ResourceLocation.tryParse(bodyInfo.dimension());
+                    if (targetDimLoc != null) {
+                        ResourceKey<Level> targetDimKey = ResourceKey.create(Registries.DIMENSION, targetDimLoc);
+                        targetLevel = server.getLevel(targetDimKey);
+                    }
                 }
 
-                ResourceKey<Level> targetDimKey = ResourceKey.create(Registries.DIMENSION, targetDimLoc);
-                ServerLevel targetLevel = server.getLevel(targetDimKey);
                 if (targetLevel == null) {
-                    continue;
+                    Vec3 planetPos = bodyInfo.spacePosition();
+                    Vec3 pushDir = entityPos.subtract(planetPos);
+                    double len = pushDir.length();
+
+                    if (len < 0.0001) {
+                        pushDir = new Vec3(0, 1, 0);
+                        len = 1.0;
+                    }
+
+                    double safeRadius = entryRadius + 1.0;
+                    Vec3 safePos = planetPos.add(pushDir.scale(safeRadius / len));
+                    if (rootEntity instanceof ServerPlayer player) {
+                        player.teleportTo(safePos.x, safePos.y, safePos.z);
+                    } else {
+                        rootEntity.teleportTo(safePos.x, safePos.y, safePos.z);
+                    }
+
+                    Vec3 bounceVel = pushDir.scale(0.8 / len);
+                    rootEntity.setDeltaMovement(bounceVel);
+                    rootEntity.hurtMarked = true;
+
+                    break;
                 }
 
                 double entryX;
@@ -247,9 +267,5 @@ public final class SpaceTransitionHandler {
                 }
             }
         }
-    }
-
-    private static double clamp(double val, double min, double max) {
-        return Math.max(min, Math.min(max, val));
     }
 }

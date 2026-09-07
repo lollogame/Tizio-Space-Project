@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#tsp:venus_biomes",
+  "features": "tsp:venus_alluminium_ore_ore_placed",
+  "step": "underground_ores"
+}

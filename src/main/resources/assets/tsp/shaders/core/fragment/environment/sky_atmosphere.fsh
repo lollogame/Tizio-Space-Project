@@ -5,7 +5,6 @@ in vec3 localPos;
 uniform vec4 ColorModulator;
 uniform vec3 SunDir;
 uniform vec3 uWavelenghts;
-uniform float uCamHeight;
 
 out vec4 fragColor;
 
@@ -31,8 +30,6 @@ const float SUN_INTENSITY = 25.0;
 const float EXPOSURE = 1.2;
 
 const float HORIZON_LIFT = 0.075;
-const float HORIZON_FADE_START = -1.65;
-const float HORIZON_FADE_MIN = 0.0;
 
 vec3 rayleighCoefficient() {
     return REFERENCE_RAYLEIGH_COEFFICIENT * pow(REFERENCE_WAVELENGTHS / uWavelenghts, vec3(4.0));
@@ -50,7 +47,7 @@ bool raySphereIntersect(const in vec3 orig, const in vec3 dir, const in float ra
     return true;
 }
 
-vec3 computeIncidentLight(const in vec3 orig, const in vec3 dir, in float tmin, in float tmax, const in vec3 sunDirection, const in vec3 betaR) {
+vec3 computeIncidentLight(const in vec3 orig, const in vec3 dir, in float tmin, in float tmax, const in vec3 sunDirection, const in vec3 betaR, const in float mieWeight) {
     float t0, t1;
     if (!raySphereIntersect(orig, dir, ATMOSPHERE_RADIUS, t0, t1) || t1 < 0.0) return vec3(0.0);
     if (t0 > tmin && t0 > 0.0) tmin = t0;
@@ -104,7 +101,7 @@ vec3 computeIncidentLight(const in vec3 orig, const in vec3 dir, in float tmin, 
         tCurrent += segmentLength;
     }
 
-    return (sumR * betaR * phaseR + sumM * MIE_COEFFICIENT * phaseM) * SUN_INTENSITY;
+    return (sumR * betaR * phaseR + sumM * MIE_COEFFICIENT * phaseM * mieWeight) * SUN_INTENSITY;
 }
 
 void main() {
@@ -114,6 +111,8 @@ void main() {
     vec3 betaR = rayleighCoefficient();
 
     vec3 rayDir = dir;
+
+    rayDir.y = max(rayDir.y, 0.0);
     rayDir.y += HORIZON_LIFT;
     rayDir = normalize(rayDir);
 
@@ -124,13 +123,11 @@ void main() {
         tMax = t0;
     }
 
-    vec3 scatter = computeIncidentLight(camPos, rayDir, 0.0, tMax, sunDirection, betaR);
+    float mieWeight = smoothstep(-0.05, 0.0, dir.y);
+    vec3 scatter = computeIncidentLight(camPos, rayDir, 0.0, tMax, sunDirection, betaR, mieWeight);
 
     vec3 color = vec3(1.0) - exp(-scatter * EXPOSURE);
     color = pow(color, vec3(1.0 / 2.2));
-
-    float depthFade = smoothstep(HORIZON_FADE_START, HORIZON_LIFT, dir.y);
-    color *= mix(HORIZON_FADE_MIN, 1.0, depthFade);
 
     float sunHeight = clamp(sunDirection.y, -1.0, 1.0);
     float dayFactor = smoothstep(-0.15, 0.05, sunHeight);

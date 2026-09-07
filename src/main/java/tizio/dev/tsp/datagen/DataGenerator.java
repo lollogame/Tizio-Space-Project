@@ -22,20 +22,16 @@ public class DataGenerator {
         CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
         ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
 
-        // Client
         generator.addProvider(event.includeClient(), new TSPBlockStateProvider(generator.getPackOutput(), existingFileHelper));
         generator.addProvider(event.includeClient(), new ItemsDataGenerator(generator.getPackOutput(), existingFileHelper));
         generator.addProvider(event.includeClient(), new SFXDataGenerator(generator.getPackOutput(), existingFileHelper));
         generator.addProvider(event.includeClient(), new TSPLanguageGenerator(generator.getPackOutput()));
 
-        // Server
-        generator.addProvider(event.includeServer(), new LootTableProvider(generator.getPackOutput(), Set.of(),
-                List.of(new LootTableProvider.SubProviderEntry(TSPBlockLootProvider::new, LootContextParamSets.BLOCK))));
-
+        generator.addProvider(event.includeServer(), new LootTableProvider(generator.getPackOutput(), Set.of(), List.of(new LootTableProvider.SubProviderEntry(TSPBlockLootProvider::new, LootContextParamSets.BLOCK))));
+        generator.addProvider(event.includeServer(), new TSPRecipeProvider(generator.getPackOutput()));
         generator.addProvider(event.includeServer(), new OreWorldGenProvider(generator.getPackOutput(), lookupProvider));
         generator.addProvider(event.includeServer(), new TSPBlockTagsProvider(generator.getPackOutput(), lookupProvider, existingFileHelper));
         generator.addProvider(event.includeServer(), new TSPBiomeTagsProvider(generator.getPackOutput(), lookupProvider, existingFileHelper));
-
         generator.addProvider(event.includeServer(), new SurfaceStructureProvider(generator));
     }
 }

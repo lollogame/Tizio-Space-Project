@@ -13,14 +13,17 @@ import tizio.dev.tsp.core.utils.volume.VolumeRenderUtil;
 
 import java.text.DecimalFormat;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
+
+// da rimuovere
+
+//@Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class DebugInfoOverlay {
 
     private static final Minecraft mc = Minecraft.getInstance();
     private static final DecimalFormat DF  = new DecimalFormat("0.0");
     private static final DecimalFormat DF2 = new DecimalFormat("0.000");
 
-    @SubscribeEvent
+    //@SubscribeEvent
     public static void onRenderOverlay(RenderGuiOverlayEvent.Post event) {
         if (mc.options.hideGui) return;
         if (mc.level == null) return;
@@ -45,8 +48,6 @@ public class DebugInfoOverlay {
 
         RenderSystem.disableBlend();
     }
-
-    /** Verde (1.0) → giallo (0.5) → rosso (0.0) */
 
     private static int drawTextWithBackground(GuiGraphics g, Font font, String text, int x, int y, int color) {
         int padding   = 3;

@@ -34,7 +34,7 @@ float sampleTexValue(vec2 uv) {
 float sampleCloudNoise2D(vec2 p, float time, float speed, float coverage) {
     if (coverage <= 0.001) return 0.0;
 
-    float wind = time * speed;
+    float wind = time * (clamp(speed, -1.0, 1.0) * 0.0050);
     float sc = max(CloudNoiseScale, 0.001) * 0.002;
 
     vec2 p1 = rotate2D(p, wind * 0.5) * (1.25 * sc);

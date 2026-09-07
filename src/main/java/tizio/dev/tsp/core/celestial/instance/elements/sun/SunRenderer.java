@@ -23,9 +23,9 @@ import java.util.stream.Collectors;
 
 public final class SunRenderer {
 
-    private static final float FLARE_SIZE_MULT     = 6.0F;  // Dimensione rispetto al raggio
-    private static final float FLARE_FADE_FAR_MULT = 5.0F; // Distanza massima di dissolvenza (x sunRadius)
-    private static final float FLARE_VIEW_CUTOFF   = 0.15F; // Limite di angolo visuale per il fade
+    private static final float FLARE_SIZE_MULT     = 6.0F;
+    private static final float FLARE_FADE_FAR_MULT = 5.0F;
+    private static final float FLARE_VIEW_CUTOFF   = 0.15F;
 
     public static List<VolumeRenderUtil.RenderTask> buildTasks(ShaderInstance shader, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, float timeSeconds) {
         if (shader == null) return List.of();
@@ -59,7 +59,6 @@ public final class SunRenderer {
         VolumeRenderUtil.setFloat(shader, "PlanetRadius", instance.planetRadius());
         VolumeRenderUtil.setFloat(shader, "BloomRadius", instance.planetRadius() * 2.0F);
         VolumeRenderUtil.setVec3(shader, "SunTint", instance.color());
-
         VolumeRenderUtil.setVec3(shader, "CenterRelative", volume.centerRelativeView());
         VolumeRenderUtil.setVec3(shader, "CameraLocalPos", volume.cameraLocalPos());
         VolumeRenderUtil.setVec3(shader, "AxisX", volume.axisXView());
@@ -96,16 +95,12 @@ public final class SunRenderer {
         double distance = toSun.length();
         float distanceAlpha = Mth.clampedMap((float) distance, sunRadius, sunRadius * FLARE_FADE_FAR_MULT, 0.0F, 1.0F);
         if (distanceAlpha <= 0.0F) return;
-
         Vector3f dirToSun = new Vector3f((float) toSun.x, (float) toSun.y, (float) toSun.z);
         if (dirToSun.lengthSquared() < 1e-6f) return;
         dirToSun.normalize();
-
         float dot = camera.getLookVector().dot(dirToSun);
         float viewAlpha = Mth.clampedMap(dot, FLARE_VIEW_CUTOFF, 1.0F, 0.0F, 1.0F);
-
         if (viewAlpha <= 0.0F) return;
-
         float alpha = distanceAlpha * viewAlpha;
 
         Vector3f worldUp = new Vector3f(0.0F, 1.0F, 0.0F);

@@ -54,6 +54,12 @@ public class CFDimension {
                 }
             };
             event.register(new ResourceLocation(MainClass.MODID, "space"), customEffect);
+            for (String dimId : tizio.dev.tsp.core.data.CelestialJsonLoader.getAllConfiguredSpaceDimensions()) {
+                ResourceLocation loc = ResourceLocation.tryParse(dimId);
+                if (loc != null) {
+                    event.register(loc, customEffect);
+                }
+            }
         }
     }
 

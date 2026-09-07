@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": {
+      "item": "tsp:circuit_board"
+    },
+    "G": {
+      "item": "minecraft:tinted_glass"
+    },
+    "T": {
+      "item": "tsp:titanium_ingot"
+    }
+  },
+  "pattern": [
+    "TTT",
+    "TGT",
+    " C "
+  ],
+  "result": {
+    "item": "tsp:space_suit_1_white_helmet"
+  },
+  "show_notification": true
+}

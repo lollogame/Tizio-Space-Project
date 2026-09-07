@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 1.0,
+  "ingredient": {
+    "item": "tsp:moon_titanium_ore"
+  },
+  "result": "tsp:titanium_ingot"
+}

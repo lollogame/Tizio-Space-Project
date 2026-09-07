@@ -12,11 +12,6 @@ import tizio.dev.tsp.core.celestial.lighting.LightShadeManager;
 @Mixin(ClientLevel.class)
 public abstract class ShadingLevelMixin {
 
-    /**
-     * @author TSP
-     * @reason Provide directional space sun shading per block face on ClientLevel.
-     *         Only applies when actually rendering the world, NOT when rendering GUI/inventory items.
-     */
     @Overwrite
     public float getShade(Direction direction, boolean shade) {
         if (!shade) return 1.0F;

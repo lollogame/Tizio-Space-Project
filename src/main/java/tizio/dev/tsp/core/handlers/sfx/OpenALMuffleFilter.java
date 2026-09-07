@@ -8,8 +8,6 @@ public final class OpenALMuffleFilter {
     private static int filterId = 0;
     private static boolean supported = false;
 
-    private OpenALMuffleFilter() {}
-
     public static void reset() {
         filterId = 0;
         supported = false;
@@ -39,10 +37,6 @@ public final class OpenALMuffleFilter {
         return supported ? filterId : 0;
     }
 
-    /**
-     * Aggiorna i parametri OpenAL del filtro in base al fattore di muffle attuale.
-     * @param muffleFactor da 0.0f (trasparente) a 1.0f (massimo muffle)
-     */
     public static void updateFilterValues(float muffleFactor) {
         try {
             int fId = getFilterId();

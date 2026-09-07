@@ -3,6 +3,21 @@
     "tsp:mars_stone",
     "tsp:moon_stone",
     "tsp:venus_stone",
-    "tsp:mars_iron_ore"
+    "tsp:deepslate_titanium_ore",
+    "tsp:mars_iron_ore",
+    "tsp:moon_iron_ore",
+    "tsp:venus_iron_ore",
+    "tsp:mars_lead_ore",
+    "tsp:moon_lead_ore",
+    "tsp:venus_lead_ore",
+    "tsp:mars_gold_ore",
+    "tsp:moon_gold_ore",
+    "tsp:venus_gold_ore",
+    "tsp:mars_alluminium_ore",
+    "tsp:moon_alluminium_ore",
+    "tsp:venus_alluminium_ore",
+    "tsp:mars_titanium_ore",
+    "tsp:moon_titanium_ore",
+    "tsp:venus_titanium_ore"
   ]
 }

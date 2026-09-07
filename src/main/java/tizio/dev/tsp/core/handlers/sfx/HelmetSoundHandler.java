@@ -13,6 +13,7 @@ import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.handlers.oxygen.OxygenManager;
 import tizio.dev.tsp.registry.RegisterSounds;
 import tizio.dev.tsp.resources.armor.CustomArmorItem;
+import tizio.dev.tsp.core.utils.Utils;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MainClass.MODID)
 public final class HelmetSoundHandler {
@@ -20,8 +21,6 @@ public final class HelmetSoundHandler {
     private static boolean wasCustomHelmet = false;
     private static String lastDimensionId = "";
     private static int dimensionCooldown = 0;
-
-    private HelmetSoundHandler() {}
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
@@ -38,7 +37,7 @@ public final class HelmetSoundHandler {
         ItemStack headItem = mc.player.getItemBySlot(EquipmentSlot.HEAD);
         boolean isCustomHelmet = headItem.getItem() instanceof CustomArmorItem;
 
-        String currentDimensionId = mc.level.dimension().location().toString();
+        String currentDimensionId = Utils.getDimensionId(mc.level);
 
         if (!currentDimensionId.equals(lastDimensionId)) {
             lastDimensionId = currentDimensionId;

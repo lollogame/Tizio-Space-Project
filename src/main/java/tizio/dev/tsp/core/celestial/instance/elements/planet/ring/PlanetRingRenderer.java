@@ -34,7 +34,6 @@ public final class PlanetRingRenderer {
                 )).collect(Collectors.toList());
     }
 
-    /** Overload that renders an explicit list of instances instead of the global registry. */
     public static List<VolumeRenderUtil.RenderTask> buildTasks(ShaderInstance shader, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, List<PlanetInstance.RingInstance> instances) {
         if (shader == null || instances == null) return List.of();
         return instances.stream()
@@ -60,9 +59,7 @@ public final class PlanetRingRenderer {
         VolumeRenderUtil.setFloat(shader, "RingOuterRadius", instance.ringOuterRadius());
         VolumeRenderUtil.setVec3(shader, "BaseColor", instance.color());
         VolumeRenderUtil.setVec3(shader, "LightDirection", lightLocal);
-
         VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation(instance.ringTexture()), 0);
-
         VolumeRenderUtil.setVec3(shader, "CenterRelative", volume.centerRelativeView());
         VolumeRenderUtil.setVec3(shader, "CameraLocalPos", volume.cameraLocalPos());
         VolumeRenderUtil.setVec3(shader, "AxisX", volume.axisXView());

@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "tsp:block/titanium_block_cut_slab"
+    },
+    "type=double": {
+      "model": "tsp:block/titanium_block_cut"
+    },
+    "type=top": {
+      "model": "tsp:block/titanium_block_cut_slab_top"
+    }
+  }
+}

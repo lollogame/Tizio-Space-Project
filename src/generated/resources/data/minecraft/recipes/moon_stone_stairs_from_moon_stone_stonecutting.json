@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "count": 1,
+  "ingredient": {
+    "item": "tsp:moon_stone"
+  },
+  "result": "tsp:moon_stone_stairs"
+}

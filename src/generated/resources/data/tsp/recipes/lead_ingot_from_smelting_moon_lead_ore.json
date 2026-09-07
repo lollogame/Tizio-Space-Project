@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 100,
+  "experience": 1.0,
+  "ingredient": {
+    "item": "tsp:moon_lead_ore"
+  },
+  "result": "tsp:lead_ingot"
+}

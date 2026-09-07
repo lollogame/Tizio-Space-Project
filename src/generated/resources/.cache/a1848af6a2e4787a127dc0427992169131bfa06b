@@ -1,5 +1,8 @@
-// 1.20.1	2026-08-26T19:48:57.0382052	Tags for minecraft:block mod id tsp
-42679ee457d7d0eba5485cd91e2cbd385d43baed data/minecraft/tags/blocks/mineable/pickaxe.json
-b02a06e11f80f8e5dc5b2c46944af7a4a86cd242 data/minecraft/tags/blocks/needs_stone_tool.json
+// 1.20.1	2026-09-07T13:49:21.5519932	Tags for minecraft:block mod id tsp
+655257095137093e6f246047f6b5c78a74a03251 data/minecraft/tags/blocks/mineable/pickaxe.json
+14dc5dbc9909fd8c5cd5c3e8762679e9875b00aa data/minecraft/tags/blocks/needs_diamond_tool.json
+ef56ab3d07b29e40e0da5df982214f9a0f2211a7 data/minecraft/tags/blocks/needs_iron_tool.json
+85585381560ddc68b0c53051f79361a5c2d18aba data/minecraft/tags/blocks/needs_stone_tool.json
 2ea5e88be9cc9fa5a3bb3de3ed200c04a55daaae data/tsp/tags/blocks/mars_stone_ore_replaceable.json
 a15e9dfe667f180ed4d1e7daf3b3aeee8ee931c7 data/tsp/tags/blocks/moon_stone_ore_replaceable.json
+d056478b332c8baf766e345c2aac46f1ef36d9e5 data/tsp/tags/blocks/venus_stone_ore_replaceable.json

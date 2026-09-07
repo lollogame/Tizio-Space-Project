@@ -27,7 +27,7 @@ public abstract class LevelRendererCloudsMixin {
         }
 
         ResourceLocation dimensionId = mc.level.dimension().location();
-        if ("tsp".equals(dimensionId.getNamespace()) && "space".equals(dimensionId.getPath())) {
+        if (CelestialJsonLoader.isSpaceDimension(dimensionId)) {
             return;
         }
 

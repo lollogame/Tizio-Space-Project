@@ -1,5 +1,6 @@
 package tizio.dev.tsp.core.utils.volume;
 
+
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -22,10 +23,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL12.GL_TEXTURE_BASE_LEVEL;
-import static org.lwjgl.opengl.GL12.GL_TEXTURE_MAX_LEVEL;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL30C.glGenerateMipmap;
 
 public final class VolumeRenderUtil {
 
@@ -33,13 +31,15 @@ public final class VolumeRenderUtil {
     public static boolean PLANET_SHADOW_CAST = true;
 
     public enum RenderPass {
-        PLANET_SURFACE(0),
-        ATMOSPHERE(1),
-        PLANET_RING(2),
-        PLANET_ROCKS_RING(3),
-        SUN(4),
-        BLACK_HOLE(4),
-        CLOUDS(5);
+
+        CLOUDS(0),
+        ORBIT_PATH(1),
+        PLANET_SURFACE(1),
+        ATMOSPHERE(2),
+        PLANET_RING(3),
+        PLANET_ROCKS_RING(4),
+        SUN(5),
+        BLACK_HOLE(5);
 
         private final int priority;
 
@@ -51,6 +51,7 @@ public final class VolumeRenderUtil {
             return this.priority;
         }
     }
+
 
     public static boolean isVisible(Frustum frustum, Vec3 center, float halfExtent) {
         if (frustum == null) {
@@ -220,8 +221,6 @@ public final class VolumeRenderUtil {
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-//        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-//        RenderSystem.texParameter(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
         shader.setSampler(samplerName, texture.getId());
     }

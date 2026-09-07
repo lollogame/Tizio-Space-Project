@@ -1,6 +1,0 @@
-{
-  "parent": "tsp:custom/armor_items/helmet",
-  "textures": {
-    "0": "tsp:item/armor/space_suit_1_acqua_helmet"
-  }
-}

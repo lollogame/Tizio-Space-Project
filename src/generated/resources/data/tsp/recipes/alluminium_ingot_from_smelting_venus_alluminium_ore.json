@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 120,
+  "experience": 1.0,
+  "ingredient": {
+    "item": "tsp:venus_alluminium_ore"
+  },
+  "result": "tsp:alluminium_ingot"
+}

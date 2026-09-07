@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": "tsp:deepslate_titanium_ore_ore_placed",
+  "step": "underground_ores"
+}

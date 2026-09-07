@@ -48,7 +48,6 @@ public class Button extends net.minecraft.client.gui.components.Button {
         g.fill(getX(), getY(), getX() + 1, getY() + height, borderColor);
         g.fill(getX() + width - 1, getY(), getX() + width, getY() + height, borderColor);
 
-
         Font font = Minecraft.getInstance().font;
         String textStr = getMessage().getString();
         int textW = font.width(textStr);

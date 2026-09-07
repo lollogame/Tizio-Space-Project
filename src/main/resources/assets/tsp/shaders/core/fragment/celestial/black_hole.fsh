@@ -87,7 +87,9 @@ vec4 raymarchDisk(vec3 ray, vec3 zeroPos) {
         float noise = n1 * 0.55 + n2 * 0.30 + n3 * 0.15;
 
         float extraWidth = noise * (1.0 - clamp(fi * (1.0 / float(DISK_LAYERS)) * 2.0 - 1.0, 0.0, 1.0));
-        float alpha = clamp(noise * (intensity + extraWidth) * ((1.0 / EffectRadius) * 10.0 + 0.01) * dist * distMult, 0.0, 1.0);
+        float normDist = dist / max(EffectRadius, 0.001);
+        float alpha = clamp(noise * (intensity + extraWidth) * 10.0 * normDist * distMult, 0.0, 1.0);
+
         vec3 col = 2.0 * mix(vec3(0.3, 0.2, 0.15) * insideCol, insideCol, min(1.0, intensity * 2.0));
 
         accumulated = clamp(vec4(col * alpha + accumulated.rgb * (1.0 - alpha), accumulated.a * (1.0 - alpha) + alpha), vec4(0.0), vec4(0.95));
@@ -142,8 +144,13 @@ void main() {
             ray = normalize(ray - (bendForce * invDist) * pos);
             pos += stepDist * ray;
 
+            float normCenterDist = centerDist / max(EffectRadius, 0.001);
+            float normStepDist = stepDist / max(EffectRadius, 0.001);
+            float normInvDist = 1.0 / max(normCenterDist, 0.0001);
+            float normInvDistSqr = normInvDist * normInvDist;
+
             vec3 glowColor = mix(BaseColor * 1.2, vec3(1.0), 0.20);
-            glowAccum += vec4(glowColor, 1.0) * (0.01 * stepDist * invDistSqr * invDistSqr * clamp(centerDist * 2.0 - 1.2, 0.0, 1.0)) * Intensity;
+            glowAccum += vec4(glowColor, 1.0) * (0.01 * normStepDist * normInvDistSqr * normInvDistSqr * clamp(normCenterDist * 2.0 - 1.2, 0.0, 1.0)) * Intensity;
         }
 
         float distToCenter = length(pos);

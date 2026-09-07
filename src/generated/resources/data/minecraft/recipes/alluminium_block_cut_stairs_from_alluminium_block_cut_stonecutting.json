@@ -1,0 +1,8 @@
+{
+  "type": "minecraft:stonecutting",
+  "count": 1,
+  "ingredient": {
+    "item": "tsp:alluminium_block_cut"
+  },
+  "result": "tsp:alluminium_block_cut_stairs"
+}

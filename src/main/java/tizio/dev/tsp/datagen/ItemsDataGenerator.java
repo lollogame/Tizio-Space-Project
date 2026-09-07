@@ -32,6 +32,18 @@ public class ItemsDataGenerator extends ItemModelProvider {
             withExistingParent(name, ResourceLocation.fromNamespaceAndPath(MainClass.MODID, "block/" + name));
         });
 
+        RegisterItems.ITEMS.getEntries().forEach(itemObject -> {
+            String name = itemObject.getId().getPath();
+
+            boolean isBlockItem = RegisterBlocks.BLOCKS.getEntries().stream()
+                    .anyMatch(b -> b.getId().getPath().equals(name));
+            boolean isArmor = RegisterItems.ARMOR_PIECES.values().stream()
+                    .anyMatch(map -> map.containsValue(itemObject));
+
+            if (!isBlockItem && !isArmor) {
+                basicItem(itemObject.get());
+            }
+        });
 
         for (Map.Entry<String, ArmorProperties> entry : RegisterItems.ARMOR_REGISTRY.entrySet()) {
             ArmorProperties properties = entry.getValue();
@@ -45,11 +57,9 @@ public class ItemsDataGenerator extends ItemModelProvider {
                 String customJson = properties.getCustomItemModel(pieceType);
 
                 if (customJson != null) {
-
                     withExistingParent(itemName, ResourceLocation.fromNamespaceAndPath(MainClass.MODID, "custom/armor_items/" + customJson))
                             .texture("0", ResourceLocation.fromNamespaceAndPath(MainClass.MODID, "item/armor/" + itemName));
                 } else {
-
                     withExistingParent(itemName, ResourceLocation.fromNamespaceAndPath("minecraft", "item/generated"))
                             .texture("layer0", ResourceLocation.fromNamespaceAndPath(MainClass.MODID, "item/armor/" + itemName));
                 }

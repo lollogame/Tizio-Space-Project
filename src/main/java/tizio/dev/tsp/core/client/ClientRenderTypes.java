@@ -2,7 +2,11 @@ package tizio.dev.tsp.core.client;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+
+import java.util.OptionalDouble;
 
 public final class ClientRenderTypes extends RenderType {
 
@@ -115,6 +119,23 @@ public final class ClientRenderTypes extends RenderType {
                     .createCompositeState(true)
     );
 
+    private static final RenderType ORBIT_LINES = RenderType.create(
+            "orbit_path_lines",
+            DefaultVertexFormat.POSITION_COLOR,
+            VertexFormat.Mode.DEBUG_LINES,
+            256,
+            false,
+            false,
+            CompositeState.builder()
+                    .setShaderState(new RenderStateShard.ShaderStateShard(GameRenderer::getPositionColorShader))
+                    .setLineState(new RenderStateShard.LineStateShard(OptionalDouble.of(2.5D)))
+                    .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
+                    .setCullState(RenderStateShard.NO_CULL)
+                    .setLightmapState(RenderStateShard.NO_LIGHTMAP)
+                    .setDepthTestState(RenderStateShard.NO_DEPTH_TEST)
+                    .setWriteMaskState(RenderStateShard.COLOR_WRITE)
+                    .createCompositeState(false)
+    );
 
     private ClientRenderTypes(String name, VertexFormat format, VertexFormat.Mode mode, int bufferSize, boolean affectsCrumbling, boolean sortOnUpload, Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
@@ -126,5 +147,7 @@ public final class ClientRenderTypes extends RenderType {
     public static RenderType planetRing() { return PLANET_RING; }
     public static RenderType blackHole() { return BLACK_HOLE; }
     public static RenderType sun() { return SUN; }
+
+    public static RenderType orbitLines() { return ORBIT_LINES; }
 
 }

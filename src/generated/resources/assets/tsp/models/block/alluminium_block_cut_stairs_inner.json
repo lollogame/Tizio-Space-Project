@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/inner_stairs",
+  "textures": {
+    "bottom": "tsp:block/alluminium_block_cut",
+    "side": "tsp:block/alluminium_block_cut",
+    "top": "tsp:block/alluminium_block_cut"
+  }
+}

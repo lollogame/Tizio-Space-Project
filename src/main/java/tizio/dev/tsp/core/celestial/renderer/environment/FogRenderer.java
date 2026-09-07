@@ -90,7 +90,7 @@ public class FogRenderer {
 
         String dimId = level.dimension().location().toString();
 
-        if ("tsp:space".equalsIgnoreCase(dimId)) {
+        if (CelestialJsonLoader.isSpaceDimension(dimId)) {
             setColor(0.0F, 0.0F, 0.0F);
             return;
         }
@@ -137,7 +137,7 @@ public class FogRenderer {
 
         String dimId = level.dimension().location().toString();
 
-        if ("tsp:space".equalsIgnoreCase(dimId)) {
+        if (CelestialJsonLoader.isSpaceDimension(dimId)) {
             setShape(FogShape.CYLINDER);
             float renderDist = mc.gameRenderer.getRenderDistance();
             setDistance(renderDist * 0.5F, renderDist);

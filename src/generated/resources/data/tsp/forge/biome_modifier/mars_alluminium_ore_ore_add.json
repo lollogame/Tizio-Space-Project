@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#tsp:mars_biomes",
+  "features": "tsp:mars_alluminium_ore_ore_placed",
+  "step": "underground_ores"
+}

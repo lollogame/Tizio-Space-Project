@@ -30,8 +30,6 @@ public final class SoundMuffleHandler {
     private static boolean lastMuffledState = false;
     private static final float FADE_SPEED = 0.5f;
 
-    private SoundMuffleHandler() {}
-
     @SubscribeEvent
     public static void onSoundEngineLoad(SoundEngineLoadEvent event) {
         OpenALMuffleFilter.reset();

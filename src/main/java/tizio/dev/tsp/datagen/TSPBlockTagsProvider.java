@@ -22,9 +22,13 @@ public class TSPBlockTagsProvider extends net.minecraftforge.common.data.BlockTa
 
     @Override
     protected void addTags(HolderLookup.Provider provider) {
+
         this.tag(TSPBlockTags.MARS_STONE_ORE_REPLACEABLE).add(RegisterBlocks.MARS_STONE.get());
         this.tag(TSPBlockTags.MARS_STONE_ORE_REPLACEABLE).add(RegisterBlocks.MARS_SAND.get());
+
         this.tag(TSPBlockTags.MOON_STONE_ORE_REPLACEABLE).add(RegisterBlocks.MOON_STONE.get());
+
+        this.tag(TSPBlockTags.VENUS_STONE_ORE_REPLACEABLE).add(RegisterBlocks.VENUS_STONE.get());
 
         for (Block block : RegisterBlocks.BLOCKS.getEntries().stream().map(RegistryObject::get).toList()) {
             if (block instanceof StoneBlock) {
@@ -45,5 +49,4 @@ public class TSPBlockTagsProvider extends net.minecraftforge.common.data.BlockTa
     }
 
 }
-
 

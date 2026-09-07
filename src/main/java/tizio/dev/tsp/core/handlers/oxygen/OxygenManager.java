@@ -8,6 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
 import tizio.dev.tsp.resources.armor.CustomArmorItem;
+import tizio.dev.tsp.core.utils.Utils;
 
 public final class OxygenManager {
 
@@ -18,20 +19,18 @@ public final class OxygenManager {
     public static final float OXYGEN_DEPLETION_RATE = 0.05F;
     public static final float SUFFOCATION_DAMAGE = 2.0F;
 
-    private OxygenManager() {}
-
     public static float getOxygen(Player player) {
         if (player == null) return MAX_OXYGEN;
         if (!player.getPersistentData().contains(OXYGEN_TAG)) {
             player.getPersistentData().putFloat(OXYGEN_TAG, MAX_OXYGEN);
             return MAX_OXYGEN;
         }
-        return Math.max(MIN_OXYGEN, Math.min(MAX_OXYGEN, player.getPersistentData().getFloat(OXYGEN_TAG)));
+        return Utils.clamp(player.getPersistentData().getFloat(OXYGEN_TAG), MIN_OXYGEN, MAX_OXYGEN);
     }
 
     public static void setOxygen(Player player, float oxygen) {
         if (player == null) return;
-        float clamped = Math.max(MIN_OXYGEN, Math.min(MAX_OXYGEN, oxygen));
+        float clamped = Utils.clamp(oxygen, MIN_OXYGEN, MAX_OXYGEN);
         player.getPersistentData().putFloat(OXYGEN_TAG, clamped);
     }
 
@@ -61,7 +60,7 @@ public final class OxygenManager {
 
     public static boolean hasOxygenInEnvironment(Level level) {
         if (level == null) return true;
-        String dimId = level.dimension().location().toString();
+        String dimId = Utils.getDimensionId(level);
         Boolean hasOxygen = CelestialJsonLoader.hasOxygenForDimension(dimId);
         if (hasOxygen != null) {
             return hasOxygen;

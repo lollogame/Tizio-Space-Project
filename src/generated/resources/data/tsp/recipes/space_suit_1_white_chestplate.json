@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "C": {
+      "item": "tsp:circuit_board"
+    },
+    "T": {
+      "item": "tsp:titanium_ingot"
+    }
+  },
+  "pattern": [
+    "T T",
+    "TCT",
+    "TTT"
+  ],
+  "result": {
+    "item": "tsp:space_suit_1_white_chestplate"
+  },
+  "show_notification": true
+}

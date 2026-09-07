@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "tsp:block/alluminium_block_slab"
+    },
+    "type=double": {
+      "model": "tsp:block/alluminium_block"
+    },
+    "type=top": {
+      "model": "tsp:block/alluminium_block_slab_top"
+    }
+  }
+}

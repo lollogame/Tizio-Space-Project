@@ -34,16 +34,14 @@ public class SurfaceStructureProvider implements DataProvider {
         List<CompletableFuture<?>> futures = new ArrayList<>();
 
         for (StructureEntry entry : entries) {
-            // 1. Configured Feature
+
             JsonObject configuredFeature = new JsonObject();
             configuredFeature.addProperty("type", MainClass.MODID + ":rock_feature");
 
-            // Passiamo lo spacing dentro la configurazione JSON della feature
             JsonObject config = new JsonObject();
             config.addProperty("spacing", entry.spacing);
             configuredFeature.add("config", config);
 
-            // 2. Placed Feature
             JsonObject placedFeature = new JsonObject();
             placedFeature.addProperty("feature", MainClass.MODID + ":" + entry.name);
             JsonArray placement = new JsonArray();
@@ -73,7 +71,6 @@ public class SurfaceStructureProvider implements DataProvider {
 
             placedFeature.add("placement", placement);
 
-            // 3. Biome Modifier di Forge
             JsonObject biomeModifier = new JsonObject();
             biomeModifier.addProperty("type", "forge:add_features");
             biomeModifier.addProperty("biomes", entry.biomeId);
@@ -83,7 +80,6 @@ public class SurfaceStructureProvider implements DataProvider {
             biomeModifier.add("features", featuresArray);
             biomeModifier.addProperty("step", "vegetal_decoration");
 
-            // Scrittura dei file JSON sul disco
             futures.add(DataProvider.saveStable(cache, configuredFeature,
                     path.resolve("data/" + MainClass.MODID + "/worldgen/configured_feature/" + entry.name + ".json")));
 

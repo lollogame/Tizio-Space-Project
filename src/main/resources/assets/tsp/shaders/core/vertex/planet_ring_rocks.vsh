@@ -71,7 +71,7 @@ void main() {
     float radialPhase  = sin(angle * 2.0 + hash1(fi, 11.0) * TAU) * 0.5 + 0.5;
     float smoothRadius = mix(baseRadius * 0.98, baseRadius * 1.02, radialPhase);
 
-    float height = (hash1(fi, 4.0) - 0.5) * 2.0 * RockHeight;
+    float height = (hash1(fi, 4.0) - 0.5) * RockHeight;
     float size   = mix(RockMinSize, RockMaxSize, hash1(fi, 5.0));
 
     vec3 ringLocalPos = vec3(cos(angle) * smoothRadius, height, sin(angle) * smoothRadius);
@@ -86,7 +86,7 @@ void main() {
         return;
     }
 
-    float boundingRadius = size * SQRT_3;
+    float boundingRadius = (size * 0.5) * SQRT_3;
     vec4 centerClip      = ProjMat * vec4(rockCenterCam, 1.0);
 
     float marginX = ProjMat[0][0] * boundingRadius;
@@ -97,7 +97,7 @@ void main() {
     centerClip.x >  centerClip.w + marginX ||
     centerClip.y < -centerClip.w - marginY ||
     centerClip.y >  centerClip.w + marginY ||
-    centerClip.z < -centerClip.z - marginZ ||
+    centerClip.z < -centerClip.w - marginZ ||
     centerClip.z >  centerClip.w + marginZ) {
         gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
         return;
@@ -123,7 +123,7 @@ void main() {
 
     fragNormal = selfRotation * localCubeNormal;
 
-    vec3 cubeCorner   = selfRotation * (Position * size);
+    vec3 cubeCorner   = selfRotation * (Position * (size * 0.5));
     vec3 localPos     = ringLocalPos + cubeCorner;
 
     vec3 worldCornerOffset = cubeCorner.x * AxisX + cubeCorner.y * AxisY + cubeCorner.z * AxisZ;

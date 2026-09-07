@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import tizio.dev.tsp.MainClass;
-import tizio.dev.tsp.client.ArmorRenderRegistry;
+import tizio.dev.tsp.core.client.ArmorRenderRegistry;
 import tizio.dev.tsp.resources.ArmorProperties;
 import tizio.dev.tsp.resources.armor.CustomArmorItem;
 

@@ -6,7 +6,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import tizio.dev.tsp.MainClass;
-import tizio.dev.tsp.client.ArmorRenderRegistry;
+import tizio.dev.tsp.core.client.ArmorRenderRegistry;
 import tizio.dev.tsp.resources.ArmorProperties;
 
 import java.util.function.Consumer;

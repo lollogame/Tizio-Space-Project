@@ -1,6 +1,7 @@
 package tizio.dev.tsp.core.celestial.instance.elements.blackhole;
 
 import net.minecraft.world.phys.Vec3;
+import tizio.dev.tsp.config.DataConfig.BlackHole;
 import tizio.dev.tsp.core.utils.volume.OrientedVolumeInstance;
 
 public final class BlackHoleInstance extends OrientedVolumeInstance {
@@ -38,9 +39,9 @@ public final class BlackHoleInstance extends OrientedVolumeInstance {
     }
 
     public static final class Builder extends OrientedVolumeInstance.Builder<BlackHoleInstance, Builder> {
-        private float radius = 1.0F;
-        private float diskRotationSpeed = 0.20F;
-        private float intensity = 1.0F;
+        private float radius = BlackHole.BUILDER_RADIUS_DEF;
+        private float diskRotationSpeed = BlackHole.DISK_ROTATION_SPEED_DEF;
+        private float intensity = BlackHole.INTENSITY_DEF;
 
         private Builder(Vec3 position) {
             super(position);
@@ -69,15 +70,15 @@ public final class BlackHoleInstance extends OrientedVolumeInstance {
     }
 
     public static final class Config {
-        public String id = "blackhole";
-        public String parentId = "sun";
-        public float radius = 100.0F;
-        public String colorHex = "#000000";
-        public float yaw = 0.0F;
-        public float pitch = 0.0F;
-        public float roll = 0.0F;
-        public float diskRotationSpeed = 0.20F;
-        public float intensity = 1.0F;
+        public String id = BlackHole.ID_DEF;
+        public String parentId = BlackHole.PARENT_ID_DEF;
+        public float radius = BlackHole.RADIUS_DEF;
+        public String colorHex = BlackHole.COLOR_HEX_DEF;
+        public float yaw = BlackHole.YAW_DEF;
+        public float pitch = BlackHole.PITCH_DEF;
+        public float roll = BlackHole.ROLL_DEF;
+        public float diskRotationSpeed = BlackHole.DISK_ROTATION_SPEED_DEF;
+        public float intensity = BlackHole.INTENSITY_DEF;
 
         public Config() {}
 

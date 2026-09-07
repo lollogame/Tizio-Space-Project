@@ -21,7 +21,6 @@ import tizio.dev.tsp.core.utils.volume.VolumeRenderUtil;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 public final class AtmosphereRenderer {
 
     public static List<VolumeRenderUtil.RenderTask> buildTasks(ShaderInstance shader, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource) {
@@ -63,7 +62,6 @@ public final class AtmosphereRenderer {
         VolumeRenderUtil.setVec3(shader, "BaseColor", instance.color());
         VolumeRenderUtil.setVec3(shader, "WaveLengths", instance.waveLengths());
         VolumeRenderUtil.setVec3(shader, "LightDirection", lightLocal);
-
         VolumeRenderUtil.setVec3(shader, "CenterRelative", volume.centerRelativeView());
         VolumeRenderUtil.setVec3(shader, "CameraLocalPos", volume.cameraLocalPos());
         VolumeRenderUtil.setVec3(shader, "AxisX", volume.axisXView());

@@ -21,10 +21,6 @@ public class RegisterSounds {
         return SFX_EVENTS.register(name, ()-> SoundEvent.createVariableRangeEvent(new ResourceLocation(MainClass.MODID, name)));
     }
 
-    //public static final RegistryObject<SoundEvent> UI_SLIDER_USE = registerSoundEvents("ui.slider.use");
-
-    // ── Helmet transition sounds ──────────────────────────────────────────────
-
     public static final RegistryObject<SoundEvent> HELMET_EQUIP_OXYGEN     = registerSoundEvents("helmet.equip.oxygen");
     public static final RegistryObject<SoundEvent> HELMET_EQUIP_NO_OXYGEN  = registerSoundEvents("helmet.equip.no_oxygen");
     public static final RegistryObject<SoundEvent> HELMET_REMOVE_OXYGEN    = registerSoundEvents("helmet.remove.oxygen");

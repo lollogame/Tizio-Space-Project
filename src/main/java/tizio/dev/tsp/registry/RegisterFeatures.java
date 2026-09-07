@@ -16,7 +16,6 @@ public class RegisterFeatures {
 
     public static final DeferredRegister<Feature<?>> FEATURES = DeferredRegister.create(ForgeRegistries.FEATURES, MainClass.MODID);
 
-
     public static final RegistryObject<Feature<CraterConfiguration>> CRATER = FEATURES.register("crater", () -> new CraterFeature(CraterConfiguration.CODEC));
     public static final RegistryObject<Feature<SpacingFeatureConfiguration>> ROCK_FEATURE = FEATURES.register("rock_feature", () -> new RockFeature(SpacingFeatureConfiguration.CODEC));
 

@@ -27,7 +27,10 @@ public record OreProperties(
         int minY,
         int maxY,
         GenerationStep.Decoration decorationStep,
-        OreToolTier toolTier
+        OreToolTier toolTier,
+        Supplier<Item> smeltResult,
+        float smeltXp,
+        int smeltTime
 ) {
 
     public static Builder builder(String name, TagKey<Block> replaces, TagKey<Biome> biomes) {
@@ -53,6 +56,10 @@ public record OreProperties(
         private int maxY = 64;
         private GenerationStep.Decoration decorationStep = GenerationStep.Decoration.UNDERGROUND_ORES;
         private OreToolTier toolTier = OreToolTier.STONE;
+
+        private Supplier<Item> smeltResult = null;
+        private float smeltXp = 0.7f;
+        private int smeltTime = 200;
 
         private Builder(String name, TagKey<Block> replaces, TagKey<Biome> biomes) {
             this.name = name;
@@ -111,13 +118,22 @@ public record OreProperties(
             return this;
         }
 
+        public Builder smelt(Supplier<Item> smeltResult, float xp, int cookingTime) {
+            this.smeltResult = smeltResult;
+            this.smeltXp = xp;
+            this.smeltTime = cookingTime;
+            return this;
+        }
+
+        public Builder smelt(Supplier<Item> smeltResult) {
+            return smelt(smeltResult, 0.7f, 200);
+        }
+
         public OreProperties build() {
             return new OreProperties(name, replaces, biomes, mapColor, hardness, resistance, requiresCorrectTool,
                     UniformInt.of(minXp, maxXp), dropItem, minDrop, maxDrop, veinSize, veinsPerChunk, minY, maxY,
-                    decorationStep, toolTier);
+                    decorationStep, toolTier, smeltResult, smeltXp, smeltTime);
         }
     }
 }
-
-
 

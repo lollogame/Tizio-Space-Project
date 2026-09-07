@@ -13,6 +13,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Vector3f;
 import tizio.dev.tsp.MainClass;
+import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.core.celestial.instance.elements.SolarSystemData;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetSurfaceRenderer;
@@ -46,7 +47,7 @@ public final class PlanetSkyRenderer {
         if (mc.level == null) return;
 
         String currentDimId = mc.level.dimension().location().toString();
-        if ("tsp:space".equals(currentDimId)) return;
+        if (CelestialJsonLoader.isSpaceDimension(currentDimId)) return;
 
         CelestialJsonLoader.ensureLoaded();
 
@@ -64,12 +65,11 @@ public final class PlanetSkyRenderer {
         float timeSeconds = (level.getGameTime() + partialTick) / 20.0f;
         Instant now = Instant.now();
         Map<String, Vec3> bodyPositions = CelestialJsonLoader.calculateBodyPositions(system, now);
-        float globalScale  = system.globalScale;
+        float globalScale = (float) Utils.clamp(system.globalScale, DataConfig.System.SCALE.min(), DataConfig.System.SCALE.max());
         Vec3 currentBodyPos = currentBody != null ? bodyPositions.getOrDefault(currentBody.id, origin(system)) : origin(system);
         Vec3 starPos = getStarPosition(system, bodyPositions);
         Vec3 cameraPos = camera.getPosition();
 
-        // ── 1. VETTORE SOLE VANILLA ───────────────────────────────────────────────
         float sunAngle = level.getSunAngle(partialTick);
         Vector3f sunDirMC = new Vector3f(-(float) Math.sin(sunAngle), (float) Math.cos(sunAngle), 0.0f);
 
@@ -95,7 +95,6 @@ public final class PlanetSkyRenderer {
             allTasks.addAll(SunRenderer.buildTasks(ClientShaderRegistry.sunShader(), camera, frustum, poseStack, bufferSource, timeSeconds, List.of(skyStarInst)));
         }
 
-
         for (PlanetInstance.Config body : system.bodies) {
             if (currentBody != null && body.id.equalsIgnoreCase(currentBody.id)) continue;
             if (!isRelatedCelestialBody(body, currentBody, system)) continue;
@@ -115,8 +114,19 @@ public final class PlanetSkyRenderer {
 
             float r = (float) computeSkyRadius(physRadius, bodyDist);
 
-            Vector3f lightDir = new Vector3f(sunDirMC).normalize();
+            Vector3f lightDir = new Vector3f(
+                    -(float) Math.sin(sunAngle),
+                    (float) Math.cos(sunAngle),
+                    0.55f
+            ).normalize();
+
             Vector3f bodyColor = CelestialJsonLoader.parseColor(body.colorHex, new Vector3f(0.55f, 0.78f, 1.0f));
+
+            boolean isParentPlanet = (currentBody != null && currentBody.parentId != null && currentBody.parentId.equalsIgnoreCase(body.id));
+
+            float renderPitch = body.pitch + (isParentPlanet ? 90.0f : 0.0f);
+            float renderYaw   = body.yaw;
+            float renderRoll  = body.roll;
 
             boolean renderSurface = body.surfaceEnabled || (body.texture != null && !body.texture.isBlank());
             if (renderSurface) {
@@ -127,7 +137,7 @@ public final class PlanetSkyRenderer {
                         .dayTexture(body.texture)
                         .color(bodyColor)
                         .lightDirection(lightDir)
-                        .eulerDegrees(body.yaw, body.pitch, body.roll)
+                        .eulerDegrees(renderYaw, renderPitch, renderRoll)
                         .spinHours(body.spinHours);
 
                 if (body.nightTexture != null && !body.nightTexture.isBlank()) {
@@ -151,11 +161,12 @@ public final class PlanetSkyRenderer {
 
             if (body.ring != null && body.ring.enabled) {
 
-                float scaleF = r / (float) physRadius;
-                float innerR = body.ring.innerRadius * globalScale * scaleF;
-                float outerR = body.ring.outerRadius * globalScale * scaleF;
+                float innerR = (body.ring.innerRadius >= body.radius ? body.ring.innerRadius / body.radius : body.ring.innerRadius) * r;
+                float outerR = (body.ring.outerRadius >= body.radius ? body.ring.outerRadius / body.radius : body.ring.outerRadius) * r;
                 float ringQuadR = outerR * 1.02f;
                 Vector3f ringColor = CelestialJsonLoader.parseColor(body.ring.colorHex, new Vector3f(1, 1, 1));
+
+                float ringPitch = body.ring.pitch + (isParentPlanet ? 90.0f : 0.0f);
 
                 allTasks.addAll(PlanetRingRenderer.buildTasks(
                         ClientShaderRegistry.planetRing(), camera, frustum, poseStack, bufferSource,
@@ -167,7 +178,7 @@ public final class PlanetSkyRenderer {
                                 .ringTexture(body.ring.texture)
                                 .color(ringColor)
                                 .lightDirection(lightDir)
-                                .eulerDegrees(body.ring.yaw, body.ring.pitch, body.ring.roll)
+                                .eulerDegrees(body.ring.yaw, ringPitch, body.ring.roll)
                                 .build())));
             }
 
@@ -189,16 +200,15 @@ public final class PlanetSkyRenderer {
                                 .color(atmosColor)
                                 .waveLengths(body.atmosphere.wavelengthR, body.atmosphere.wavelengthG, body.atmosphere.wavelengthB)
                                 .lightDirection(lightDir)
-                                .eulerDegrees(body.yaw, body.pitch, body.roll)
+                                .eulerDegrees(renderYaw, renderPitch, renderRoll)
                                 .build())));
             }
         }
 
         if (currentBody != null && currentBody.ring != null && currentBody.ring.enabled) {
-            buildOwnRingTasks(currentBody, globalScale, sunDirMC, camera, frustum, poseStack, bufferSource, cameraPos, allTasks);
+            buildOwnRingTasks(currentBody, globalScale, sunAngle, camera, frustum, poseStack, bufferSource, cameraPos, allTasks);
         }
 
-        // ── RENDERING NUVOLE PIATTE DEL PIANETA CORRENTE ──────────────────────────
         if ((!Utils.isModLoaded("simpleclouds") || Utils.isModLoaded("betterclouds")) && (currentBody != null && currentBody.clouds != null && currentBody.clouds.enabled)) {
 
             allTasks.addAll(SkyCloudsRenderer.buildTasks(
@@ -241,14 +251,13 @@ public final class PlanetSkyRenderer {
         return false;
     }
 
-    private static void buildOwnRingTasks(PlanetInstance.Config body, float globalScale, Vector3f sunDirMC, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Vec3 cameraPos, List<VolumeRenderUtil.RenderTask> ringTasks) {
+    private static void buildOwnRingTasks(PlanetInstance.Config body, float globalScale, float sunAngle, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Vec3 cameraPos, List<VolumeRenderUtil.RenderTask> ringTasks) {
 
         float physPlanetR = body.radius * globalScale;
         if (physPlanetR < 1e-6f) return;
 
-        float scaleToSky = (float) (SKY_DOME_RADIUS / physPlanetR);
-        float innerR     = body.ring.innerRadius * globalScale * scaleToSky;
-        float outerR     = body.ring.outerRadius * globalScale * scaleToSky;
+        float innerR = (body.ring.innerRadius >= body.radius ? body.ring.innerRadius / body.radius : body.ring.innerRadius) * (float) SKY_DOME_RADIUS;
+        float outerR = (body.ring.outerRadius >= body.radius ? body.ring.outerRadius / body.radius : body.ring.outerRadius) * (float) SKY_DOME_RADIUS;
 
         org.joml.Quaternionf rot = new org.joml.Quaternionf().rotationZYX((float) Math.toRadians(body.ring.roll), (float) Math.toRadians(body.ring.pitch), (float) Math.toRadians(body.ring.yaw));
         Vector3f localUp = new Vector3f(0.0f, (float) SKY_DOME_RADIUS, 0.0f);
@@ -259,7 +268,7 @@ public final class PlanetSkyRenderer {
         float ringQuadR = (outerR + (float) SKY_DOME_RADIUS) * 1.5f;
         float ringRadiusMult = 1.8f;
 
-        Vector3f lightDir = new Vector3f(sunDirMC).normalize();
+        Vector3f lightDir = new Vector3f(-(float) Math.sin(sunAngle), (float) Math.cos(sunAngle), 0.55f).normalize();
         Vector3f ringColor = CelestialJsonLoader.parseColor(body.ring.colorHex, new Vector3f(1, 1, 1));
 
         ringTasks.addAll(PlanetRingRenderer.buildTasks(ClientShaderRegistry.planetRing(), camera, frustum, poseStack, bufferSource,

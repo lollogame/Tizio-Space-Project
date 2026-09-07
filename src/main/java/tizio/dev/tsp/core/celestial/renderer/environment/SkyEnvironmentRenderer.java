@@ -350,32 +350,32 @@ public final class SkyEnvironmentRenderer {
         if (SkyRenderContext.skyboxBuffer == null) {
             BufferBuilder bb = Tesselator.getInstance().getBuilder();
             bb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            // Bottom face
+
             bb.vertex(-0.5F, -0.5F, -0.5F).uv(0.0F,        0.0F).endVertex();
             bb.vertex(-0.5F, -0.5F,  0.5F).uv(0.0F,        0.5F).endVertex();
             bb.vertex( 0.5F, -0.5F,  0.5F).uv(1.0F / 3.0F, 0.5F).endVertex();
             bb.vertex( 0.5F, -0.5F, -0.5F).uv(1.0F / 3.0F, 0.0F).endVertex();
-            // Top face
+
             bb.vertex(-0.5F,  0.5F,  0.5F).uv(1.0F / 3.0F, 0.0F).endVertex();
             bb.vertex(-0.5F,  0.5F, -0.5F).uv(1.0F / 3.0F, 0.5F).endVertex();
             bb.vertex( 0.5F,  0.5F, -0.5F).uv(2.0F / 3.0F, 0.5F).endVertex();
             bb.vertex( 0.5F,  0.5F,  0.5F).uv(2.0F / 3.0F, 0.0F).endVertex();
-            // South face
+
             bb.vertex( 0.5F,  0.5F,  0.5F).uv(2.0F / 3.0F, 0.0F).endVertex();
             bb.vertex( 0.5F, -0.5F,  0.5F).uv(2.0F / 3.0F, 0.5F).endVertex();
             bb.vertex(-0.5F, -0.5F,  0.5F).uv(1.0F,        0.5F).endVertex();
             bb.vertex(-0.5F,  0.5F,  0.5F).uv(1.0F,        0.0F).endVertex();
-            // West face
+
             bb.vertex(-0.5F,  0.5F,  0.5F).uv(0.0F,        0.5F).endVertex();
             bb.vertex(-0.5F, -0.5F,  0.5F).uv(0.0F,        1.0F).endVertex();
             bb.vertex(-0.5F, -0.5F, -0.5F).uv(1.0F / 3.0F, 1.0F).endVertex();
             bb.vertex(-0.5F,  0.5F, -0.5F).uv(1.0F / 3.0F, 0.5F).endVertex();
-            // North face
+
             bb.vertex(-0.5F,  0.5F, -0.5F).uv(1.0F / 3.0F, 0.5F).endVertex();
             bb.vertex(-0.5F, -0.5F, -0.5F).uv(1.0F / 3.0F, 1.0F).endVertex();
             bb.vertex( 0.5F, -0.5F, -0.5F).uv(2.0F / 3.0F, 1.0F).endVertex();
             bb.vertex( 0.5F,  0.5F, -0.5F).uv(2.0F / 3.0F, 0.5F).endVertex();
-            // East face
+
             bb.vertex( 0.5F,  0.5F, -0.5F).uv(2.0F / 3.0F, 0.5F).endVertex();
             bb.vertex( 0.5F, -0.5F, -0.5F).uv(2.0F / 3.0F, 1.0F).endVertex();
             bb.vertex( 0.5F, -0.5F,  0.5F).uv(1.0F,        1.0F).endVertex();
@@ -466,7 +466,6 @@ public final class SkyEnvironmentRenderer {
         VolumeRenderUtil.setFloat(ClientShaderRegistry.skyboxAtmosphere(), "uCamHeight", uCamHeight);
         VolumeRenderUtil.setVec3(ClientShaderRegistry.skyboxAtmosphere(), "uWavelenghts", uWavelenghts);
 
-
         float size = mc.options.getEffectiveRenderDistance() << 6;
         SkyRenderContext.poseStack.pushPose();
         SkyRenderContext.poseStack.scale(size, size, size);
@@ -510,32 +509,32 @@ public final class SkyEnvironmentRenderer {
 
         BufferBuilder bb = Tesselator.getInstance().getBuilder();
         bb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-        // Bottom
+
         bb.vertex(mat, -100F, -100F, -100F).uv( 0F,  0F).endVertex();
         bb.vertex(mat, -100F, -100F,  100F).uv( 0F, 16F).endVertex();
         bb.vertex(mat,  100F, -100F,  100F).uv(16F, 16F).endVertex();
         bb.vertex(mat,  100F, -100F, -100F).uv(16F,  0F).endVertex();
-        // South
+
         bb.vertex(mat, -100F, -100F,  100F).uv( 0F,  0F).endVertex();
         bb.vertex(mat, -100F,  100F,  100F).uv( 0F, 16F).endVertex();
         bb.vertex(mat,  100F,  100F,  100F).uv(16F, 16F).endVertex();
         bb.vertex(mat,  100F, -100F,  100F).uv(16F,  0F).endVertex();
-        // North
+
         bb.vertex(mat, -100F,  100F, -100F).uv( 0F,  0F).endVertex();
         bb.vertex(mat, -100F, -100F, -100F).uv( 0F, 16F).endVertex();
         bb.vertex(mat,  100F, -100F, -100F).uv(16F, 16F).endVertex();
         bb.vertex(mat,  100F,  100F, -100F).uv(16F,  0F).endVertex();
-        // Top
+
         bb.vertex(mat, -100F,  100F,  100F).uv( 0F,  0F).endVertex();
         bb.vertex(mat, -100F,  100F, -100F).uv( 0F, 16F).endVertex();
         bb.vertex(mat,  100F,  100F, -100F).uv(16F, 16F).endVertex();
         bb.vertex(mat,  100F,  100F,  100F).uv(16F,  0F).endVertex();
-        // West
+
         bb.vertex(mat, -100F,  100F, -100F).uv( 0F,  0F).endVertex();
         bb.vertex(mat, -100F,  100F,  100F).uv( 0F, 16F).endVertex();
         bb.vertex(mat, -100F, -100F,  100F).uv(16F, 16F).endVertex();
         bb.vertex(mat, -100F, -100F, -100F).uv(16F,  0F).endVertex();
-        // East
+
         bb.vertex(mat,  100F, -100F, -100F).uv( 0F,  0F).endVertex();
         bb.vertex(mat,  100F, -100F,  100F).uv( 0F, 16F).endVertex();
         bb.vertex(mat,  100F,  100F,  100F).uv(16F, 16F).endVertex();
@@ -547,7 +546,7 @@ public final class SkyEnvironmentRenderer {
     }
 
     public static void renderStars(int amount, int seed, float yaw, float pitch, float roll, int color, boolean constant) {
-        // Rebuild the star buffer only when params change
+
         if (SkyRenderContext.starBuffer == null
                 || amount != SkyRenderContext.starAmount
                 || seed   != SkyRenderContext.starSeed) {
@@ -713,7 +712,6 @@ public final class SkyEnvironmentRenderer {
         BufferBuilder bb = Tesselator.getInstance().getBuilder();
         bb.begin(VertexFormat.Mode.TRIANGLE_FAN, DefaultVertexFormat.POSITION_COLOR);
 
-        // Fan center: toward the sun or moon
         if (sunRising) bb.vertex(mat,  100.0F, 0.0F, 0.0F).color(r, g, b, alpha).endVertex();
         else           bb.vertex(mat, -100.0F, 0.0F, 0.0F).color(r, g, b, alpha).endVertex();
 
@@ -826,7 +824,6 @@ public final class SkyEnvironmentRenderer {
         if (mc.level == null) return;
         long gameTime = mc.level.getGameTime();
 
-        // Spawn a new comet if under the limit and enough time has passed
         if (SkyRenderContext.activeComets.size() < SkyRenderContext.MAX_COMETS
                 && gameTime - SkyRenderContext.lastCometSpawnTime
                 > minSpawn + SkyRenderContext.cometRandom.nextInt(maxSpawn)) {
@@ -834,7 +831,6 @@ public final class SkyEnvironmentRenderer {
             SkyRenderContext.activeComets.add(spawnComet());
         }
 
-        // Remove expired comets
         SkyRenderContext.activeComets.removeIf(c -> c.age > c.life);
         if (SkyRenderContext.activeComets.isEmpty()) return;
 
@@ -863,10 +859,8 @@ public final class SkyEnvironmentRenderer {
             SkyRenderContext.poseStack.mulPose(Axis.XP.rotationDegrees(pitch + SKYBOX_ROTATION.y()));
             SkyRenderContext.poseStack.mulPose(Axis.ZN.rotationDegrees(roll + SKYBOX_ROTATION.z()));
 
-            // Head quad
             addCometQuad(bb, headPos, comet.size, comet.color, baseAlpha, SkyRenderContext.poseStack);
 
-            // Tail segments (fading & growing toward the back)
             final int   TAIL_SEGMENTS = 15;
             final float SEGMENT_GAP   = 1.5F;
             Vec3 velNorm = comet.velocity.normalize();

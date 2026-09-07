@@ -29,15 +29,8 @@ public final class SkyCloudsRenderer {
 
     private SkyCloudsRenderer() {}
 
-    public static List<VolumeRenderUtil.RenderTask> buildTasks(
-            ShaderInstance shader,
-            PoseStack poseStack,
-            float partialTick,
-            double camX,
-            double camY,
-            double camZ,
-            PlanetInstance.Clouds clouds
-    ) {
+    public static List<VolumeRenderUtil.RenderTask> buildTasks(ShaderInstance shader, PoseStack poseStack, float partialTick, double camX, double camY, double camZ, PlanetInstance.Clouds clouds) {
+
         List<VolumeRenderUtil.RenderTask> tasks = new ArrayList<>();
 
         if (shader == null || clouds == null || !clouds.enabled) {
@@ -59,6 +52,7 @@ public final class SkyCloudsRenderer {
         Vec3 cloudPos = new Vec3(camX, cloudWorldY, camZ);
 
         tasks.add(new VolumeRenderUtil.RenderTask(cloudPos, VolumeRenderUtil.RenderPass.CLOUDS, () -> {
+
             PoseStack modelViewStack = RenderSystem.getModelViewStack();
             modelViewStack.pushPose();
             modelViewStack.mulPoseMatrix(cameraMatrix);
@@ -69,14 +63,13 @@ public final class SkyCloudsRenderer {
             RenderSystem.defaultBlendFunc();
             RenderSystem.disableCull();
             RenderSystem.depthMask(false);
-
             RenderSystem.setShader(ClientShaderRegistry::skyClouds);
-            VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation(clouds.texture), 0);
 
+            VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation(clouds.texture), 0);
             VolumeRenderUtil.setFloat(shader, "Time", time);
             VolumeRenderUtil.setFloat(shader, "CloudWindSpeed", clouds.windSpeed);
             VolumeRenderUtil.setFloat(shader, "CloudCoverage", clouds.density);
-            VolumeRenderUtil.setFloat(shader, "CloudNoiseScale", 0.10f); //clouds.noiseScale
+            VolumeRenderUtil.setFloat(shader, "CloudNoiseScale", 0.10f);
             VolumeRenderUtil.setVec4(shader, "CloudColor", color.x(), color.y(), color.z(), clouds.alpha);
             VolumeRenderUtil.setVec3(shader, "LightDirection", sunDir);
             VolumeRenderUtil.setVec3(shader, "CameraPos", new Vector3f((float) camX, 0f, (float) camZ));
@@ -84,8 +77,8 @@ public final class SkyCloudsRenderer {
 
             Tesselator tesselator = Tesselator.getInstance();
             BufferBuilder buffer = tesselator.getBuilder();
-            buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
 
+            buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
             buffer.vertex(-halfSize, 0.0F, -halfSize).uv(((float) camX - halfSize), ((float) camZ - halfSize)).endVertex();
             buffer.vertex(-halfSize, 0.0F, halfSize).uv(((float) camX - halfSize), ((float) camZ + halfSize)).endVertex();
             buffer.vertex(halfSize, 0.0F, halfSize).uv(((float) camX + halfSize), ((float) camZ + halfSize)).endVertex();

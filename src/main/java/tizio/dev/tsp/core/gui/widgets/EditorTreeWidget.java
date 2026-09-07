@@ -187,7 +187,6 @@ public class EditorTreeWidget extends AbstractWidget {
     public void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         if (!this.visible) return;
 
-        // Outer container box
         g.fill(getX(), getY(), getX() + width, getY() + height, SystemEditorTheme.TREE_BG);
         g.fill(getX(), getY(), getX() + width, getY() + 1, SystemEditorTheme.TREE_BORDER);
         g.fill(getX(), getY() + height - 1, getX() + width, getY() + height, SystemEditorTheme.TREE_BORDER);
@@ -210,7 +209,7 @@ public class EditorTreeWidget extends AbstractWidget {
 
             if (isSelected) {
                 g.fill(getX() + 2, rowY, getX() + width - 2, rowY + ROW_H, SystemEditorTheme.TREE_NODE_SEL_BG);
-                //g.fill(getX() + 2, rowY, getX() + 5, rowY + ROW_H, SystemEditorTheme.TREE_NODE_SEL_STRIP);
+
             } else if (isHovered) {
                 g.fill(getX() + 2, rowY, getX() + width - 2, rowY + ROW_H, SystemEditorTheme.TREE_NODE_HOVER_BG);
             }
@@ -241,7 +240,6 @@ public class EditorTreeWidget extends AbstractWidget {
 
         g.disableScissor();
 
-        // Render scrollbar if list exceeds tree height
         int totalH = visibleFlatList.size() * ROW_H;
         if (totalH > height) {
             int scrollbarH = Math.max(12, (height * height) / totalH);

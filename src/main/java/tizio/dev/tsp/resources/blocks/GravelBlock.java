@@ -14,11 +14,9 @@ public class GravelBlock extends FallingBlock {
         super(BlockBehaviour.Properties.of().mapColor(MapColor.STONE).instrument(NoteBlockInstrument.SNARE).strength(0.6F).sound(SoundType.GRAVEL));
     }
 
-
     @Override
     public boolean skipRendering(BlockState state, BlockState adiacentsBlocks, Direction dir) {
         return adiacentsBlocks.getBlock() == this || super.skipRendering(state, adiacentsBlocks, dir);
     }
-
 
 }

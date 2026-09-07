@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
+import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.core.celestial.instance.elements.SolarSystemData;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
 
@@ -58,7 +59,7 @@ public final class CelestialJsonExporter {
             JsonObject bodyObj = new JsonObject();
             bodyObj.addProperty("id", body.id);
             bodyObj.addProperty("type", body.type);
-            bodyObj.addProperty("parentId", body.parentId != null ? body.parentId : "sun");
+            bodyObj.addProperty("parentId", body.parentId != null ? body.parentId : DataConfig.Body.PARENT_ID_DEF);
             if (body.dimension != null && !body.dimension.isBlank()) {
                 bodyObj.addProperty("dimension", body.dimension);
             }
@@ -66,7 +67,6 @@ public final class CelestialJsonExporter {
             bodyObj.addProperty("oxygen", body.oxygen);
             bodyObj.addProperty("temperature", body.temperature);
             bodyObj.addProperty("radius", body.radius);
-
 
             boolean isBH = body.isBlackHole();
 
@@ -142,6 +142,7 @@ public final class CelestialJsonExporter {
                     atmos.addProperty("intensity", body.atmosphere.intensity);
                     atmos.addProperty("rayleighScaleHeight", body.atmosphere.rayleighScaleHeight);
                     atmos.addProperty("rayleighStrength", body.atmosphere.rayleighStrength);
+                    atmos.addProperty("color", body.atmosphere.colorHex);
 
                     JsonArray wavelengths = new JsonArray();
                     wavelengths.add(body.atmosphere.wavelengthR);
@@ -190,7 +191,7 @@ public final class CelestialJsonExporter {
                     clouds.addProperty("windSpeed", body.clouds.windSpeed);
                     clouds.addProperty("color", body.clouds.colorHex);
                     clouds.addProperty("noiseScale", body.clouds.noiseScale);
-                    if (body.clouds.alpha != 1.0F) {
+                    if (body.clouds.alpha != DataConfig.Clouds.ALPHA_DEF) {
                         clouds.addProperty("alpha", body.clouds.alpha);
                     }
                     bodyObj.add("clouds", clouds);

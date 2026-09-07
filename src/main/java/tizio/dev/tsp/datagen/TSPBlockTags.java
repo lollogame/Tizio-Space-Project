@@ -10,6 +10,7 @@ public class TSPBlockTags {
 
     public static final TagKey<Block> MARS_STONE_ORE_REPLACEABLE = tag("mars_stone_ore_replaceable");
     public static final TagKey<Block> MOON_STONE_ORE_REPLACEABLE = tag("moon_stone_ore_replaceable");
+    public static final TagKey<Block> VENUS_STONE_ORE_REPLACEABLE = tag("venus_stone_ore_replaceable");
 
     private static TagKey<Block> tag(String name) {
         return TagKey.create(Registries.BLOCK, new ResourceLocation(MainClass.MODID, name));

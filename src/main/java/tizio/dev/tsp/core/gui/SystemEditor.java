@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.phys.Vec3;
+import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.config.ConfigManager;
 import tizio.dev.tsp.core.celestial.camera.CameraPlanetOrbit;
 import tizio.dev.tsp.core.celestial.instance.elements.SolarSystemData;
@@ -15,7 +16,6 @@ import tizio.dev.tsp.core.celestial.instance.elements.sun.SunInstance;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
 import tizio.dev.tsp.core.gui.theme.SystemEditorTheme;
 import tizio.dev.tsp.core.gui.widgets.*;
-import tizio.dev.tsp.core.handlers.gravity.GravityManager;
 
 import java.io.File;
 import java.time.Instant;
@@ -75,7 +75,6 @@ public class SystemEditor extends Screen {
     private long    statusMessageTime = 0;
     private boolean statusIsError     = false;
 
-    // Active Edit Boxes
     private EditBox sysIdEditBox;
     private EditBox sysDimEditBox;
     private EditBox starIdEditBox;
@@ -97,7 +96,6 @@ public class SystemEditor extends Screen {
     private EditBox starsColorEditBox;
     private EditBox fogColorEditBox;
 
-    // Color Pickers
     private ColorPreviewWidget starColorPicker;
     private ColorPreviewWidget bodyColorPicker;
     private ColorPreviewWidget atmosColorPicker;
@@ -107,7 +105,7 @@ public class SystemEditor extends Screen {
     private ColorPreviewWidget fogColorPicker;
 
     public SystemEditor() {
-        super(Component.literal("Development Celestial Editor"));
+        super(Component.literal("Development System Editor"));
     }
     private int getPanelLeftWidth() {
         return Math.min(190, Math.max(140, (this.width / 2) - 95));
@@ -120,7 +118,6 @@ public class SystemEditor extends Screen {
     protected void init() {
 
         if(!ConfigManager.isDevelopmentMode()) return;
-
         CelestialJsonLoader.ensureLoaded();
 
         if (activeSystem == null) {
@@ -154,8 +151,8 @@ public class SystemEditor extends Screen {
         } else if (selectedNode == NodeType.STAR && activeSystem != null && activeSystem.star != null) {
             SunInstance.Config star = activeSystem.star;
             Vec3 pos = new Vec3(activeSystem.originX, activeSystem.originY, activeSystem.originZ);
-            float globalScale = Math.max(0.0001F, activeSystem.globalScale <= 0.0F ? 1.0F : activeSystem.globalScale);
-            double visualRadius = Math.max(0.05D, Math.min(100000.0D, star.radius * globalScale));
+            float globalScale = activeSystem.globalScale;
+            double visualRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, Math.min((double) DataConfig.Star.MAX_RADIUS, star.radius * globalScale));
             CameraPlanetOrbit.updateFocus(star.id, pos, visualRadius);
         }
     }
@@ -189,13 +186,12 @@ public class SystemEditor extends Screen {
         ));
     }
 
-
     private SolarSystemData createDefaultSystem() {
-        SolarSystemData system = new SolarSystemData("new_system", "tsp:space");
-        system.star = new SunInstance.Config("sun", 2000.0F, "#ffd48a");
-        PlanetInstance.Config earth = new PlanetInstance.Config("new_planet", "planet", "sun", 250.0F, "earth_mat_0", "#7fb8ff");
-        earth.orbit.radius     = 16000.0;
-        earth.orbit.periodDays = 365.25;
+        SolarSystemData system = new SolarSystemData(DataConfig.System.DEFAULT_SYSTEM_ID, DataConfig.System.DEFAULT_SPACE_DIMENSION);
+        system.star = new SunInstance.Config(DataConfig.Star.ID_DEF, DataConfig.Star.RADIUS.defF(), DataConfig.Star.COLOR_HEX_DEF);
+        PlanetInstance.Config earth = new PlanetInstance.Config(DataConfig.Body.NEW_BODY_ID, DataConfig.Body.TYPE_DEF, DataConfig.Body.PARENT_ID_DEF, DataConfig.Body.DEFAULT_SYSTEM_BODY_RADIUS, DataConfig.Body.TEXTURE_DEF, DataConfig.Body.COLOR_HEX_DEF);
+        earth.orbit.radius     = DataConfig.Orbit.RADIUS.def();
+        earth.orbit.periodDays = DataConfig.Orbit.PERIOD_DAYS.def();
         earth.atmosphere.enabled = true;
         system.bodies.add(earth);
         return system;
@@ -212,7 +208,7 @@ public class SystemEditor extends Screen {
         SunInstance.Config star = activeSystem.star;
         Vec3 pos = new Vec3(activeSystem.originX, activeSystem.originY, activeSystem.originZ);
         float globalScale = Math.max(0.0001F, activeSystem.globalScale <= 0.0F ? 1.0F : activeSystem.globalScale);
-        double visualRadius = Math.max(0.05D, Math.min(100000.0D, star.radius * globalScale));
+        double visualRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, Math.min((double) DataConfig.Star.MAX_RADIUS, star.radius * globalScale));
         CameraPlanetOrbit.activate(star.id, pos, visualRadius);
     }
 
@@ -226,7 +222,7 @@ public class SystemEditor extends Screen {
             return Optional.empty();
         }
         float globalScale = Math.max(0.0001F, activeSystem.globalScale <= 0.0F ? 1.0F : activeSystem.globalScale);
-        double physRadius = Math.max(0.05, selectedBody.radius * globalScale);
+        double physRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, selectedBody.radius * globalScale);
         double visualRadius = CelestialJsonLoader.resolveAtmosphereRadiusConfig(selectedBody.atmosphere, (float) physRadius);
         return Optional.of(new CelestialJsonLoader.BodySpatialInfo(
                 activeSystem, selectedBody, pos, physRadius, visualRadius, selectedBody.dimension));
@@ -284,7 +280,6 @@ public class SystemEditor extends Screen {
 
         addRenderableWidget(new Button(this.width - 75, y, 71, 20, Component.literal("Hide UI"), b -> toggleHideUI()).accentColor(SystemEditorTheme.AMBER));
 
-        // Toggle Left Sidebar Button
         int leftW = getPanelLeftWidth();
         String leftToggleLabel = leftPanelCollapsed ? " Tree > " : " < ";
         addRenderableWidget(new Button(leftPanelCollapsed ? 4 : leftW - 24, HEADER_H + 2, leftPanelCollapsed ? 55 : 20, 16, Component.literal(leftToggleLabel), b -> {
@@ -292,7 +287,6 @@ public class SystemEditor extends Screen {
             buildLayout();
         }).compact(true));
 
-        // Toggle Right Sidebar Button
         int rightW = getPanelRightWidth();
         int p2X = this.width - rightW;
         String rightToggleLabel = rightPanelCollapsed ? " < Insp. " : " > ";
@@ -307,7 +301,6 @@ public class SystemEditor extends Screen {
         int startY = HEADER_H + 20;
         int width  = getPanelLeftWidth() - 8;
 
-        // Search Input Box
         searchEditBox = new EditBox(this.font, panelX, startY, width, ROW_H, Component.literal("Search"));
         searchEditBox.setValue(searchQuery);
         searchEditBox.setHint(Component.literal("Search bodies..."));
@@ -322,7 +315,6 @@ public class SystemEditor extends Screen {
         int treeY = startY + ROW_H + 4;
         int treeH = this.height - treeY - 52;
 
-        // Tree Widget
         String currentSelId = (selectedNode == NodeType.SYSTEM && activeSystem != null) ? activeSystem.id
                 : ((selectedNode == NodeType.STAR && activeSystem != null && activeSystem.star != null) ? activeSystem.star.id
                 : (selectedBody != null ? selectedBody.id : null));
@@ -357,7 +349,6 @@ public class SystemEditor extends Screen {
         }
         addRenderableWidget(treeWidget);
 
-        // Action Buttons at bottom of Left Panel
         int botY1 = this.height - 46;
         int btnW4 = (width - 6) / 4;
 
@@ -365,7 +356,6 @@ public class SystemEditor extends Screen {
         addRenderableWidget(new Button(panelX + btnW4 + 2, botY1, btnW4, ROW_H, Component.literal("+Moon"), button -> addBody("moon")).compact(true));
         addRenderableWidget(new Button(panelX + (btnW4 + 2) * 2, botY1, btnW4, ROW_H, Component.literal("+ BH"), button -> addBody("blackhole")).compact(true));
 
-        // Delete Body Button - Red Accent
         addRenderableWidget(new Button(panelX + (btnW4 + 2) * 3, botY1, btnW4, ROW_H, Component.literal("Delete"), button -> promptRemoveSelectedBody()).compact(true).accentColor(SystemEditorTheme.RED));
 
         int botY2 = this.height - 24;
@@ -381,7 +371,6 @@ public class SystemEditor extends Screen {
         int startY = HEADER_H + 20;
         int width  = rightW - 8;
 
-        // Header Tab Navigation
         buildTabHeader(panelX, startY, width);
 
         int formY = startY + ROW_H + 4;
@@ -470,7 +459,26 @@ public class SystemEditor extends Screen {
     private int getMaxInspectorScroll() {
         int formY = HEADER_H + 44;
         int visibleH = this.height - formY - 26;
-        return Math.max(0, totalInspectorHeight - visibleH);
+        int maxScroll = Math.max(0, totalInspectorHeight - visibleH);
+
+        ColorPreviewWidget openPicker = findOpenColorPicker();
+        if (openPicker != null) {
+            InspectorEntry entry = findEntryForWidget(openPicker);
+            if (entry != null) {
+                int popupContentBottom = entry.rawY + openPicker.getPopupBottomOffset();
+                int neededScroll = popupContentBottom - visibleH;
+                maxScroll = Math.max(maxScroll, neededScroll);
+            }
+        }
+
+        return maxScroll;
+    }
+
+    private InspectorEntry findEntryForWidget(AbstractWidget widget) {
+        for (InspectorEntry entry : inspectorEntries) {
+            if (entry.widget == widget) return entry;
+        }
+        return null;
     }
 
     private EditBox addLabeledEditBox(int x, int relativeY, int width, String label, String value, Consumer<String> responder) {
@@ -486,15 +494,18 @@ public class SystemEditor extends Screen {
         return box;
     }
 
-    private void addInspectorSliderWithReset(int x, int relativeY, int width, String label, double current, double def, double min, double max, Consumer<Double> onChange) {
+    private void addCustomSlider(int x, int relativeY, int width, String label, double current, double def, double min, double max, Consumer<Double> onChange) {
         int formY = HEADER_H + 44;
         int sliderW = width - 24;
         LabeledSlider slider = new LabeledSlider(x, formY + relativeY, sliderW, ROW_H, label, current, def, min, max, onChange);
         addInspectorWidget(slider, relativeY, ROW_H, null);
 
-        // Reset Slider button - Red Accent
         Button resetBtn = new Button(x + sliderW + 2, formY + relativeY, 22, ROW_H, Component.literal("R"), b -> slider.resetToDefault()).compact(true).accentColor(SystemEditorTheme.RED);
         addInspectorWidget(resetBtn, relativeY, ROW_H, null);
+    }
+
+    private void addCustomSlider(int x, int relativeY, int width, String label, double current, DataConfig.Slider slider, Consumer<Double> onChange) {
+        addCustomSlider(x, relativeY, width, label, current, slider.def(), slider.min(), slider.max(), onChange);
     }
 
     private void buildSystemTab(int x, int y, int width) {
@@ -514,16 +525,37 @@ public class SystemEditor extends Screen {
         });
         relY += 22;
 
-        sysDimEditBox = addLabeledEditBox(x, relY, width, "Dim:", activeSystem.dimension != null ? activeSystem.dimension : "tsp:space", val -> {
-            activeSystem.dimension = val;
-            notifyChanged();
-        });
+        {
+            int formY = HEADER_H + 44;
+            int labelWidth = 42;
+            String dimInitial = activeSystem.dimension != null ? activeSystem.dimension : SolarSystemData.DEFAULT_SPACE_DIMENSION;
+            sysDimEditBox = new EditBox(this.font, x + labelWidth, formY + relY, width - labelWidth, ROW_H, Component.literal("Dim:")) {
+                @Override
+                public void setFocused(boolean focused) {
+                    if (!focused && isFocused()) {
+                        String val = getValue();
+                        net.minecraft.resources.ResourceLocation parsed = net.minecraft.resources.ResourceLocation.tryParse(val);
+                        net.minecraft.client.multiplayer.ClientPacketListener conn = Minecraft.getInstance().getConnection();
+                        boolean exists = parsed != null && conn != null && conn.levels().contains(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, parsed));
+                        String resolved = exists ? val : SolarSystemData.DEFAULT_SPACE_DIMENSION;
+                        if (!resolved.equals(val)) setValue(resolved);
+                        if (!CelestialJsonLoader.isBlacklistedForSpaceDimension(resolved)) {
+                            activeSystem.dimension = resolved;
+                            notifyChanged();
+                        }
+                    }
+                    super.setFocused(focused);
+                }
+            };
+            sysDimEditBox.setValue(dimInitial);
+            addInspectorWidget(sysDimEditBox, relY, ROW_H, "Dim:");
+        }
         relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Origin X", activeSystem.originX, 0.0, -100000.0, 100000.0, val -> { activeSystem.originX = val; notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Origin Y", activeSystem.originY, 500.0, -100000.0, 100000.0, val -> { activeSystem.originY = val; notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Origin Z", activeSystem.originZ, 0.0, -100000.0, 100000.0, val -> { activeSystem.originZ = val; notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Scale", activeSystem.globalScale, 5.50, 0.001, 10.0, val -> { activeSystem.globalScale = val.floatValue(); notifyChanged(); });
+        addCustomSlider(x, relY, width, "Origin X", activeSystem.originX, DataConfig.System.ORIGIN_X, val -> { activeSystem.originX = val; notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Origin Y", activeSystem.originY, DataConfig.System.ORIGIN_Y, val -> { activeSystem.originY = val; notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Origin Z", activeSystem.originZ, DataConfig.System.ORIGIN_Z, val -> { activeSystem.originZ = val; notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Scale", activeSystem.globalScale, DataConfig.System.SCALE, val -> { activeSystem.globalScale = val.floatValue(); notifyChanged(); });
     }
 
     private void buildStarTab(int x, int y, int width) {
@@ -542,7 +574,7 @@ public class SystemEditor extends Screen {
         addInspectorWidget(enableBtn, relY, ROW_H, null); relY += 22;
 
         starColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color"));
-        starColorEditBox.setValue(star.colorHex != null ? star.colorHex : "#ffd48a");
+        starColorEditBox.setValue(star.colorHex != null ? star.colorHex : DataConfig.Star.COLOR_HEX_DEF);
         starColorEditBox.setResponder(val -> {
             if (val.startsWith("#") && val.length() == 7) {
                 star.colorHex = val;
@@ -559,16 +591,16 @@ public class SystemEditor extends Screen {
         });
 
         addInspectorWidget(starColorPicker, relY, ROW_H, null); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Radius", star.radius, 2000.0, 100.0, 100000.0, val -> { star.radius = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Radius", star.radius, DataConfig.Star.RADIUS, val -> { star.radius = val.floatValue(); notifyChanged(); }); relY += 22;
 
         if (star.isBlackHole()) {
-            addInspectorSliderWithReset(x, relY, width, "Disk Speed", star.diskRotationSpeed, 0.20, 0.0, 5.0, val -> { star.diskRotationSpeed = val.floatValue(); notifyChanged(); }); relY += 22;
-            addInspectorSliderWithReset(x, relY, width, "Intensity", star.intensity, 1.0, 0.0, 10.0, val -> { star.intensity = val.floatValue(); notifyChanged(); }); relY += 22;
+            addCustomSlider(x, relY, width, "Disk Speed", star.diskRotationSpeed, DataConfig.Star.DISK_ROTATION_SPEED, val -> { star.diskRotationSpeed = val.floatValue(); notifyChanged(); }); relY += 22;
+            addCustomSlider(x, relY, width, "Intensity", star.intensity, DataConfig.Star.INTENSITY, val -> { star.intensity = val.floatValue(); notifyChanged(); }); relY += 22;
         }
 
-        addInspectorSliderWithReset(x, relY, width, "Yaw (°)", star.yaw, 0.0, -180.0, 180.0, val -> { star.yaw = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Pitch (°)", star.pitch, 0.0, -180.0, 180.0, val -> { star.pitch = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Roll (°)", star.roll, 0.0, -180.0, 180.0, val -> { star.roll = val.floatValue(); notifyChanged(); });
+        addCustomSlider(x, relY, width, "Yaw (°)", star.yaw, DataConfig.Star.YAW, val -> { star.yaw = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Pitch (°)", star.pitch, DataConfig.Star.PITCH, val -> { star.pitch = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Roll (°)", star.roll, DataConfig.Star.ROLL, val -> { star.roll = val.floatValue(); notifyChanged(); });
     }
 
     private void buildGeneralTab(int x, int y, int width) {
@@ -598,19 +630,20 @@ public class SystemEditor extends Screen {
             if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, val);
         }); relY += 22;
 
-        bodyParentEditBox = addLabeledEditBox(x, relY, width, "Parent:", selectedBody.parentId != null ? selectedBody.parentId : "sun", val -> {
+        bodyParentEditBox = addLabeledEditBox(x, relY, width, "Parent:", selectedBody.parentId != null ? selectedBody.parentId : DataConfig.Body.PARENT_ID_DEF, val -> {
             selectedBody.parentId = val;
             notifyChanged();
             if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, selectedBody.id);
         }); relY += 22;
 
-        bodyDimEditBox = addLabeledEditBox(x, relY, width, "Dim:", selectedBody.dimension != null ? selectedBody.dimension : "", val -> { selectedBody.dimension = val; notifyChanged(); }); relY += 24;
+        bodyDimEditBox = addLabeledEditBox(x, relY, width, "Dim:", selectedBody.dimension != null ? selectedBody.dimension : DataConfig.Body.DIMENSION_DEF, val -> { selectedBody.dimension = val; notifyChanged(); }); relY += 24;
 
         Button dupBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Duplicate Body Config"), b -> duplicateSelectedBody());
         addInspectorWidget(dupBtn, relY, ROW_H, null);
     }
 
     private void buildOrbitTab(int x, int y, int width) {
+
         if (selectedBody.orbit == null) selectedBody.orbit = new PlanetInstance.Orbit();
         totalInspectorHeight = 0;
         int relY = 0;
@@ -620,18 +653,17 @@ public class SystemEditor extends Screen {
             selectedBody.orbit.enabled = !selectedBody.orbit.enabled;
             notifyChanged(); buildLayout();
         });
+
         addInspectorWidget(orbBtn, relY, ROW_H, null); relY += 22;
+        addCustomSlider(x, relY, width, "Orbit Radius",  selectedBody.orbit.radius,       DataConfig.Orbit.RADIUS, val -> { selectedBody.orbit.radius       = val; notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Period (Days)", selectedBody.orbit.periodDays,    DataConfig.Orbit.PERIOD_DAYS, val -> { selectedBody.orbit.periodDays    = val; notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Inclination°",  selectedBody.orbit.inclination,   DataConfig.Orbit.INCLINATION, val -> { selectedBody.orbit.inclination   = val; notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Asc Node°",     selectedBody.orbit.ascendingNode, DataConfig.Orbit.ASCENDING_NODE, val -> { selectedBody.orbit.ascendingNode = val; notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Epoch Angle°",  selectedBody.orbit.epochAngle,    DataConfig.Orbit.EPOCH_ANGLE, val -> { selectedBody.orbit.epochAngle    = val; notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Vert Offset",   selectedBody.orbit.verticalOffset, DataConfig.Orbit.VERTICAL_OFFSET, val -> { selectedBody.orbit.verticalOffset= val; notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Spin (Hours)", selectedBody.spinHours, DataConfig.Body.SPIN_HOURS, val -> { selectedBody.spinHours = val; notifyChanged(); }); relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Orbit Radius",  selectedBody.orbit.radius,       16000.0, 0.0,     200000.0, val -> { selectedBody.orbit.radius       = val; notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Period (Days)", selectedBody.orbit.periodDays,    365.25,  0.1,     60000.0,  val -> { selectedBody.orbit.periodDays    = val; notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Inclination°",  selectedBody.orbit.inclination,   0.0,     -90.0,   90.0,     val -> { selectedBody.orbit.inclination   = val; notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Asc Node°",     selectedBody.orbit.ascendingNode, 0.0,     0.0,     360.0,    val -> { selectedBody.orbit.ascendingNode = val; notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Epoch Angle°",  selectedBody.orbit.epochAngle,    0.0,     0.0,     360.0,    val -> { selectedBody.orbit.epochAngle    = val; notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Vert Offset",   selectedBody.orbit.verticalOffset,0.0,    -2000.0,  2000.0,   val -> { selectedBody.orbit.verticalOffset= val; notifyChanged(); }); relY += 22;
-
-        epochUtcEditBox = addLabeledEditBox(x, relY, width, "Epoch:", selectedBody.orbit.epochUtc != null ? selectedBody.orbit.epochUtc : "2000-01-01T12:00:00Z", val -> { selectedBody.orbit.epochUtc = val; notifyChanged(); }); relY += 22;
-
-        addInspectorSliderWithReset(x, relY, width, "Spin (Hours)", selectedBody.spinHours, 24.0, 0.0, 1000.0, val -> { selectedBody.spinHours = val; notifyChanged(); });
+        epochUtcEditBox = addLabeledEditBox(x, relY, width, "Epoch:", selectedBody.orbit.epochUtc != null ? selectedBody.orbit.epochUtc : DataConfig.Orbit.EPOCH_UTC_DEF, val -> { selectedBody.orbit.epochUtc = val; notifyChanged(); });
     }
 
     private void buildSurfaceTab(int x, int y, int width) {
@@ -639,8 +671,8 @@ public class SystemEditor extends Screen {
         int relY = 0;
         int formY = HEADER_H + 44;
 
-        addInspectorSliderWithReset(x, relY, width, "Body Radius", selectedBody.radius, 150.0, 1.0, 1800.0, val -> { selectedBody.radius = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Gravity", selectedBody.gravity, GravityManager.EARTH_GRAVITY_MS2, 0.0, 50.0, val -> {selectedBody.gravity = val.floatValue();notifyChanged();});relY += 22;
+        addCustomSlider(x, relY, width, "Body Radius", selectedBody.radius, DataConfig.Body.RADIUS, val -> { selectedBody.radius = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Gravity", selectedBody.gravity, DataConfig.Body.GRAVITY, val -> {selectedBody.gravity = val.floatValue();notifyChanged();});relY += 22;
 
         Button oxygenBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Oxygen: " + (selectedBody.oxygen ? "True" : "False")), b -> {
             selectedBody.oxygen = !selectedBody.oxygen;
@@ -649,18 +681,18 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(oxygenBtn, relY, ROW_H, null); relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Temperature", selectedBody.temperature, 0.0, -1.0, 1.0, val -> { selectedBody.temperature = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Temperature", selectedBody.temperature, DataConfig.Body.TEMPERATURE, val -> { selectedBody.temperature = val.floatValue(); notifyChanged(); }); relY += 22;
 
         if (selectedBody.isBlackHole()) {
-            addInspectorSliderWithReset(x, relY, width, "Disk Speed", selectedBody.diskRotationSpeed, 0.20, 0.0, 5.0, val -> { selectedBody.diskRotationSpeed = val.floatValue(); notifyChanged(); }); relY += 22;
-            addInspectorSliderWithReset(x, relY, width, "Intensity", selectedBody.intensity, 1.0, 0.0, 10.0, val -> { selectedBody.intensity = val.floatValue(); notifyChanged(); }); relY += 22;
+            addCustomSlider(x, relY, width, "Disk Speed", selectedBody.diskRotationSpeed, DataConfig.Body.DISK_ROTATION_SPEED, val -> { selectedBody.diskRotationSpeed = val.floatValue(); notifyChanged(); }); relY += 22;
+            addCustomSlider(x, relY, width, "Intensity", selectedBody.intensity, DataConfig.Body.INTENSITY, val -> { selectedBody.intensity = val.floatValue(); notifyChanged(); }); relY += 22;
         } else {
-            dayTextureEditBox = addLabeledEditBox(x, relY, width, "Day:", selectedBody.texture != null ? selectedBody.texture : "", val -> { selectedBody.texture = val; notifyChanged(); }); relY += 22;
-            nightTextureEditBox = addLabeledEditBox(x, relY, width, "Night:", selectedBody.nightTexture != null ? selectedBody.nightTexture : "", val -> { selectedBody.nightTexture = val; notifyChanged(); }); relY += 22;
+            dayTextureEditBox = addLabeledEditBox(x, relY, width, "Day:", selectedBody.texture != null ? selectedBody.texture : DataConfig.Body.TEXTURE_DEF, val -> { selectedBody.texture = val; notifyChanged(); }); relY += 22;
+            nightTextureEditBox = addLabeledEditBox(x, relY, width, "Night:", selectedBody.nightTexture != null ? selectedBody.nightTexture : DataConfig.Body.NIGHT_TEXTURE_DEF, val -> { selectedBody.nightTexture = val; notifyChanged(); }); relY += 22;
         }
 
         bodyColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
-        bodyColorEditBox.setValue(selectedBody.colorHex != null ? selectedBody.colorHex : "#7fb8ff");
+        bodyColorEditBox.setValue(selectedBody.colorHex != null ? selectedBody.colorHex : DataConfig.Body.COLOR_HEX_DEF);
         bodyColorEditBox.setResponder(val -> {
             if (val.startsWith("#") && val.length() == 7) {
                 selectedBody.colorHex = val;
@@ -677,9 +709,9 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(bodyColorPicker, relY, ROW_H, null); relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Rot Yaw°",   selectedBody.yaw,   0.0, -180.0, 180.0, val -> { selectedBody.yaw   = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rot Pitch°", selectedBody.pitch, 0.0, -180.0, 180.0, val -> { selectedBody.pitch = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rot Roll°",  selectedBody.roll,  0.0, -180.0, 180.0, val -> { selectedBody.roll  = val.floatValue(); notifyChanged(); });
+        addCustomSlider(x, relY, width, "Rot Yaw°",   selectedBody.yaw,   DataConfig.Body.ROT_YAW, val -> { selectedBody.yaw   = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Rot Pitch°", selectedBody.pitch, DataConfig.Body.ROT_PITCH, val -> { selectedBody.pitch = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Rot Roll°",  selectedBody.roll,  DataConfig.Body.ROT_ROLL, val -> { selectedBody.roll  = val.floatValue(); notifyChanged(); });
 
         if (!selectedBody.isBlackHole() && !"star".equalsIgnoreCase(selectedBody.type)) {
             if (selectedBody.clouds == null) selectedBody.clouds = new PlanetInstance.Clouds();
@@ -692,10 +724,10 @@ public class SystemEditor extends Screen {
             });
             addInspectorWidget(cldBtn, relY, ROW_H, null); relY += 22;
 
-            cloudTextureEditBox = addLabeledEditBox(x, relY, width, "Noise:", selectedBody.clouds.texture != null ? selectedBody.clouds.texture : "noise1", val -> { selectedBody.clouds.texture = val; notifyChanged(); }); relY += 22;
+            cloudTextureEditBox = addLabeledEditBox(x, relY, width, "Noise:", selectedBody.clouds.texture != null ? selectedBody.clouds.texture : DataConfig.Clouds.TEXTURE_DEF, val -> { selectedBody.clouds.texture = val; notifyChanged(); }); relY += 22;
 
             cloudColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
-            cloudColorEditBox.setValue(selectedBody.clouds.colorHex != null ? selectedBody.clouds.colorHex : "#ffffff");
+            cloudColorEditBox.setValue(selectedBody.clouds.colorHex != null ? selectedBody.clouds.colorHex : DataConfig.Clouds.COLOR_HEX_DEF);
             cloudColorEditBox.setResponder(val -> {
                 if (val.startsWith("#") && val.length() == 7) {
                     selectedBody.clouds.colorHex = val;
@@ -705,17 +737,17 @@ public class SystemEditor extends Screen {
             });
             addInspectorWidget(cloudColorEditBox, relY, ROW_H, "Color:");
 
-            cloudColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.clouds.colorHex != null ? selectedBody.clouds.colorHex : "#ffffff", hex -> {
+            cloudColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.clouds.colorHex != null ? selectedBody.clouds.colorHex : DataConfig.Clouds.COLOR_HEX_DEF, hex -> {
                 selectedBody.clouds.colorHex = hex;
                 if (cloudColorEditBox != null) cloudColorEditBox.setValue(hex);
                 notifyChanged();
             });
             addInspectorWidget(cloudColorPicker, relY, ROW_H, null); relY += 22;
 
-            addInspectorSliderWithReset(x, relY, width, "Cloud Height", selectedBody.clouds.height, 0.03, 0.001, 0.2, val -> { selectedBody.clouds.height = val.floatValue(); notifyChanged(); }); relY += 22;
-            addInspectorSliderWithReset(x, relY, width, "Cloud Density", selectedBody.clouds.density, 0.5, 0.0, 1.0, val -> { selectedBody.clouds.density = val.floatValue(); notifyChanged(); }); relY += 22;
-            addInspectorSliderWithReset(x, relY, width, "Noise Scale", selectedBody.clouds.noiseScale, 1.0, 0.1, 10.0, val -> { selectedBody.clouds.noiseScale = val.floatValue(); notifyChanged(); }); relY += 22;
-            addInspectorSliderWithReset(x, relY, width, "Wind Speed", selectedBody.clouds.windSpeed, 0.01, -0.5, 0.5, val -> { selectedBody.clouds.windSpeed = val.floatValue(); notifyChanged(); });
+            addCustomSlider(x, relY, width, "Cloud Height", selectedBody.clouds.height, DataConfig.Clouds.HEIGHT, val -> { selectedBody.clouds.height = val.floatValue(); notifyChanged(); }); relY += 22;
+            addCustomSlider(x, relY, width, "Cloud Density", selectedBody.clouds.density, DataConfig.Clouds.DENSITY, val -> { selectedBody.clouds.density = val.floatValue(); notifyChanged(); }); relY += 22;
+            addCustomSlider(x, relY, width, "Noise Scale", selectedBody.clouds.noiseScale, DataConfig.Clouds.NOISE_SCALE, val -> { selectedBody.clouds.noiseScale = val.floatValue(); notifyChanged(); }); relY += 22;
+            addCustomSlider(x, relY, width, "Wind Speed", selectedBody.clouds.windSpeed, DataConfig.Clouds.WIND_SPEED, val -> { selectedBody.clouds.windSpeed = val.floatValue(); notifyChanged(); });
         }
     }
 
@@ -731,17 +763,17 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(atmBtn, relY, ROW_H, null); relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Thickness",    selectedBody.atmosphere.thickness,         0.23,   0.04,  0.35,    val -> { selectedBody.atmosphere.thickness         = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Exposure",     selectedBody.atmosphere.exposure,           3.25,   1.0,   3.25,   val -> { selectedBody.atmosphere.exposure          = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Intensity",    selectedBody.atmosphere.intensity,          0.34,   0.15,  0.7,    val -> { selectedBody.atmosphere.intensity         = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rayleigh H",   selectedBody.atmosphere.rayleighScaleHeight,0.0913, 0.0913, 0.20,    val -> { selectedBody.atmosphere.rayleighScaleHeight= val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rayleigh Str", selectedBody.atmosphere.rayleighStrength,   0.0856, 0.0035, 0.0942,    val -> { selectedBody.atmosphere.rayleighStrength  = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "λ Red",        selectedBody.atmosphere.wavelengthR,        1000.0, 380.0, 2000.0, val -> { selectedBody.atmosphere.wavelengthR       = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "λ Green",      selectedBody.atmosphere.wavelengthG,        1000.0, 380.0, 2000.0, val -> { selectedBody.atmosphere.wavelengthG       = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "λ Blue",       selectedBody.atmosphere.wavelengthB,        1000.0, 380.0, 2000.0, val -> { selectedBody.atmosphere.wavelengthB       = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Thickness",    selectedBody.atmosphere.thickness,         DataConfig.Atmosphere.THICKNESS, val -> { selectedBody.atmosphere.thickness         = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Exposure",     selectedBody.atmosphere.exposure,           DataConfig.Atmosphere.EXPOSURE, val -> { selectedBody.atmosphere.exposure          = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Intensity",    selectedBody.atmosphere.intensity,          DataConfig.Atmosphere.INTENSITY, val -> { selectedBody.atmosphere.intensity         = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Rayleigh H",   selectedBody.atmosphere.rayleighScaleHeight, DataConfig.Atmosphere.RAYLEIGH_SCALE_HEIGHT, val -> { selectedBody.atmosphere.rayleighScaleHeight= val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Rayleigh Str", selectedBody.atmosphere.rayleighStrength,   DataConfig.Atmosphere.RAYLEIGH_STRENGTH, val -> { selectedBody.atmosphere.rayleighStrength  = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "λ Red",        selectedBody.atmosphere.wavelengthR,        DataConfig.Atmosphere.WAVELENGTH_R, val -> { selectedBody.atmosphere.wavelengthR       = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "λ Green",      selectedBody.atmosphere.wavelengthG,        DataConfig.Atmosphere.WAVELENGTH_G, val -> { selectedBody.atmosphere.wavelengthG       = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "λ Blue",       selectedBody.atmosphere.wavelengthB,        DataConfig.Atmosphere.WAVELENGTH_B, val -> { selectedBody.atmosphere.wavelengthB       = val.floatValue(); notifyChanged(); }); relY += 22;
 
         atmosColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
-        atmosColorEditBox.setValue(selectedBody.atmosphere.colorHex != null ? selectedBody.atmosphere.colorHex : "#ffffff");
+        atmosColorEditBox.setValue(selectedBody.atmosphere.colorHex != null ? selectedBody.atmosphere.colorHex : DataConfig.Atmosphere.COLOR_HEX_DEF);
         atmosColorEditBox.setResponder(val -> {
             if (val.startsWith("#") && val.length() == 7) {
                 selectedBody.atmosphere.colorHex = val;
@@ -751,7 +783,7 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(atmosColorEditBox, relY, ROW_H, "Color:");
 
-        atmosColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.atmosphere.colorHex, hex -> {
+        atmosColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.atmosphere.colorHex != null ? selectedBody.atmosphere.colorHex : DataConfig.Atmosphere.COLOR_HEX_DEF, hex -> {
             selectedBody.atmosphere.colorHex = hex;
             if (atmosColorEditBox != null) atmosColorEditBox.setValue(hex);
             notifyChanged();
@@ -771,33 +803,17 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(rngBtn, relY, ROW_H, null); relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Inner Radius", selectedBody.ring.innerRadius, 180.0, 5.0,  2000.0, val -> { selectedBody.ring.innerRadius = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Outer Radius", selectedBody.ring.outerRadius, 300.0, 10.0, 4000.0, val -> { selectedBody.ring.outerRadius = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Inner Radius", selectedBody.ring.innerRadius, DataConfig.Ring.INNER_RADIUS, val -> {float newInner = val.floatValue();selectedBody.ring.innerRadius = newInner;if (selectedBody.ring.outerRadius <= newInner) {selectedBody.ring.outerRadius = newInner + 0.1F;}notifyChanged();});relY += 22;
+        addCustomSlider(x, relY, width, "Outer Radius", selectedBody.ring.outerRadius, DataConfig.Ring.OUTER_RADIUS, val -> {float newOuter = val.floatValue();selectedBody.ring.outerRadius = newOuter;if (selectedBody.ring.innerRadius >= newOuter) {selectedBody.ring.innerRadius = Math.max(DataConfig.Ring.INNER_RADIUS.minF(), newOuter);}notifyChanged();});relY += 22;
 
-        ringTextureEditBox = addLabeledEditBox(x, relY, width, "Ring:", selectedBody.ring.texture != null ? selectedBody.ring.texture : "saturn_ring", val -> { selectedBody.ring.texture = val; notifyChanged(); }); relY += 22;
-        rockTextureEditBox = addLabeledEditBox(x, relY, width, "Rock:", selectedBody.ring.rockTexture != null ? selectedBody.ring.rockTexture : "rock_texture", val -> { selectedBody.ring.rockTexture = val; notifyChanged(); }); relY += 22;
+        ringTextureEditBox = addLabeledEditBox(x, relY, width, "Ring:", selectedBody.ring.texture != null ? selectedBody.ring.texture : DataConfig.Ring.TEXTURE_DEF, val -> { selectedBody.ring.texture = val; notifyChanged(); }); relY += 22;
+        rockTextureEditBox = addLabeledEditBox(x, relY, width, "Rock:", selectedBody.ring.rockTexture != null ? selectedBody.ring.rockTexture : DataConfig.Ring.ROCK_TEXTURE_DEF, val -> { selectedBody.ring.rockTexture = val; notifyChanged(); }); relY += 22;
 
         ringColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
-        ringColorEditBox.setValue(selectedBody.ring.colorHex != null ? selectedBody.ring.colorHex : "#ffffff");
-        ringColorEditBox.setResponder(val -> {
-            if (val.startsWith("#") && val.length() == 7) {
-                selectedBody.ring.colorHex = val;
-                if (ringColorPicker != null) ringColorPicker.setHexColor(val);
-                notifyChanged();
-            }
-        });
-        addInspectorWidget(ringColorEditBox, relY, ROW_H, "Color:");
 
-        ringColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.ring.colorHex, hex -> {
-            selectedBody.ring.colorHex = hex;
-            if (ringColorEditBox != null) ringColorEditBox.setValue(hex);
-            notifyChanged();
-        });
-        addInspectorWidget(ringColorPicker, relY, ROW_H, null); relY += 22;
-
-        addInspectorSliderWithReset(x, relY, width, "Ring Yaw°",   selectedBody.ring.yaw,   0.0, -180.0, 180.0, val -> { selectedBody.ring.yaw   = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Ring Pitch°",  selectedBody.ring.pitch, 0.0, -180.0, 180.0, val -> { selectedBody.ring.pitch = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Ring Roll°",   selectedBody.ring.roll,  0.0, -180.0, 180.0, val -> { selectedBody.ring.roll  = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Ring Yaw°",   selectedBody.ring.yaw,   DataConfig.Ring.YAW, val -> { selectedBody.ring.yaw   = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Ring Pitch°",  selectedBody.ring.pitch, DataConfig.Ring.PITCH, val -> { selectedBody.ring.pitch = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Ring Roll°",   selectedBody.ring.roll,  DataConfig.Ring.ROLL, val -> { selectedBody.ring.roll  = val.floatValue(); notifyChanged(); }); relY += 22;
 
         Button rkBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Rocks Enabled: " + selectedBody.ring.rocksEnabled), b -> {
             selectedBody.ring.rocksEnabled = !selectedBody.ring.rocksEnabled;
@@ -805,11 +821,11 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(rkBtn, relY, ROW_H, null); relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Rock Count",    selectedBody.ring.rockCount,   4000.0, 0.0,   150000.0, val -> { selectedBody.ring.rockCount   = val.intValue();   notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rock Min Size", selectedBody.ring.rockMinSize,  0.5,   0.05,  4.0,    val -> { selectedBody.ring.rockMinSize  = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rock Max Size", selectedBody.ring.rockMaxSize,  2.0,   0.1,   4.0,    val -> { selectedBody.ring.rockMaxSize  = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Rock Height",   selectedBody.ring.rockHeight,   5.0,   0.0,   20.0,   val -> { selectedBody.ring.rockHeight   = val.floatValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Orbit Speed",   selectedBody.ring.rockOrbitSpeed,0.0,   -0.10,   0.10,    val -> { selectedBody.ring.rockOrbitSpeed= val.floatValue(); notifyChanged(); });
+        addCustomSlider(x, relY, width, "Rock Count",    selectedBody.ring.rockCount,   DataConfig.Ring.ROCK_COUNT, val -> { selectedBody.ring.rockCount   = val.intValue();   notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Rock Min Size", selectedBody.ring.rockMinSize,  DataConfig.Ring.ROCK_MIN_SIZE, val -> { selectedBody.ring.rockMinSize  = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Rock Max Size", selectedBody.ring.rockMaxSize,  DataConfig.Ring.ROCK_MAX_SIZE, val -> { selectedBody.ring.rockMaxSize  = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Rock Height",   selectedBody.ring.rockHeight,   DataConfig.Ring.ROCK_HEIGHT, val -> { selectedBody.ring.rockHeight   = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Orbit Speed",   selectedBody.ring.rockOrbitSpeed, DataConfig.Ring.ROCK_ORBIT_SPEED, val -> { selectedBody.ring.rockOrbitSpeed= val.floatValue(); notifyChanged(); });
     }
 
     private void buildSkyTab(int x, int y, int width) {
@@ -837,7 +853,7 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(skyConstBtn, relY, ROW_H, null); relY += 22;
 
-        skyTextureEditBox = addLabeledEditBox(x, relY, width, "Tex:", selectedBody.sky.skyboxTexture != null ? selectedBody.sky.skyboxTexture : "space_skybox", val -> { selectedBody.sky.skyboxTexture = val; notifyChanged(); }); relY += 22;
+        skyTextureEditBox = addLabeledEditBox(x, relY, width, "Tex:", selectedBody.sky.skyboxTexture != null ? selectedBody.sky.skyboxTexture : DataConfig.Sky.SKYBOX_TEXTURE_DEF, val -> { selectedBody.sky.skyboxTexture = val; notifyChanged(); }); relY += 22;
 
         Button starsBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Stars Enabled: " + selectedBody.sky.starsEnabled), b -> {
             selectedBody.sky.starsEnabled = !selectedBody.sky.starsEnabled;
@@ -845,11 +861,11 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(starsBtn, relY, ROW_H, null); relY += 22;
 
-        addInspectorSliderWithReset(x, relY, width, "Stars Amount", selectedBody.sky.starsAmount, 5000.0, 0.0, 20000.0, val -> { selectedBody.sky.starsAmount = val.intValue(); notifyChanged(); }); relY += 22;
-        addInspectorSliderWithReset(x, relY, width, "Stars Seed", selectedBody.sky.starsSeed, 0.0, 0.0, 10000.0, val -> { selectedBody.sky.starsSeed = val.intValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Stars Amount", selectedBody.sky.starsAmount, DataConfig.Sky.STARS_AMOUNT, val -> { selectedBody.sky.starsAmount = val.intValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Stars Seed", selectedBody.sky.starsSeed, DataConfig.Sky.STARS_SEED, val -> { selectedBody.sky.starsSeed = val.intValue(); notifyChanged(); }); relY += 22;
 
         starsColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
-        starsColorEditBox.setValue(selectedBody.sky.starsColorHex != null ? selectedBody.sky.starsColorHex : "#ffffff");
+        starsColorEditBox.setValue(selectedBody.sky.starsColorHex != null ? selectedBody.sky.starsColorHex : DataConfig.Sky.STARS_COLOR_HEX_DEF);
         starsColorEditBox.setResponder(val -> {
             if (val.startsWith("#") && val.length() == 7) {
                 selectedBody.sky.starsColorHex = val;
@@ -859,14 +875,13 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(starsColorEditBox, relY, ROW_H, "Color:");
 
-        starsColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.sky.starsColorHex != null ? selectedBody.sky.starsColorHex : "#ffffff", hex -> {
+        starsColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.sky.starsColorHex != null ? selectedBody.sky.starsColorHex : DataConfig.Sky.STARS_COLOR_HEX_DEF, hex -> {
             selectedBody.sky.starsColorHex = hex;
             if (starsColorEditBox != null) starsColorEditBox.setValue(hex);
             notifyChanged();
         });
         addInspectorWidget(starsColorPicker, relY, ROW_H, null); relY += 24;
 
-        // Custom Fog Controls
         Button fogBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Fog Enabled: " + selectedBody.fog.enabled), b -> {
             selectedBody.fog.enabled = !selectedBody.fog.enabled;
             notifyChanged(); buildLayout();
@@ -881,7 +896,7 @@ public class SystemEditor extends Screen {
             addInspectorWidget(fogShapeBtn, relY, ROW_H, null); relY += 22;
 
             fogColorEditBox = new EditBox(this.font, x + 42, formY + relY, width - 70, ROW_H, Component.literal("Color Hex"));
-            fogColorEditBox.setValue(selectedBody.fog.colorHex != null ? selectedBody.fog.colorHex : "#000000");
+            fogColorEditBox.setValue(selectedBody.fog.colorHex != null ? selectedBody.fog.colorHex : DataConfig.Fog.COLOR_HEX_DEF);
             fogColorEditBox.setResponder(val -> {
                 if (val.startsWith("#") && val.length() == 7) {
                     selectedBody.fog.colorHex = val;
@@ -891,7 +906,7 @@ public class SystemEditor extends Screen {
             });
             addInspectorWidget(fogColorEditBox, relY, ROW_H, "Fog Clr:");
 
-            fogColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.fog.colorHex != null ? selectedBody.fog.colorHex : "#000000", hex -> {
+            fogColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, selectedBody.fog.colorHex != null ? selectedBody.fog.colorHex : DataConfig.Fog.COLOR_HEX_DEF, hex -> {
                 selectedBody.fog.colorHex = hex;
                 if (fogColorEditBox != null) fogColorEditBox.setValue(hex);
                 notifyChanged();
@@ -905,11 +920,11 @@ public class SystemEditor extends Screen {
             addInspectorWidget(useRdBtn, relY, ROW_H, null); relY += 22;
 
             if (selectedBody.fog.useRenderDistance) {
-                addInspectorSliderWithReset(x, relY, width, "Fog Start %", selectedBody.fog.startDistance, 0.0, -50.0, 100.0, val -> { selectedBody.fog.startDistance = val.floatValue(); notifyChanged(); }); relY += 22;
-                addInspectorSliderWithReset(x, relY, width, "Fog End %", selectedBody.fog.endDistance, 50.0, 1.0, 200.0, val -> { selectedBody.fog.endDistance = val.floatValue(); notifyChanged(); });
+                addCustomSlider(x, relY, width, "Fog Start %", selectedBody.fog.startDistance, DataConfig.Fog.START_PERCENT, val -> { selectedBody.fog.startDistance = val.floatValue(); notifyChanged(); }); relY += 22;
+                addCustomSlider(x, relY, width, "Fog End %", selectedBody.fog.endDistance, DataConfig.Fog.END_PERCENT, val -> { selectedBody.fog.endDistance = val.floatValue(); notifyChanged(); });
             } else {
-                addInspectorSliderWithReset(x, relY, width, "Fog Start", selectedBody.fog.startDistance, 0.0, -100.0, 300.0, val -> { selectedBody.fog.startDistance = val.floatValue(); notifyChanged(); }); relY += 22;
-                addInspectorSliderWithReset(x, relY, width, "Fog End", selectedBody.fog.endDistance, 48.0, 2.0, 500.0, val -> { selectedBody.fog.endDistance = val.floatValue(); notifyChanged(); });
+                addCustomSlider(x, relY, width, "Fog Start", selectedBody.fog.startDistance, DataConfig.Fog.START_DISTANCE, val -> { selectedBody.fog.startDistance = val.floatValue(); notifyChanged(); }); relY += 22;
+                addCustomSlider(x, relY, width, "Fog End", selectedBody.fog.endDistance, DataConfig.Fog.END_DISTANCE, val -> { selectedBody.fog.endDistance = val.floatValue(); notifyChanged(); });
             }
         }
     }
@@ -946,18 +961,15 @@ public class SystemEditor extends Screen {
         int leftW = getPanelLeftWidth();
         int rightW = getPanelRightWidth();
 
-        // Top Header Bar
         g.fill(0, 0, this.width, HEADER_H, SystemEditorTheme.HEADER_BG);
         g.fill(0, HEADER_H - 1, this.width, HEADER_H, SystemEditorTheme.HEADER_BORDER_BOT);
 
-        // Left Panel Backdrop
         if (!leftPanelCollapsed) {
             g.fill(0, HEADER_H, leftW, this.height, SystemEditorTheme.PANEL_BG);
             g.fill(leftW - 1, HEADER_H, leftW, this.height, SystemEditorTheme.PANEL_BORDER);
             g.drawString(this.font, "SYSTEM TREE", 6, HEADER_H + 5, SystemEditorTheme.PANEL_TITLE_TEXT, SystemEditorTheme.TEXT_SHADOW);
         }
 
-        // Right Panel Backdrop
         if (!rightPanelCollapsed) {
             int p2X = this.width - rightW;
             g.fill(p2X, HEADER_H, this.width, this.height, SystemEditorTheme.PANEL_BG);
@@ -1008,7 +1020,6 @@ public class SystemEditor extends Screen {
             if (treeWidget != null) treeWidget.visible = false;
         }
 
-        // Render widgets (header, sidebars, tab buttons, reset button, tree/search)
         super.render(g, mouseX, mouseY, partialTick);
 
         if (hideSearchAndTree) {
@@ -1019,7 +1030,7 @@ public class SystemEditor extends Screen {
         g.flush();
 
         if (!rightPanelCollapsed) {
-            // Render Inspector Scrollbar if content exceeds panel height
+
             if (totalInspectorHeight > visibleH && visibleH > 0) {
                 int maxScroll = getMaxInspectorScroll();
                 int scrollbarH = Math.max(15, (visibleH * visibleH) / totalInspectorHeight);
@@ -1031,15 +1042,20 @@ public class SystemEditor extends Screen {
             }
         }
 
-        renderColorPickerOverlay(starColorPicker, g, mouseX, mouseY);
-        renderColorPickerOverlay(bodyColorPicker, g, mouseX, mouseY);
-        renderColorPickerOverlay(atmosColorPicker, g, mouseX, mouseY);
-        renderColorPickerOverlay(ringColorPicker, g, mouseX, mouseY);
-        renderColorPickerOverlay(cloudColorPicker, g, mouseX, mouseY);
-        renderColorPickerOverlay(starsColorPicker, g, mouseX, mouseY);
-        renderColorPickerOverlay(fogColorPicker, g, mouseX, mouseY);
+        if (!rightPanelCollapsed) {
+            g.enableScissor(p2X, formY, this.width, scissorBottom);
 
-        // Render System Selection Dropdown Menu if open
+            renderColorPickerOverlay(starColorPicker, g, mouseX, mouseY);
+            renderColorPickerOverlay(bodyColorPicker, g, mouseX, mouseY);
+            renderColorPickerOverlay(atmosColorPicker, g, mouseX, mouseY);
+            renderColorPickerOverlay(ringColorPicker, g, mouseX, mouseY);
+            renderColorPickerOverlay(cloudColorPicker, g, mouseX, mouseY);
+            renderColorPickerOverlay(starsColorPicker, g, mouseX, mouseY);
+            renderColorPickerOverlay(fogColorPicker, g, mouseX, mouseY);
+
+            g.disableScissor();
+        }
+
         if (systemDropdownOpen) {
             renderSystemDropdown(g, mouseX, mouseY);
         }
@@ -1059,8 +1075,6 @@ public class SystemEditor extends Screen {
             int accentColor = statusIsError ? SystemEditorTheme.TOAST_ERROR_TEXT : SystemEditorTheme.TOAST_SUCCESS_TEXT;
 
             g.fill(x1, y1, x2, y2, accentColor);
-            //g.fill(x1, y1, x1 + 3, y2, accentColor);
-            //g.fill(x1, y1, x2, y1 + 1, accentColor);
 
             g.drawString(this.font, statusMessage, x1 + 8, y1 + 5, textColor, SystemEditorTheme.TEXT_SHADOW);
         }
@@ -1280,11 +1294,11 @@ public class SystemEditor extends Screen {
     }
 
     private void addNewSystem() {
-        String newId = "system_" + (CelestialJsonLoader.getActiveSystems().size() + 1);
-        SolarSystemData sys = new SolarSystemData(newId, "tsp:space");
-        sys.star = new SunInstance.Config("sun", 2000.0F, "#ffd48a");
-        PlanetInstance.Config body = new PlanetInstance.Config("new_planet", "planet", "sun", 200.0F, "earth_mat_0", "#7fb8ff");
-        body.orbit.radius = 12000.0;
+        String newId = DataConfig.System.NEW_SYSTEM_ID_PREFIX + (CelestialJsonLoader.getActiveSystems().size() + 1);
+        SolarSystemData sys = new SolarSystemData(newId, SolarSystemData.DEFAULT_SPACE_DIMENSION);
+        sys.star = new SunInstance.Config(DataConfig.Star.ID_DEF, DataConfig.Star.RADIUS.defF(), DataConfig.Star.COLOR_HEX_DEF);
+        PlanetInstance.Config body = new PlanetInstance.Config(DataConfig.Body.NEW_BODY_ID, DataConfig.Body.TYPE_DEF, DataConfig.Body.PARENT_ID_DEF, DataConfig.Body.NEW_SYSTEM_BODY_RADIUS, DataConfig.Body.TEXTURE_DEF, DataConfig.Body.COLOR_HEX_DEF);
+        body.orbit.radius = DataConfig.Orbit.NEW_SYSTEM_RADIUS;
         sys.bodies.add(body);
         activeSystem = sys;
         selectedNode = NodeType.SYSTEM;
@@ -1339,17 +1353,17 @@ public class SystemEditor extends Screen {
     private void addBody(String type) {
         if (activeSystem == null) return;
         String newId    = type + "_" + (activeSystem.bodies.size() + 1);
-        String parentId = "moon".equalsIgnoreCase(type) && selectedBody != null ? selectedBody.id : "sun";
-        float  radius   = "moon".equalsIgnoreCase(type) ? 60.0F : ("blackhole".equalsIgnoreCase(type) ? 300.0F : 150.0F);
-        PlanetInstance.Config newBody = new PlanetInstance.Config(newId, type, parentId, radius, "earth_mat_0", "#7fb8ff");
+        String parentId = "moon".equalsIgnoreCase(type) && selectedBody != null ? selectedBody.id : DataConfig.Body.PARENT_ID_DEF;
+        float  radius   = "moon".equalsIgnoreCase(type) ? DataConfig.Body.MOON_RADIUS : ("blackhole".equalsIgnoreCase(type) ? DataConfig.Body.BLACKHOLE_RADIUS : DataConfig.Body.PLANET_RADIUS);
+        PlanetInstance.Config newBody = new PlanetInstance.Config(newId, type, parentId, radius, DataConfig.Body.TEXTURE_DEF, DataConfig.Body.COLOR_HEX_DEF);
 
         if (newBody.isBlackHole()) {
             newBody.atmosphere.enabled = false;
             newBody.ring.enabled = false;
         }
 
-        newBody.orbit.radius     = "moon".equalsIgnoreCase(type) ? 1200.0 : (activeSystem.bodies.size() + 1) * 8000.0;
-        newBody.orbit.periodDays = "moon".equalsIgnoreCase(type) ? 27.0   : (activeSystem.bodies.size() + 1) * 100.0;
+        newBody.orbit.radius     = "moon".equalsIgnoreCase(type) ? DataConfig.Orbit.MOON_RADIUS : (activeSystem.bodies.size() + 1) * DataConfig.Orbit.BODY_STEP_RADIUS;
+        newBody.orbit.periodDays = "moon".equalsIgnoreCase(type) ? DataConfig.Orbit.MOON_PERIOD_DAYS : (activeSystem.bodies.size() + 1) * DataConfig.Orbit.BODY_STEP_PERIOD_DAYS;
         activeSystem.bodies.add(newBody);
         selectedBody = newBody;
         selectedNode = NodeType.BODY;
@@ -1362,8 +1376,8 @@ public class SystemEditor extends Screen {
     private void duplicateSelectedBody() {
         if (activeSystem == null || selectedBody == null) return;
         PlanetInstance.Config copy = selectedBody.copy();
-        copy.id = selectedBody.id + "_copy";
-        copy.orbit.radius += 1000.0;
+        copy.id = selectedBody.id + DataConfig.Body.COPY_SUFFIX;
+        copy.orbit.radius += DataConfig.Body.COPY_ORBIT_OFFSET;
         activeSystem.bodies.add(copy);
         selectedBody = copy;
         selectedNode = NodeType.BODY;
@@ -1415,10 +1429,10 @@ public class SystemEditor extends Screen {
             selectedBody.atmosphere.enabled = false;
             selectedBody.ring.enabled = false;
         }
-        selectedBody.radius     = 150.0F;
-        selectedBody.oxygen     = false;
-        selectedBody.temperature = 0.0F;
-        selectedBody.yaw = selectedBody.pitch = selectedBody.roll = 0.0F;
+        selectedBody.radius     = DataConfig.Body.RESET_RADIUS;
+        selectedBody.oxygen     = DataConfig.Body.OXYGEN_DEF;
+        selectedBody.temperature = DataConfig.Body.TEMPERATURE.defF();
+        selectedBody.yaw = selectedBody.pitch = selectedBody.roll = DataConfig.Body.ROT_YAW.defF();
         notifyChanged();
         showStatus("Reset this body.", false);
         buildLayout();

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/stairs",
+  "textures": {
+    "bottom": "tsp:block/titanium_block",
+    "side": "tsp:block/titanium_block",
+    "top": "tsp:block/titanium_block"
+  }
+}

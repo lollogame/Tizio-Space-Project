@@ -11,28 +11,15 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Materials {
 
     public static final ResourceLocation DEFAULT_DEBUG_TEXTURE = Texture.add("textures/engine/no_texture");
-
     public static final ResourceLocation SPACE_SKYBOX = Texture.addEnv("milky_way");
-    public static final ResourceLocation DARK_SPACE_SKYBOX = Texture.addEnv("spacebox_dark");
-    public static final ResourceLocation COMET_ELEMENT = Texture.addEnv("comet");
-    public static final ResourceLocation NULL = Texture.addEnv("skybox_null");
 
-    public static final ResourceLocation OVERWORLD_MAT = Texture.add("textures/planets/overworld");
-    public static final ResourceLocation OVERWORLD_NIGHT_MAT = Texture.add("textures/planets/overworld_night");
-
-    // Cache per evitare I/O e allocazioni di stringhe ad ogni frame
     private static final Map<String, ResourceLocation> TEXTURE_CACHE = new ConcurrentHashMap<>();
     private static final Map<String, ResourceLocation> SKY_TEXTURE_CACHE = new ConcurrentHashMap<>();
-
-    private Materials() {}
 
     public static ResourceLocation getNoTexture() {
         return DEFAULT_DEBUG_TEXTURE;
     }
 
-    /**
-     * Da chiamare quando il client ricarica le risorse (F3 + T) per svuotare la cache.
-     */
     public static void clearCache() {
         TEXTURE_CACHE.clear();
         SKY_TEXTURE_CACHE.clear();
@@ -51,14 +38,14 @@ public class Materials {
 
     public static ResourceLocation resolveTextureLocation(String rawTexture) {
         if (rawTexture == null || rawTexture.isBlank()) {
-            return DEFAULT_DEBUG_TEXTURE;
+            return getNoTexture();
         }
         return TEXTURE_CACHE.computeIfAbsent(rawTexture, key -> resolveInternal(key, "planets"));
     }
 
     public static ResourceLocation resolveSkyTextureLocation(String rawTexture) {
         if (rawTexture == null || rawTexture.isBlank()) {
-            return DEFAULT_DEBUG_TEXTURE;
+            return getNoTexture();
         }
         return SKY_TEXTURE_CACHE.computeIfAbsent(rawTexture, key -> resolveInternal(key, "environment"));
     }
@@ -80,7 +67,7 @@ public class Materials {
             }
 
             if (path.isEmpty() || path.endsWith("/")) {
-                return DEFAULT_DEBUG_TEXTURE;
+                return getNoTexture();
             }
 
             if (!path.startsWith("textures/")) {
@@ -102,10 +89,10 @@ public class Materials {
             }
 
         } catch (Exception e) {
-            return DEFAULT_DEBUG_TEXTURE;
+            return getNoTexture();
         }
 
-        return DEFAULT_DEBUG_TEXTURE;
+        return getNoTexture();
     }
 
     private static boolean textureExists(ResourceLocation location) {

@@ -2,7 +2,9 @@ package tizio.dev.tsp.core.celestial.instance.elements.sun;
 
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
+import tizio.dev.tsp.config.DataConfig.Star;
 import tizio.dev.tsp.core.utils.volume.OrientedVolumeInstance;
+import tizio.dev.tsp.core.utils.Utils;
 
 public final class SunInstance extends OrientedVolumeInstance {
 
@@ -34,13 +36,13 @@ public final class SunInstance extends OrientedVolumeInstance {
 
     public static final class Builder extends OrientedVolumeInstance.Builder<SunInstance, Builder> {
 
-        private float planetRadius = 1.0F;
-        private float sunRadius = 1.95F;
+        private float planetRadius = Star.BUILDER_PLANET_RADIUS_DEF;
+        private float sunRadius = Star.BUILDER_SUN_RADIUS_DEF;
 
         private Builder(Vec3 position) {
             super(position);
-            this.color = new Vector3f(1.0F, 0.90F, 0.72F);
-            this.quadScale = 1.2F;
+            this.color = new Vector3f(Star.BUILDER_COLOR_DEF);
+            this.quadScale = Star.BUILDER_QUAD_SCALE_DEF;
         }
 
         public Builder planetRadius(float planetRadius) {
@@ -60,19 +62,19 @@ public final class SunInstance extends OrientedVolumeInstance {
     }
 
     public static final class Config {
-        public String type = "star";
-        public String id = "sun";
-        public float radius = 2000.0F;
-        public String colorHex = "#ffd48a";
-        public float yaw = 0.0F;
-        public float pitch = 0.0F;
-        public float roll = 0.0F;
-        public float sunRadiusFactor = 1.3F;
-        public float scatteringStrength = 0.5F;
-        public float densityFalloff = 5.0F;
-        public boolean enabled = true;
-        public float diskRotationSpeed = 0.20F;
-        public float intensity = 1.0F;
+        public String type = Star.TYPE_DEF;
+        public String id = Star.ID_DEF;
+        public float radius = Star.RADIUS.defF();
+        public String colorHex = Star.COLOR_HEX_DEF;
+        public float yaw = Star.YAW.defF();
+        public float pitch = Star.PITCH.defF();
+        public float roll = Star.ROLL.defF();
+        public float sunRadiusFactor = Star.SUN_RADIUS_FACTOR_DEF;
+        public float scatteringStrength = Star.SCATTERING_STRENGTH_DEF;
+        public float densityFalloff = Star.DENSITY_FALLOFF_DEF;
+        public boolean enabled = Star.ENABLED_DEF;
+        public float diskRotationSpeed = Star.DISK_ROTATION_SPEED.defF();
+        public float intensity = Star.INTENSITY.defF();
 
         public Config() {}
 
@@ -83,7 +85,7 @@ public final class SunInstance extends OrientedVolumeInstance {
         }
 
         public boolean isBlackHole() {
-            return "blackhole".equalsIgnoreCase(this.type);
+            return Utils.isBlackHole(this.type);
         }
 
         public Config copy() {
