@@ -1,0 +1,121 @@
+Custom Source License (CSL) v1.0
+
+Copyright (c) 2026 [T.S.P MOD - Tizio9258]
+All Rights Reserved.
+
+1. SCOPE
+    This license applies to the Software, including its Source Code, compiled Builds, JAR files, resources, assets, documentation, and other materials contained in this repository.
+
+2. DEFINITIONS
+    "Software" means the project identified by the copyright notice above.
+    "Source Code" or "SRC" means the human-readable source code contained in this repository.
+    "Build" means any compiled, packaged, or executable version of the Software, including JAR files.
+    "Addon" means an independently developed extension that interacts with the Software through publicly documented APIs, hooks, or other expressly permitted interfaces.
+    "Port" means a conversion, adaptation, or implementation of the Software for another platform, loader, framework, language, or runtime.
+    "Fork" means a separate project or derivative repository created from, based on, or incorporating the Software's Source Code.
+
+3. COPYRIGHT
+    The Software and all associated materials are protected by copyright and other applicable intellectual property laws.
+    All rights not expressly granted by this license are reserved by the copyright holder.
+    No ownership or intellectual property rights are transferred to any recipient.
+
+4. SOURCE CODE - READ-ONLY
+    The copyright holder grants a limited, non-exclusive, non-transferable license to view and inspect the Source Code.
+    The Source Code may be accessed for the purposes of learning, inspection, debugging, and development of permitted Addons.
+    The Source Code may NOT be:
+
+* Modified, edited, patched, or otherwise altered.
+* Copied, redistributed, or republished, in whole or in part.
+* Used to create derivative works.
+* Used to create unauthorized Ports.
+* Used to create unauthorized Forks.
+* Used to create competing or substantially similar software.
+* Used to remove or circumvent copyright, license, or proprietary notices.
+
+5. ADDONS
+
+Addons are permitted only when they are independently authored and interact with the Software through permitted APIs, hooks, interfaces, or other officially supported integration mechanisms.
+
+Addons must NOT:
+
+* Contain copied or modified portions of the Software's Source Code.
+* Modify or replace the Software's Source Code.
+* Redistribute the Software's Source Code.
+* Include the Software's protected resources or assets without written permission.
+* Constitute an unauthorized Port or Fork.
+* Claim to be official or endorsed by the copyright holder without written permission.
+
+The permission to create Addons does not grant any ownership or additional rights to the Software.
+
+6. BUILDS AND JAR FILES - ALL RIGHTS RESERVED
+
+All compiled Builds of the Software, including JAR files, are licensed under ALL RIGHTS RESERVED (ARR).
+Unless expressly authorized in writing by the copyright holder, Builds and JAR files may NOT be:
+
+* Copied or redistributed.
+* Modified, repackaged, or republished.
+* Decompiled or reverse-engineered for the purpose of reconstructing or obtaining Source Code.
+* Used to create derivative works (Ask first.)
+* Used to create unauthorized Ports or Forks.
+* Sold, sublicensed, or incorporated into another software product.
+
+7. RESOURCES AND ASSETS
+
+All resources and assets included with the Software are protected by copyright.
+This includes, but is not limited to:
+
+* Textures.
+* Models.
+* Sounds.
+* Music.
+* Images.
+* Fonts.
+* Configuration files.
+* Data files.
+* Other original assets.
+
+These resources may NOT be copied, extracted, redistributed, modified, repurposed, or included in another project without prior written permission from the copyright holder.
+
+8. PORTS AND FORKS
+    No permission is granted to create, maintain, publish, or distribute any Port or Fork of the Software.
+    Any Port or Fork requires explicit prior written authorization from the copyright holder.
+    The existence of the Software on GitHub does not grant permission to create a Fork.
+    Any unauthorized Fork or Port is outside the scope of this license and is not permitted.
+
+9. GITHUB
+    The availability of this Software on GitHub does not grant any additional rights beyond those expressly provided by this license.
+    The repository is provided for source-code access, inspection, and permitted Addon development only.
+    GitHub features such as Fork, Clone, Download, or similar functionality do not constitute permission to use the Software in a manner prohibited by this license.
+
+10. COPYRIGHT AND LICENSE NOTICES
+    All copyright notices, license notices, trademarks, proprietary notices, and other attribution notices included with the Software must remain intact.
+    No person may remove, obscure, or alter such notices.
+
+11. COMMERCIAL USE
+    Commercial use, sale, sublicensing, redistribution, or incorporation of the Software or its protected materials into another product is prohibited unless explicitly
+    authorized in writing by the copyright holder.
+
+12. TERMINATION
+    Any rights granted under this license terminate immediately upon violation of its terms.
+    Upon termination, all use and distribution of the Software, Source Code, Builds, JAR files, resources, and other protected materials must cease.
+    All unauthorized copies must be deleted.
+
+13. EXCEPTIONS
+    Any exception to this license must be explicitly granted in writing by the copyright holder.
+    No implied permission is granted.
+
+14. NO WARRANTY
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+    TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE COPYRIGHT HOLDER SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+15. GOVERNING LAW
+    This license shall be interpreted in accordance with the applicable laws of the jurisdiction in which the copyright holder resides, unless otherwise required by applicable law.
+
+16. CONTACT
+    For licensing permissions, exceptions, or other inquiries, contact: [T.S.P MOD - Tizio9258]
+
+17. ACCEPTANCE
+    By accessing, using, copying, modifying, redistributing, or otherwise interacting with the Software, you acknowledge that you have read, understood, and agree to be bound by this license.
+
+Copyright (c) 2026 [T.S.P MOD - Tizio9258]
+All Rights Reserved.
