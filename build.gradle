@@ -85,8 +85,6 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("curse.maven:viltrumite-flight-1528087:8806648")
-
 }
 
 tasks.named('processResources', ProcessResources).configure {
