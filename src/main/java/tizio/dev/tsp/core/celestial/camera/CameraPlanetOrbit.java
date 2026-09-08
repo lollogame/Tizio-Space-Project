@@ -39,8 +39,6 @@ public final class CameraPlanetOrbit {
     private static double orbitYaw = 0.0D;
     private static double orbitPitch = 20.0D;
 
-    private CameraPlanetOrbit() {}
-
     public static boolean isActive() {
         return active;
     }

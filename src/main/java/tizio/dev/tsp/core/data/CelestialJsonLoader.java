@@ -15,6 +15,7 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
+import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.core.celestial.instance.elements.SolarSystemData;
 import tizio.dev.tsp.core.celestial.instance.elements.blackhole.BlackHoleInstance;
@@ -131,6 +132,7 @@ public final class CelestialJsonLoader {
     public static void setCurrentDimension(ResourceLocation dimension) {
         if (dimension != null && !dimension.equals(currentDimension)) {
             currentDimension = dimension;
+            activeSelectedSystemId = null;
             forceFullRebuild();
         }
     }
@@ -186,6 +188,11 @@ public final class CelestialJsonLoader {
         rebuildAt(Instant.ofEpochMilli(nowMs));
     }
 
+    public static void resetToCurrentDimension() {
+        activeSelectedSystemId = null;
+        forceFullRebuild();
+    }
+
     private static void rebuildAt(Instant now) {
         ResourceLocation dim = currentDimension;
         if (dim == null || activeSystems.isEmpty()) {
@@ -195,7 +202,8 @@ public final class CelestialJsonLoader {
         }
 
         SolarSystemData systemToBuild = null;
-        if (activeSelectedSystemId != null) {
+
+        if (activeSelectedSystemId != null && activeSystems.containsKey(activeSelectedSystemId)) {
             systemToBuild = activeSystems.get(activeSelectedSystemId);
         }
 
@@ -211,6 +219,11 @@ public final class CelestialJsonLoader {
                     break;
                 }
             }
+        }
+
+        if (systemToBuild == null && !activeSystems.isEmpty()) {
+            systemToBuild = activeSystems.values().iterator().next();
+            activeSelectedSystemId = systemToBuild.id;
         }
 
         if (systemToBuild != null) {
@@ -268,7 +281,7 @@ public final class CelestialJsonLoader {
         String systemId = safeId(string(root, "id", stripJsonExtension(resourceId)), stripJsonExtension(resourceId));
         String dimension = string(root, "dimension", SolarSystemData.DEFAULT_SPACE_DIMENSION);
         if (isBlacklistedForSpaceDimension(dimension)) {
-            LOGGER.warn("[TSP] Solar system '{}': dimension '{}' is blacklisted for space use. Falling back to '{}'.",
+            LOGGER.warn("["+ MainClass.MODID.toUpperCase()+"] Solar system '{}': dimension '{}' is blacklisted for space use. Falling back to '{}'.",
                     systemId, dimension, SolarSystemData.DEFAULT_SPACE_DIMENSION);
             dimension = SolarSystemData.DEFAULT_SPACE_DIMENSION;
         }

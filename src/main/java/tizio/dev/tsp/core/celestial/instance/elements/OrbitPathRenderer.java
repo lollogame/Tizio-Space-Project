@@ -22,12 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 public final class OrbitPathRenderer {
-
+    //troppi anelli, mi sposi?
     private static final int SEGMENTS = 120;
     private static final float[] DEFAULT_COLOR = {0.6F, 0.85F, 1.0F};
-
-    private OrbitPathRenderer() {
-    }
 
     public static List<VolumeRenderUtil.RenderTask> buildTasks(Camera camera, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource) {
         Minecraft mc = Minecraft.getInstance();
@@ -46,16 +43,27 @@ public final class OrbitPathRenderer {
         }
 
         Instant now = Instant.now();
-        String currentDimId = currentDimLoc.toString();
         Vec3 camPos = camera.getPosition();
-
         List<VolumeRenderUtil.RenderTask> tasks = new ArrayList<>();
 
-        for (SolarSystemData system : systems.values()) {
-            if (!currentDimId.equalsIgnoreCase(system.dimension)) {
-                continue;
+        SolarSystemData targetSystem = null;
+        String selectedId = CelestialJsonLoader.getActiveSelectedSystemId();
+
+        if (selectedId != null && systems.containsKey(selectedId)) {
+            targetSystem = systems.get(selectedId);
+        } else {
+
+            String currentDimId = currentDimLoc.toString();
+            for (SolarSystemData system : systems.values()) {
+                if (currentDimId.equalsIgnoreCase(system.dimension)) {
+                    targetSystem = system;
+                    break;
+                }
             }
-            collectSystemTasks(system, now, camPos, poseStack, bufferSource, tasks);
+        }
+
+        if (targetSystem != null) {
+            collectSystemTasks(targetSystem, now, camPos, poseStack, bufferSource, tasks);
         }
 
         return tasks;

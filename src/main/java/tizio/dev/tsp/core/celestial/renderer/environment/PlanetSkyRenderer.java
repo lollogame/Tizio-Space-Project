@@ -13,6 +13,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Vector3f;
 import tizio.dev.tsp.MainClass;
+import tizio.dev.tsp.config.ConfigManager;
 import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.core.celestial.instance.elements.SolarSystemData;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
@@ -209,17 +210,20 @@ public final class PlanetSkyRenderer {
             buildOwnRingTasks(currentBody, globalScale, sunAngle, camera, frustum, poseStack, bufferSource, cameraPos, allTasks);
         }
 
-        if ((!Utils.isModLoaded("simpleclouds") || Utils.isModLoaded("betterclouds")) && (currentBody != null && currentBody.clouds != null && currentBody.clouds.enabled)) {
-
-            allTasks.addAll(SkyCloudsRenderer.buildTasks(
-                    ClientShaderRegistry.skyClouds(),
-                    poseStack,
-                    partialTick,
-                    cameraPos.x,
-                    cameraPos.y,
-                    cameraPos.z,
-                    currentBody.clouds
-            ));
+        if (ConfigManager.enablePlanetClouds()) {
+            if (Minecraft.getInstance().options.cloudStatus().get() != net.minecraft.client.CloudStatus.OFF) {
+                if ((!Utils.isModLoaded("simpleclouds") || Utils.isModLoaded("betterclouds")) && (currentBody != null && currentBody.clouds != null && currentBody.clouds.enabled)) {
+                    allTasks.addAll(SkyCloudsRenderer.buildTasks(
+                            ClientShaderRegistry.skyClouds(),
+                            poseStack,
+                            partialTick,
+                            cameraPos.x,
+                            cameraPos.y,
+                            cameraPos.z,
+                            currentBody.clouds
+                    ));
+                }
+            }
         }
 
         List<VolumeRenderUtil.RenderTask> sortedTasks = VolumeRenderUtil.mergeSorted(cameraPos, allTasks);

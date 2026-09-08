@@ -75,7 +75,7 @@ public class Utils {
 
             for (String modId : BLACKLIST) {
                 if (isModLoaded(modId)) {
-                    System.err.println("[TSP] Failed to load the mod due to incompatible mod: " + modId);
+                    System.err.println("["+MainClass.MODID.toUpperCase()+"] Failed to load the mod due to incompatible mod: " + modId);
                     Runtime.getRuntime().halt(1);
                 }
             }

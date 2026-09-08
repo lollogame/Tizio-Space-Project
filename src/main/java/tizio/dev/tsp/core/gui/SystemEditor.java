@@ -967,7 +967,9 @@ public class SystemEditor extends Screen {
         if (!leftPanelCollapsed) {
             g.fill(0, HEADER_H, leftW, this.height, SystemEditorTheme.PANEL_BG);
             g.fill(leftW - 1, HEADER_H, leftW, this.height, SystemEditorTheme.PANEL_BORDER);
-            g.drawString(this.font, "SYSTEM TREE", 6, HEADER_H + 5, SystemEditorTheme.PANEL_TITLE_TEXT, SystemEditorTheme.TEXT_SHADOW);
+            if (!systemDropdownOpen) {
+                g.drawString(this.font, "SYSTEM TREE", 6, HEADER_H + 5, SystemEditorTheme.PANEL_TITLE_TEXT, SystemEditorTheme.TEXT_SHADOW);
+            }
         }
 
         if (!rightPanelCollapsed) {
@@ -1102,6 +1104,8 @@ public class SystemEditor extends Screen {
     }
 
     private void renderSystemDropdown(GuiGraphics g, int mouseX, int mouseY) {
+        g.pose().pushPose();
+        g.pose().translate(0, 0, 400.0F);
         var systems = new ArrayList<>(CelestialJsonLoader.getActiveSystems().values());
         int dropX = 4;
         int dropY = 24;
@@ -1138,6 +1142,7 @@ public class SystemEditor extends Screen {
             g.fill(dropX + 2, iy, dropX + dropW - 2, iy + itemH, SystemEditorTheme.DROPDOWN_ITEM_HOVER);
         }
         g.drawString(this.font, "+ Create New System", dropX + 8, iy + 4, hoveredNew ? SystemEditorTheme.DROPDOWN_TEXT_ACTIVE : SystemEditorTheme.DROPDOWN_TEXT_NEW, SystemEditorTheme.TEXT_SHADOW);
+        g.pose().popPose();
     }
 
     private void closeOtherColorPickers(ColorPreviewWidget current) {
@@ -1448,5 +1453,11 @@ public class SystemEditor extends Screen {
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void onClose() {
+        CelestialJsonLoader.resetToCurrentDimension();
+        super.onClose();
     }
 }
