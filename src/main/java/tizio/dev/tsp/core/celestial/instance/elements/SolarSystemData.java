@@ -39,6 +39,41 @@ public class SolarSystemData {
         return null;
     }
 
+    public boolean canAddBody() {
+        return bodies.size() < DataConfig.System.MAX_BODIES_LIMIT;
+    }
+
+    public List<PlanetInstance.Config> getMoonsOf(String parentId) {
+        List<PlanetInstance.Config> result = new ArrayList<>();
+        if (parentId == null || parentId.isBlank()) return result;
+        for (PlanetInstance.Config body : bodies) {
+            if (parentId.equalsIgnoreCase(body.parentId)) {
+                result.add(body);
+            }
+        }
+        return result;
+    }
+
+    public boolean isDescendant(String potentialDescendantId, String ancestorId) {
+        if (potentialDescendantId == null || ancestorId == null || potentialDescendantId.isBlank() || ancestorId.isBlank()) {
+            return false;
+        }
+        if (potentialDescendantId.equalsIgnoreCase(ancestorId)) {
+            return true;
+        }
+        java.util.Set<String> visited = new java.util.HashSet<>();
+        String currId = potentialDescendantId;
+        while (currId != null && !currId.isBlank() && visited.add(currId.toLowerCase(java.util.Locale.ROOT))) {
+            PlanetInstance.Config curr = findBody(currId);
+            if (curr == null || curr.parentId == null) break;
+            if (ancestorId.equalsIgnoreCase(curr.parentId)) {
+                return true;
+            }
+            currId = curr.parentId;
+        }
+        return false;
+    }
+
     public SolarSystemData copy() {
         SolarSystemData copy = new SolarSystemData();
         copy.id = this.id;

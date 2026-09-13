@@ -29,6 +29,11 @@
     { "name": "RockHeight", "type": "float", "count": 1, "values": [0.12] },
     { "name": "OrbitSpeed", "type": "float", "count": 1, "values": [0.02] },
     { "name": "Time", "type": "float", "count": 1, "values": [0.0] },
-    { "name": "RingSeed", "type": "float", "count": 1, "values": [0.0] }
+    { "name": "RingSeed", "type": "float", "count": 1, "values": [0.0] },
+    { "name": "LightCount", "type": "int", "count": 1, "values": [1] },
+    { "name": "LightDirection0", "type": "float", "count": 3, "values": [0.23, 0.19, 0.95] },
+    { "name": "LightDirection1", "type": "float", "count": 3, "values": [0.0, 0.0, 0.0] },
+    { "name": "LightDirection2", "type": "float", "count": 3, "values": [0.0, 0.0, 0.0] },
+    { "name": "LightDirection3", "type": "float", "count": 3, "values": [0.0, 0.0, 0.0] }
   ]
 }

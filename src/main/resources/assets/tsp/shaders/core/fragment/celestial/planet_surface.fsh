@@ -1,7 +1,11 @@
 #version 150
 
 uniform float PlanetRadius;
-uniform vec3 LightDirection;
+uniform int LightCount;
+uniform vec3 LightDirection0;
+uniform vec3 LightDirection1;
+uniform vec3 LightDirection2;
+uniform vec3 LightDirection3;
 uniform vec3 CameraLocalPos;
 uniform float TerminatorSoftness;
 uniform float UseNightTexture;
@@ -30,7 +34,9 @@ in vec3 fragLocalPos;
 
 out vec4 fragColor;
 
+const int   MAX_LIGHTS          = 4;
 const float NIGHT_BRIGHTNESS    = 0.10;
+const float NIGHT_BOOST_STRENGTH = 0.5;
 const vec3  NIGHT_COLOR_TINT    = vec3(0.55, 0.65, 1.00);
 const float NIGHT_TINT_STRENGTH = 0.35;
 const float SHADOW_SMOOTHNESS   = 0.15;
@@ -127,6 +133,33 @@ float calculateEclipseShadow(vec3 hitPos, vec3 sunDir) {
     shadowPlanets[2] = ShadowPlanet2;
     shadowPlanets[3] = ShadowPlanet3;
 
+    float nightAreaFraction = 0.5;
+    if (LightCount >= 2) {
+
+        vec3 localSunDirs[MAX_LIGHTS];
+        localSunDirs[0] = normalize(LightDirection0);
+        localSunDirs[1] = normalize(LightDirection1);
+        localSunDirs[2] = normalize(LightDirection2);
+        localSunDirs[3] = normalize(LightDirection3);
+
+        float avgAngle = 0.0;
+        int pairCount = 0;
+        for (int i = 0; i < MAX_LIGHTS; ++i) {
+            if (i >= LightCount) break;
+            for (int j = i + 1; j < MAX_LIGHTS; ++j) {
+                if (j >= LightCount) break;
+                avgAngle += acos(clamp(dot(localSunDirs[i], localSunDirs[j]), -1.0, 1.0));
+                pairCount++;
+            }
+        }
+        avgAngle /= float(max(pairCount, 1));
+        nightAreaFraction = clamp((3.14159265 - avgAngle) / (2.0 * 3.14159265), 0.0, 0.5);
+        nightAreaFraction /= float(LightCount - 1);
+    }
+
+    float nightBoost = (0.5 - nightAreaFraction) * 2.0 * NIGHT_BOOST_STRENGTH;
+    float boostedNightBrightness = NIGHT_BRIGHTNESS * (1.0 + nightBoost);
+
     float totalShadow = 1.0;
     for (int i = 0; i < 4; ++i) {
         if (i >= ShadowPlanetCount) break;
@@ -169,21 +202,44 @@ void main() {
     vec3 surfNormal = (SurfaceRotation != 0.0) ? rotateY(normal, -SurfaceRotation) : normal;
     vec2 uv = sphericalUV(surfNormal);
 
-    vec3 sunDir = normalize(LightDirection);
-    float NdotL = dot(normal, sunDir);
+    vec3 sunDirs[MAX_LIGHTS];
+    sunDirs[0] = normalize(LightDirection0);
+    sunDirs[1] = normalize(LightDirection1);
+    sunDirs[2] = normalize(LightDirection2);
+    sunDirs[3] = normalize(LightDirection3);
+
+    float eclipseShadows[MAX_LIGHTS];
+    eclipseShadows[0] = 1.0;
+    eclipseShadows[1] = 1.0;
+    eclipseShadows[2] = 1.0;
+    eclipseShadows[3] = 1.0;
 
     float softness = max(TerminatorSoftness, SHADOW_SMOOTHNESS);
-    float dayBlend = smoothstep(-softness, softness, NdotL);
 
-    float eclipseShadow = calculateEclipseShadow(hitPos, sunDir);
-    float effectiveDayBlend = dayBlend * eclipseShadow;
-
+    float dayBlendAccum = 0.0;
+    float diffuseAccum = 0.0;
     float groundCloudShadowFactor = 1.0;
-    if (CloudsEnabled > 0.5) {
-        vec3 shadowSamplePos = normalize(hitPos + sunDir * (PlanetRadius * max(CloudHeight, 0.01) * 2.0));
-        float cloudShadowDensity = sampleCloudNoise(shadowSamplePos, Time, CloudWindSpeed, CloudCoverage);
-        groundCloudShadowFactor = 1.0 - cloudShadowDensity * 0.45 * effectiveDayBlend;
+
+    for (int i = 0; i < MAX_LIGHTS; ++i) {
+        if (i >= LightCount) break;
+
+        vec3 sunDir = sunDirs[i];
+        float NdotL = dot(normal, sunDir);
+        float dayBlend = smoothstep(-softness, softness, NdotL);
+        float eclipseShadow = calculateEclipseShadow(hitPos, sunDir);
+        eclipseShadows[i] = eclipseShadow;
+
+        float effectiveDayBlend = dayBlend * eclipseShadow;
+        dayBlendAccum = min(dayBlendAccum + effectiveDayBlend, 1.0);
+        diffuseAccum += max(NdotL, 0.0) * eclipseShadow;
+
+        if (CloudsEnabled > 0.5) {
+            vec3 shadowSamplePos = normalize(hitPos + sunDir * (PlanetRadius * max(CloudHeight, 0.01) * 2.0));
+            float cloudShadowDensity = sampleCloudNoise(shadowSamplePos, Time, CloudWindSpeed, CloudCoverage);
+            groundCloudShadowFactor *= 1.0 - cloudShadowDensity * 0.45 * effectiveDayBlend;
+        }
     }
+    diffuseAccum = min(diffuseAccum, 1.0);
 
     vec4 dayColor = texture(Sampler0, uv);
     vec3 finalSurface;
@@ -191,17 +247,15 @@ void main() {
 
     if (UseNightTexture > 0.5) {
         vec4 nightColor = texture(Sampler1, uv);
-        float diffuse = max(NdotL, 0.0);
-        vec3 litDayColor = dayColor.rgb * (0.35 + 0.65 * diffuse) * groundCloudShadowFactor;
-        vec3 blendedColor = mix(nightColor.rgb, litDayColor, effectiveDayBlend);
+        vec3 litDayColor = dayColor.rgb * (0.35 + 0.65 * diffuseAccum) * groundCloudShadowFactor;
+        vec3 blendedColor = mix(nightColor.rgb, litDayColor, dayBlendAccum);
         finalSurface = mix(blendedColor, dayColor.rgb, clamp(EmissiveStrength, 0.0, 1.0));
     } else {
         vec3 tintedNight = dayColor.rgb * mix(vec3(1.0), NIGHT_COLOR_TINT, NIGHT_TINT_STRENGTH) * NIGHT_BRIGHTNESS;
         vec4 nightColor = vec4(tintedNight, dayColor.a);
 
-        vec4 surfaceColor = mix(nightColor, dayColor, effectiveDayBlend);
-        float diffuse = max(NdotL, 0.0) * eclipseShadow;
-        float lighting = mix(NIGHT_BRIGHTNESS, 1.0, effectiveDayBlend) * (1.0 - (1.0 - diffuse) * (1.0 - effectiveDayBlend) * 0.4) * groundCloudShadowFactor;
+        vec4 surfaceColor = mix(nightColor, dayColor, dayBlendAccum);
+        float lighting = mix(NIGHT_BRIGHTNESS, 1.0, dayBlendAccum) * (1.0 - (1.0 - diffuseAccum) * (1.0 - dayBlendAccum) * 0.4) * groundCloudShadowFactor;
 
         finalSurface = surfaceColor.rgb * max(lighting, max(EmissiveStrength, 0.0));
         surfaceAlpha = surfaceColor.a;
@@ -229,27 +283,45 @@ void main() {
             float bumpiness = 2.0;
             vec3 perturbedNormal = normalize(cloudNormal + (t1 * (dL - dR) + t2 * (dB - dT)) * bumpiness);
 
-            float wrap = 0.4;
-            float rawNdotL = dot(perturbedNormal, sunDir);
-            float cloudNdotL = max(0.0, (rawNdotL + wrap) / (1.0 + wrap));
-
             vec3 viewDir = -viewRay.direction;
-            float viewDotSun = max(0.0, dot(viewDir, sunDir));
-            float sss = pow(viewDotSun, 3.0) * (1.0 - cloudDensity * 0.5);
 
-            vec3 shadowSamplePos = normalize(cloudNormal + sunDir * 0.05);
-            float densityTowardsSun = sampleCloudNoise(shadowSamplePos, Time, CloudWindSpeed, CloudCoverage);
-            float opticalDepth = max(0.0, densityTowardsSun - cloudDensity * 0.1);
-            float shadow = mix(0.65, 1.0, exp(-opticalDepth * 1.5)) * eclipseShadow;
+            float cloudDayBlendAccum = 0.0;
+            float cloudDiffuseAccum = 0.0;
+            float sssAccum = 0.0;
 
-            float cloudDayBlend = smoothstep(-softness, softness, dot(cloudNormal, sunDir)) * eclipseShadow;
-            float diffuse = cloudNdotL * shadow;
-            float finalLighting = clamp((0.35 + 0.65 * diffuse) + sss * 0.8, 0.35, 1.2);
+            for (int i = 0; i < MAX_LIGHTS; ++i) {
+                if (i >= LightCount) break;
+
+                vec3 sunDir = sunDirs[i];
+                float eclipseShadow = eclipseShadows[i];
+
+                float wrap = 0.4;
+                float rawNdotL = dot(perturbedNormal, sunDir);
+                float cloudNdotL = max(0.0, (rawNdotL + wrap) / (1.0 + wrap));
+
+                float viewDotSun = max(0.0, dot(viewDir, sunDir));
+                float sss = pow(viewDotSun, 3.0) * (1.0 - cloudDensity * 0.5);
+
+                vec3 shadowSamplePos = normalize(cloudNormal + sunDir * 0.05);
+                float densityTowardsSun = sampleCloudNoise(shadowSamplePos, Time, CloudWindSpeed, CloudCoverage);
+                float opticalDepth = max(0.0, densityTowardsSun - cloudDensity * 0.1);
+                float shadow = mix(0.65, 1.0, exp(-opticalDepth * 1.5)) * eclipseShadow;
+
+                float cloudDayBlend = smoothstep(-softness, softness, dot(cloudNormal, sunDir)) * eclipseShadow;
+                float diffuse = cloudNdotL * shadow;
+
+                cloudDayBlendAccum = min(cloudDayBlendAccum + cloudDayBlend, 1.0);
+                cloudDiffuseAccum += diffuse;
+                sssAccum += sss;
+            }
+            cloudDiffuseAccum = min(cloudDiffuseAccum, 1.0);
+
+            float finalLighting = clamp((0.35 + 0.65 * cloudDiffuseAccum) + sssAccum * 0.8, 0.35, 1.2);
 
             vec3 cloudLitColor = CloudColor.rgb * finalLighting;
             vec3 cloudNightColor = CloudColor.rgb * mix(vec3(1.0), NIGHT_COLOR_TINT, NIGHT_TINT_STRENGTH) * (NIGHT_BRIGHTNESS * 0.85);
 
-            vec3 cloudColorBlended = mix(cloudNightColor, cloudLitColor, cloudDayBlend);
+            vec3 cloudColorBlended = mix(cloudNightColor, cloudLitColor, cloudDayBlendAccum);
             cloudColorBlended = mix(cloudColorBlended, CloudColor.rgb, clamp(EmissiveStrength, 0.0, 1.0));
 
             float cloudFinalAlpha = cloudDensity * clamp(CloudColor.a, 0.0, 1.0);

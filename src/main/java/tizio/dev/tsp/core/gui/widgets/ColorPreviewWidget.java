@@ -29,6 +29,7 @@ public class ColorPreviewWidget extends AbstractWidget {
 
     private final LabeledSlider vSlider;
     private boolean updatingSlider = false;
+    private boolean isDraggingSlider = false;
 
     public ColorPreviewWidget(int x, int y, int width, int height, String initialHex, Consumer<String> onColorSelected) {
 
@@ -83,6 +84,11 @@ public class ColorPreviewWidget extends AbstractWidget {
 
     public void closePalette() {
         this.paletteOpen = false;
+        this.isDraggingSlider = false;
+    }
+
+    public void handleMouseReleased() {
+        this.isDraggingSlider = false;
     }
 
     public boolean isMouseOverSwatch(double mouseX, double mouseY) {
@@ -154,7 +160,9 @@ public class ColorPreviewWidget extends AbstractWidget {
             updateSliderBounds();
             int[] sb = getSliderBounds();
             if (mouseX >= sb[0] && mouseX <= sb[0] + sb[2] && mouseY >= sb[1] && mouseY <= sb[1] + sb[3]) {
-                return vSlider.mouseClicked(mouseX, mouseY, button);
+                boolean res = vSlider.mouseClicked(mouseX, mouseY, button);
+                if (res) isDraggingSlider = true;
+                return res;
             }
 
             pickFromField(mouseX, mouseY);
@@ -167,11 +175,16 @@ public class ColorPreviewWidget extends AbstractWidget {
 
     public boolean handlePaletteDrag(double mouseX, double mouseY) {
         if (!paletteOpen) return false;
+        if (isDraggingSlider) {
+            vSlider.mouseDragged(mouseX, mouseY, 0, 0, 0);
+            return true;
+        }
         if (isMouseOverPopup(mouseX, mouseY)) {
             updateSliderBounds();
             int[] sb = getSliderBounds();
             if (mouseY >= sb[1] - 4 && mouseY <= sb[1] + sb[3] + 4 && mouseX >= sb[0] && mouseX <= sb[0] + sb[2]) {
                 vSlider.mouseDragged(mouseX, mouseY, 0, 0, 0);
+                isDraggingSlider = true;
                 return true;
             }
             return pickFromField(mouseX, mouseY);

@@ -22,11 +22,16 @@
     { "name": "RayleighStrength", "type": "float", "count": 1, "values": [1.0] },
     { "name": "BaseColor", "type": "float", "count": 3, "values": [0.55, 0.78, 1.0] },
     { "name": "WaveLengths", "type": "float", "count": 3, "values": [780.0, 540.0, 440.0] },
-    { "name": "LightDirection", "type": "float", "count": 3, "values": [0.23, 0.19, 0.95] },
     { "name": "CenterRelative", "type": "float", "count": 3, "values": [0.0, 0.0, 0.0] },
     { "name": "AxisX", "type": "float", "count": 3, "values": [1.0, 0.0, 0.0] },
     { "name": "AxisY", "type": "float", "count": 3, "values": [0.0, 1.0, 0.0] },
     { "name": "AxisZ", "type": "float", "count": 3, "values": [0.0, 0.0, 1.0] },
-    { "name": "CameraLocalPos", "type": "float", "count": 3, "values": [0.0, 0.0, -16.0] }
+    { "name": "CameraLocalPos", "type": "float", "count": 3, "values": [0.0, 0.0, -16.0] },
+
+    { "name": "LightCount", "type": "int", "count": 1, "values": [1] },
+    { "name": "LightDirection0", "type": "float", "count": 3, "values": [0.23, 0.19, 0.95] },
+    { "name": "LightDirection1", "type": "float", "count": 3, "values": [0.0, 0.0, 0.0] },
+    { "name": "LightDirection2", "type": "float", "count": 3, "values": [0.0, 0.0, 0.0] },
+    { "name": "LightDirection3", "type": "float", "count": 3, "values": [0.0, 0.0, 0.0] }
   ]
 }

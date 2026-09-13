@@ -80,7 +80,7 @@ public class Color {
     private static void validateComponent(int value, String name) {
         if (value < 0 || value > 255) {
             throw new IllegalArgumentException(
-                    name + "value needs to be 0 e 255 (value: " + value + ")");
+                    name + " value must be between 0 and 255 (value: " + value + ")");
         }
     }
 

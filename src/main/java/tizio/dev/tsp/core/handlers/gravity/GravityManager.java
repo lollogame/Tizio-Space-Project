@@ -16,7 +16,7 @@ import java.util.Map;
 
 public final class GravityManager {
 
-    public static final double EARTH_GRAVITY_MS2 = 9.80665D; //dio bon
+    public static final double EARTH_GRAVITY_MS2 = 9.80665D;
 
     public static final double VANILLA_LIVING_GRAVITY = 0.08D;
     public static final double VANILLA_ITEM_GRAVITY = 0.04D;

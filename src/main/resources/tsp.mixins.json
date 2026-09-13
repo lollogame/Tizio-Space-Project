@@ -11,7 +11,10 @@
     "gravity.FallingBlockEntityGravityMixin",
     "gravity.ItemEntityGravityMixin",
     "gravity.PrimedTntGravityMixin",
-    "gravity.ThrowableProjectileGravityMixin"
+    "gravity.ThrowableProjectileGravityMixin",
+
+    "other.SLWeatherHandlerMixin",
+    "other.LWeatherMixin"
 
   ],
   "client": [

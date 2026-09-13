@@ -8,8 +8,6 @@ import java.util.Set;
 
 public final class DataConfig {
 
-    private DataConfig() {}
-
     public record Slider(double def, double min, double max) {
         public float defF() { return (float) def; }
         public float minF() { return (float) min; }
@@ -20,7 +18,8 @@ public final class DataConfig {
     }
 
     public static final class System {
-        private System() {}
+
+        public static final int MAX_BODIES_LIMIT = 30;
         public static final String DEFAULT_SPACE_DIMENSION = "tsp:space";
         public static final Set<String> VANILLA_DIMENSION_BLACKLIST = Set.of(
             "minecraft:overworld",
@@ -39,12 +38,13 @@ public final class DataConfig {
     }
 
     public static final class Star {
-        private Star() {}
+
         public static final String ID_DEF = "sun";
         public static final String TYPE_DEF = "star";
         public static final String COLOR_HEX_DEF = "#ffd48a";
         public static final boolean ENABLED_DEF = true;
-        public static final Slider RADIUS = new Slider(2000.0, 100.0, 10000.0);
+        public static final float RADIUS_SCALE = 10000.0F;
+        public static final Slider RADIUS = new Slider(0.20, 0.01, 1.0);
         public static final Slider DISK_ROTATION_SPEED = new Slider(0.20, 0.0, 5.0);
         public static final Slider INTENSITY = new Slider(1.0, 0.0, 2.0);
         public static final Slider YAW = new Slider(0.0, -180.0, 180.0);
@@ -58,13 +58,16 @@ public final class DataConfig {
         public static final float BUILDER_SUN_RADIUS_DEF = 1.95F;
         public static final Vector3f BUILDER_COLOR_DEF = new Vector3f(1.0F, 0.90F, 0.72F);
         public static final float BUILDER_QUAD_SCALE_DEF = 1.2F;
+
+        public static float toBlocks(float normalized) { return normalized * RADIUS_SCALE; }
+        public static float normalize(float blocks) { return blocks / RADIUS_SCALE; }
     }
 
     public static final class BlackHole {
-        private BlackHole() {}
+
         public static final String ID_DEF = "blackhole";
         public static final String PARENT_ID_DEF = "sun";
-        public static final float RADIUS_DEF = 100.0F;
+        public static final float RADIUS_DEF = 0.056F;
         public static final String COLOR_HEX_DEF = "#000000";
         public static final float YAW_DEF = 0.0F;
         public static final float PITCH_DEF = 0.0F;
@@ -75,7 +78,7 @@ public final class DataConfig {
     }
 
     public static final class Body {
-        private Body() {}
+
         public static final String ID_DEF = "body";
         public static final String UNNAMED_BODY_ID = "unnamed_body";
         public static final String NEW_BODY_ID = "new_planet";
@@ -87,15 +90,16 @@ public final class DataConfig {
         public static final String COLOR_HEX_DEF = "#7fb8ff";
         public static final String DIMENSION_DEF = "";
         public static final boolean OXYGEN_DEF = false;
-        public static final Slider RADIUS = new Slider(150.0, 60.0, 1800.0);
-        public static final float FALLBACK_RADIUS = 60.0F;
-        public static final float DEFAULT_SYSTEM_BODY_RADIUS = 250.0F;
-        public static final float NEW_SYSTEM_BODY_RADIUS = 200.0F;
-        public static final float MOON_RADIUS = 60.0F;
-        public static final float BLACKHOLE_RADIUS = 300.0F;
-        public static final float PLANET_RADIUS = 150.0F;
-        public static final float PLANET_INSTANCE_RADIUS = 100.0F;
-        public static final float RESET_RADIUS = 150.0F;
+        public static final float RADIUS_SCALE = 1800.0F;
+        public static final Slider RADIUS = new Slider(0.083, 0.033, 1.0);
+        public static final float FALLBACK_RADIUS = 0.033F;
+        public static final float DEFAULT_SYSTEM_BODY_RADIUS = 0.139F;
+        public static final float NEW_SYSTEM_BODY_RADIUS = 0.111F;
+        public static final float MOON_RADIUS = 0.033F;
+        public static final float BLACKHOLE_RADIUS = 0.167F;
+        public static final float PLANET_RADIUS = 0.083F;
+        public static final float PLANET_INSTANCE_RADIUS = 0.056F;
+        public static final float RESET_RADIUS = 0.083F;
         public static final float MIN_PHYSICAL_RADIUS = 0.05F;
         public static final float MAX_RADIUS = 10_000.0F;
         public static final Slider GRAVITY = new Slider(GravityManager.EARTH_GRAVITY_MS2, 0.0, 50.0);
@@ -110,31 +114,41 @@ public final class DataConfig {
         public static final boolean SURFACE_ENABLED_DEF = true;
         public static final Vector3f SURFACE_COLOR_RGB_DEF = new Vector3f(0.55F, 0.78F, 1.0F);
         public static final String COPY_SUFFIX = "_copy";
-        public static final double COPY_ORBIT_OFFSET = 1000.0;
+        public static final double COPY_ORBIT_OFFSET = 0.01D;
+        public static final int MAX_MOONS_PER_MOON = 0;
+
+        public static float toBlocks(float normalized) { return normalized * RADIUS_SCALE; }
+        public static float normalize(float blocks) { return blocks / RADIUS_SCALE; }
     }
 
     public static final class Orbit {
-        private Orbit() {}
+
         public static final boolean ENABLED_DEF = true;
         public static final String EPOCH_UTC_DEF = "2000-01-01T12:00:00Z";
-        public static final Slider RADIUS = new Slider(16000.0, 0.0, 200000.0);
+        public static final double RADIUS_SCALE = 100000.0D;
+        public static final Slider RADIUS = new Slider(0.16, 0.0, 1.0);
         public static final double RADIUS_FALLBACK = 0.0;
-        public static final double NEW_SYSTEM_RADIUS = 12000.0;
-        public static final double MOON_RADIUS = 1200.0;
-        public static final double BODY_STEP_RADIUS = 8000.0;
+        public static final double NEW_SYSTEM_RADIUS = 0.12;
+        public static final double MOON_RADIUS = 0.012;
+        public static final double MOON_STEP_RADIUS = 0.006;
+        public static final double BODY_STEP_RADIUS = 0.08;
         public static final Slider PERIOD_DAYS = new Slider(365.25, 0.1, 60000.0);
         public static final double PERIOD_DAYS_FALLBACK = 0.0;
         public static final double MOON_PERIOD_DAYS = 27.0;
+        public static final double MOON_STEP_PERIOD_DAYS = 12.0;
         public static final double BODY_STEP_PERIOD_DAYS = 100.0;
         public static final Slider INCLINATION = new Slider(0.0, -90.0, 90.0);
         public static final Slider ASCENDING_NODE = new Slider(0.0, 0.0, 360.0);
         public static final Slider EPOCH_ANGLE = new Slider(0.0, 0.0, 360.0);
         public static final Slider VERTICAL_OFFSET = new Slider(0.0, -2000.0, 2000.0);
         public static final double MAX_SCALED_RADIUS = 30_000_000.0;
+
+        public static double toBlocks(double normalized) { return normalized * RADIUS_SCALE; }
+        public static double normalize(double blocks) { return blocks / RADIUS_SCALE; }
     }
 
     public static final class Clouds {
-        private Clouds() {}
+
         public static final boolean ENABLED_DEF = false;
         public static final String TEXTURE_DEF = "noise1";
         public static final String COLOR_HEX_DEF = "#ffffff";
@@ -149,7 +163,7 @@ public final class DataConfig {
     }
 
     public static final class Atmosphere {
-        private Atmosphere() {}
+
         public static final boolean ENABLED_DEF = false;
         public static final String COLOR_HEX_DEF = "#ffffff";
         public static final String JSON_COLOR_HEX_DEF = "#7fb8ff";
@@ -170,7 +184,7 @@ public final class DataConfig {
     }
 
     public static final class Ring {
-        private Ring() {}
+
         public static final boolean ENABLED_DEF = false;
         public static final String TEXTURE_DEF = "saturn_ring";
         public static final String ROCK_TEXTURE_DEF = "rock_texture";
@@ -202,7 +216,7 @@ public final class DataConfig {
     }
 
     public static final class Sky {
-        private Sky() {}
+
         public static final boolean SKYBOX_ROTATION_DEF = false;
         public static final boolean SKYBOX_CONSTANT_DEF = false;
         public static final String SKYBOX_TEXTURE_DEF = "space_skybox";
@@ -215,7 +229,7 @@ public final class DataConfig {
     }
 
     public static final class Fog {
-        private Fog() {}
+
         public static final boolean ENABLED_DEF = true;
         public static final boolean SURFACE_FOG_ENABLED_DEF = false;
         public static final String COLOR_HEX_DEF = "#000000";

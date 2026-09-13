@@ -4,26 +4,18 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 import tizio.dev.tsp.core.utils.Color;
-import tizio.dev.tsp.core.utils.volume.VolumeRenderUtil;
 
 import java.text.DecimalFormat;
 
 
-// da rimuovere
-
-//@Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class DebugInfoOverlay {
 
     private static final Minecraft mc = Minecraft.getInstance();
     private static final DecimalFormat DF  = new DecimalFormat("0.0");
     private static final DecimalFormat DF2 = new DecimalFormat("0.000");
 
-    //@SubscribeEvent
     public static void onRenderOverlay(RenderGuiOverlayEvent.Post event) {
         if (mc.options.hideGui) return;
         if (mc.level == null) return;

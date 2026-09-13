@@ -35,8 +35,6 @@ public class RegisterItems {
         return new ItemFactory(name, itemSupplier);
     }
 
-    //================================================================
-
     public static final RegistryObject<Item> LEAD_NUGGET = registerItem("lead_nugget").build();
     public static final RegistryObject<Item> LEAD_INGOT = registerItem("lead_ingot").makeNuggets(() -> LEAD_NUGGET.get()).makeBlock(() -> RegisterBlocks.LEAD_BLOCK.get()).build();
     public static final RegistryObject<Item> RAW_LEAD = registerItem("raw_lead").canSmelt(() -> LEAD_INGOT.get()).makeBlock(() -> RegisterBlocks.RAW_LEAD_BLOCK.get()).build();
@@ -50,9 +48,6 @@ public class RegisterItems {
     public static final RegistryObject<Item> RAW_TITANIUM = registerItem("raw_titanium").canSmelt(() -> TITANIUM_INGOT.get()).makeBlock(() -> RegisterBlocks.RAW_TITANIUM_BLOCK.get()).build();
 
     public static final RegistryObject<Item> CIRCUIT_BOARD = registerItem("circuit_board").build();
-
-
-    //================================================================
 
     public static ArmorProperties registerArmor(ArmorProperties.Builder builder) {
         ArmorProperties properties = builder.build();
@@ -69,8 +64,6 @@ public class RegisterItems {
         return properties;
     }
 
-    //================================================================
-
     public static final ArmorProperties SPACE_SUIT_TIER_1_ORANGE = registerArmor(ArmorProperties.create("Space Suit - Orange", "space_suit_1_orange", ArmorTier.TIER_1, ArmorMaterials.DIAMOND).with3DModel().withCustomHelmet("helmet"));
     public static final ArmorProperties SPACE_SUIT_TIER_1_RED =    registerArmor(ArmorProperties.create("Space Suit - Red", "space_suit_1_red", ArmorTier.TIER_1, ArmorMaterials.DIAMOND).with3DModel().withCustomHelmet("helmet"));
     public static final ArmorProperties SPACE_SUIT_TIER_1_YELLOW = registerArmor(ArmorProperties.create("Space Suit - Yellow", "space_suit_1_yellow", ArmorTier.TIER_1, ArmorMaterials.DIAMOND).with3DModel().withCustomHelmet("helmet"));
@@ -80,9 +73,6 @@ public class RegisterItems {
     public static final ArmorProperties SPACE_SUIT_TIER_1_PINK =   registerArmor(ArmorProperties.create("Space Suit - Pink", "space_suit_1_pink", ArmorTier.TIER_1, ArmorMaterials.DIAMOND).with3DModel().withCustomHelmet("helmet"));
     public static final ArmorProperties SPACE_SUIT_TIER_1_PURPLE = registerArmor(ArmorProperties.create("Space Suit - Purple", "space_suit_1_purple", ArmorTier.TIER_1, ArmorMaterials.DIAMOND).with3DModel().withCustomHelmet("helmet"));
     public static final ArmorProperties SPACE_SUIT_TIER_1_WHITE =  registerArmor(ArmorProperties.create("Space Suit - White", "space_suit_1_white", ArmorTier.TIER_1, ArmorMaterials.DIAMOND).with3DModel().withCustomHelmet("helmet"));
-
-
-    //================================================================
 
     public static void register(IEventBus bus) {
         ITEMS.register(bus);

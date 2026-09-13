@@ -69,7 +69,7 @@ public class EditorTreeWidget extends AbstractWidget {
         }
 
         Map<String, TreeItem> bodyItemMap = new HashMap<>();
-        List<PlanetInstance.Config> unparented = new ArrayList<>();
+        List<PlanetInstance.Config> satellites = new ArrayList<>();
 
         for (PlanetInstance.Config body : systemConfig.bodies) {
             String bType = body.type != null ? body.type.toLowerCase(Locale.ROOT) : "planet";
@@ -82,19 +82,24 @@ public class EditorTreeWidget extends AbstractWidget {
             TreeItem bItem = new TreeItem(body.id, tag + body.id, bType, 1, body.parentId, body);
             bodyItemMap.put(body.id, bItem);
 
-            if (body.parentId == null || body.parentId.isBlank() || "sun".equalsIgnoreCase(body.parentId) || (systemConfig.star != null && systemConfig.star.id.equalsIgnoreCase(body.parentId))) {
+            boolean orbitsStar = body.parentId == null || body.parentId.isBlank()
+                    || "sun".equalsIgnoreCase(body.parentId)
+                    || (systemConfig.star != null && systemConfig.star.id.equalsIgnoreCase(body.parentId));
+
+            if (orbitsStar && !"moon".equalsIgnoreCase(bType)) {
                 sysItem.children.add(bItem);
             } else {
-                unparented.add(body);
+                satellites.add(body);
             }
         }
 
-        for (PlanetInstance.Config body : unparented) {
+        for (PlanetInstance.Config body : satellites) {
             TreeItem bItem = bodyItemMap.get(body.id);
             if (bItem == null) continue;
-            TreeItem parentTreeItem = bodyItemMap.get(body.parentId);
-            if (parentTreeItem != null) {
-                TreeItem nestedItem = new TreeItem(body.id, bItem.label, bItem.type, parentTreeItem.depth + 1, body.parentId, body);
+            TreeItem parentTreeItem = (body.parentId != null && !body.parentId.equalsIgnoreCase(body.id))
+                    ? bodyItemMap.get(body.parentId) : null;
+            if (parentTreeItem != null && !"moon".equalsIgnoreCase(parentTreeItem.type) && parentTreeItem.depth == 1) {
+                TreeItem nestedItem = new TreeItem(body.id, bItem.label, bItem.type, 2, body.parentId, body);
                 parentTreeItem.children.add(nestedItem);
             } else {
                 sysItem.children.add(bItem);

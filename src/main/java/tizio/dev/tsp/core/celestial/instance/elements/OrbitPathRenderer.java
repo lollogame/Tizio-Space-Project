@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
+import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
 import tizio.dev.tsp.core.client.ClientRenderTypes;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
@@ -22,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 public final class OrbitPathRenderer {
-    //troppi anelli, mi sposi?
     private static final int SEGMENTS = 120;
     private static final float[] DEFAULT_COLOR = {0.6F, 0.85F, 1.0F};
 
@@ -93,7 +93,7 @@ public final class OrbitPathRenderer {
             float[] rgb = parseColorHex(body.colorHex, body.id);
             float alpha = isMoonRing ? 0.7F : 1.0F;
 
-            double radius = body.orbit.radius * globalScale;
+            double radius = DataConfig.Orbit.toBlocks(body.orbit.radius) * globalScale;
             double inclinationDeg = body.orbit.inclination;
             double ascendingNodeDeg = body.orbit.ascendingNode;
             double verticalOffset = body.orbit.verticalOffset * globalScale;

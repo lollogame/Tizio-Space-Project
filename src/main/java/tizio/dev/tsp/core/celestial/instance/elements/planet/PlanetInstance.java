@@ -78,6 +78,18 @@ public final class PlanetInstance {
             return Utils.isBlackHole(this.type);
         }
 
+        public boolean isMoon() {
+            return "moon".equalsIgnoreCase(this.type);
+        }
+
+        public boolean isStar() {
+            return "star".equalsIgnoreCase(this.type);
+        }
+
+        public boolean isPlanet() {
+            return !isMoon() && !isStar() && !isBlackHole();
+        }
+
         public Config copy() {
             Config copy = new Config();
             copy.id = this.id;

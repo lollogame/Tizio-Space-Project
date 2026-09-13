@@ -20,7 +20,7 @@ public class LabeledSlider extends AbstractSliderButton {
     private final Consumer<Double> onChange;
 
     public LabeledSlider(int x, int y, int width, int height, String labelPrefix, double initialValue, double defaultValue, double min, double max, Consumer<Double> onChange) {
-        super(x, y, width, height, Component.empty(), (initialValue - min) / (max - min));
+        super(x, y, width, height, Component.empty(), (max > min) ? (initialValue - min) / (max - min) : 0.0);
         this.labelPrefix = labelPrefix;
         this.defaultValue = defaultValue;
         this.min = min;
@@ -33,6 +33,12 @@ public class LabeledSlider extends AbstractSliderButton {
         this(x, y, width, height, labelPrefix, initialValue, initialValue, min, max, onChange);
     }
 
+    private int getMaxValWidth(Font font) {
+        String minStr = String.format(Locale.ROOT, "%.2f", min);
+        String maxStr = String.format(Locale.ROOT, "%.2f", max);
+        return Math.max(font.width(minStr), font.width(maxStr)) + 4;
+    }
+
     private int getTrackX1() {
         Font font = Minecraft.getInstance().font;
         int labelWidth = font.width(labelPrefix);
@@ -41,10 +47,7 @@ public class LabeledSlider extends AbstractSliderButton {
 
     private int getTrackX2() {
         Font font = Minecraft.getInstance().font;
-        String valStr = String.format(Locale.ROOT, "%.2f", getValue());
-        String maxStr = String.format(Locale.ROOT, "%.2f", max);
-        int valWidth = Math.max(font.width(valStr), font.width(maxStr));
-        return getX() + width - valWidth - 8;
+        return getX() + width - getMaxValWidth(font) - 6;
     }
 
     @Override
@@ -65,6 +68,15 @@ public class LabeledSlider extends AbstractSliderButton {
     }
 
     @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (button == 0 && this.active && this.visible) {
+            updateValueFromMouse(mouseX);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public void onClick(double mouseX, double mouseY) {
         updateValueFromMouse(mouseX);
     }
@@ -78,10 +90,12 @@ public class LabeledSlider extends AbstractSliderButton {
         int t1 = getTrackX1();
         int t2 = getTrackX2();
         if (t2 > t1) {
-            double newValue = (mouseX - t1) / (double) (t2 - t1);
-            this.value = Utils.clamp(newValue, 0.0, 1.0);
-            updateMessage();
-            applyValue();
+            double clamped = Utils.clamp((mouseX - t1) / (double) (t2 - t1), 0.0, 1.0);
+            if (Double.compare(this.value, clamped) != 0) {
+                this.value = clamped;
+                updateMessage();
+                applyValue();
+            }
         }
     }
 
@@ -104,9 +118,15 @@ public class LabeledSlider extends AbstractSliderButton {
 
     public void setValue(double newValue) {
         double clamped = Utils.clamp(newValue, min, max);
-        this.value = (clamped - min) / (max - min);
+        this.value = (max > min) ? (clamped - min) / (max - min) : 0.0;
         updateMessage();
         applyValue();
+    }
+
+    public void setValueQuiet(double newValue) {
+        double clamped = Utils.clamp(newValue, min, max);
+        this.value = (max > min) ? (clamped - min) / (max - min) : 0.0;
+        updateMessage();
     }
 
     public void resetToDefault() {
@@ -151,7 +171,7 @@ public class LabeledSlider extends AbstractSliderButton {
             g.fill(trackX1, trackY - 1, Math.max(trackX1, fillX), trackY + 1, SystemEditorTheme.SLIDER_TRACK_FILL);
 
             int handleW = 8;
-            int handleX = Math.max(trackX1 - 2, Math.min(trackX2 - handleW + 2, fillX - handleW / 2));
+            int handleX = fillX - handleW / 2;
             int handleY1 = getY() + 2;
             int handleY2 = getY() + height - 2;
 

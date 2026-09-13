@@ -80,7 +80,7 @@ public final class PlanetSkyRenderer {
 
             Vec3 toStarVec  = starPos.subtract(currentBodyPos);
             double starDist = toStarVec.length();
-            float r = (float) computeSkyRadius((system.star.radius * 0.35f) * globalScale, starDist > 1e-6 ? starDist : 1000.0);
+            float r = (float) computeSkyRadius((DataConfig.Star.toBlocks(system.star.radius) * 0.35f) * globalScale, starDist > 1e-6 ? starDist : 1000.0);
             float starDomeDist = SKY_DOME_RADIUS + 50.0f;
             Vec3 skyPosStar = cameraPos.add(toVec3(sunDirMC).scale(starDomeDist));
             Vector3f starColor = CelestialJsonLoader.parseColor(system.star.colorHex, new Vector3f(1.0f, 0.9f, 0.65f));
@@ -108,7 +108,7 @@ public final class PlanetSkyRenderer {
             Vec3 skyPosRing    = cameraPos.add(toVec3(dirSky).scale(SKY_DOME_RADIUS - 0.02));
             Vec3 skyPosAtmos   = cameraPos.add(toVec3(dirSky).scale(SKY_DOME_RADIUS - 0.05));
 
-            double physRadius = body.radius * globalScale;
+            double physRadius = DataConfig.Body.toBlocks(body.radius) * globalScale;
             Vec3 bodyPos = bodyPositions.getOrDefault(body.id, currentBodyPos);
             double bodyDist = bodyPos.subtract(currentBodyPos).length();
             if (bodyDist < 1e-6) bodyDist = 1800.0;
@@ -162,8 +162,9 @@ public final class PlanetSkyRenderer {
 
             if (body.ring != null && body.ring.enabled) {
 
-                float innerR = (body.ring.innerRadius >= body.radius ? body.ring.innerRadius / body.radius : body.ring.innerRadius) * r;
-                float outerR = (body.ring.outerRadius >= body.radius ? body.ring.outerRadius / body.radius : body.ring.outerRadius) * r;
+                float bodyRadiusBlocks = DataConfig.Body.toBlocks(body.radius);
+                float innerR = (body.ring.innerRadius >= bodyRadiusBlocks ? body.ring.innerRadius / bodyRadiusBlocks : body.ring.innerRadius) * r;
+                float outerR = (body.ring.outerRadius >= bodyRadiusBlocks ? body.ring.outerRadius / bodyRadiusBlocks : body.ring.outerRadius) * r;
                 float ringQuadR = outerR * 1.02f;
                 Vector3f ringColor = CelestialJsonLoader.parseColor(body.ring.colorHex, new Vector3f(1, 1, 1));
 
@@ -257,11 +258,12 @@ public final class PlanetSkyRenderer {
 
     private static void buildOwnRingTasks(PlanetInstance.Config body, float globalScale, float sunAngle, Camera camera, Frustum frustum, PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, Vec3 cameraPos, List<VolumeRenderUtil.RenderTask> ringTasks) {
 
-        float physPlanetR = body.radius * globalScale;
+        float physPlanetR = DataConfig.Body.toBlocks(body.radius) * globalScale;
         if (physPlanetR < 1e-6f) return;
 
-        float innerR = (body.ring.innerRadius >= body.radius ? body.ring.innerRadius / body.radius : body.ring.innerRadius) * (float) SKY_DOME_RADIUS;
-        float outerR = (body.ring.outerRadius >= body.radius ? body.ring.outerRadius / body.radius : body.ring.outerRadius) * (float) SKY_DOME_RADIUS;
+        float bodyRadiusBlocks = DataConfig.Body.toBlocks(body.radius);
+        float innerR = (body.ring.innerRadius >= bodyRadiusBlocks ? body.ring.innerRadius / bodyRadiusBlocks : body.ring.innerRadius) * (float) SKY_DOME_RADIUS;
+        float outerR = (body.ring.outerRadius >= bodyRadiusBlocks ? body.ring.outerRadius / bodyRadiusBlocks : body.ring.outerRadius) * (float) SKY_DOME_RADIUS;
 
         org.joml.Quaternionf rot = new org.joml.Quaternionf().rotationZYX((float) Math.toRadians(body.ring.roll), (float) Math.toRadians(body.ring.pitch), (float) Math.toRadians(body.ring.yaw));
         Vector3f localUp = new Vector3f(0.0f, (float) SKY_DOME_RADIUS, 0.0f);

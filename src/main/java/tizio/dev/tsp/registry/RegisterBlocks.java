@@ -39,8 +39,6 @@ public class RegisterBlocks {
         BLOCKS.register(bus);
     }
 
-    //================================================================
-
     public static final RegistryObject<Block> MARS_SAND = registerBlock("mars_sand", SandBlock::new).randomRotation().build();
     public static final RegistryObject<Block> MARS_STONE = registerBlock("mars_stone", StoneBlock::new).craftingRecipes().stonecutter().makeStairs().makeSlab().build();
     public static final RegistryObject<Block> MARS_GRAVEL = registerBlock("mars_gravel", GravelBlock::new).randomRotation().build();
@@ -53,8 +51,6 @@ public class RegisterBlocks {
     public static final RegistryObject<Block> VENUS_STONE = registerBlock("venus_stone", StoneBlock::new).craftingRecipes().stonecutter().makeStairs().makeSlab().build();
     public static final RegistryObject<Block> VENUS_GRAVEL = registerBlock("venus_gravel", GravelBlock::new).randomRotation().build();
     public static final RegistryObject<Block> DEBRIS = registerBlock("debris", DebrisBlock::new).randomRotation().customItem("debris").customModel("debris_1").customModel("debris_2").build();
-
-    //================================================================
 
     public static final RegistryObject<Block> DEEPSLATE_TITANIUM_ORE = RegisterOres.registerOre(OreProperties.builder("deepslate_titanium_ore", BlockTags.DEEPSLATE_ORE_REPLACEABLES, BiomeTags.IS_OVERWORLD).toolTier(OreToolTier.IRON).strength(4.5f, 3.0f).drops(() -> RegisterItems.RAW_TITANIUM.get(), 1, 1).smelt(() -> RegisterItems.TITANIUM_INGOT.get(), 1.0f, 200).xp(3, 7).vein(8, 7).height(-64, 16).build());
 
@@ -78,13 +74,9 @@ public class RegisterBlocks {
     public static final RegistryObject<Block> MOON_TITANIUM_ORE = RegisterOres.registerOre(OreProperties.builder("moon_titanium_ore", TSPBlockTags.MOON_STONE_ORE_REPLACEABLE, TSPBiomeTags.MOON_BIOMES).toolTier(OreToolTier.DIAMOND).strength(3f, 3f).drops(() -> RegisterItems.RAW_TITANIUM.get(), 1, 1).smelt(() -> RegisterItems.TITANIUM_INGOT.get(), 1.0f, 200).xp(3, 7).vein(4, 4).height(-55, -36).build());
     public static final RegistryObject<Block> VENUS_TITANIUM_ORE = RegisterOres.registerOre(OreProperties.builder("venus_titanium_ore", TSPBlockTags.VENUS_STONE_ORE_REPLACEABLE, TSPBiomeTags.VENUS_BIOMES).toolTier(OreToolTier.DIAMOND).strength(3f, 3f).drops(() -> RegisterItems.RAW_TITANIUM.get(), 1, 1).smelt(() -> RegisterItems.TITANIUM_INGOT.get(), 1.0f, 200).xp(3, 7).vein(4, 4).height(-55, -36).build());
 
-    //================================================================
-
     public static final RegistryObject<Block> RAW_TITANIUM_BLOCK = registerBlock("raw_titanium_block", MetalBlock::new).canSmelt(() -> RegisterItems.TITANIUM_INGOT.get()).build();
     public static final RegistryObject<Block> RAW_ALLUMINIUM_BLOCK = registerBlock("raw_alluminium_block", MetalBlock::new).canSmelt(() -> RegisterItems.ALLUMINIUM_INGOT.get()).build();
     public static final RegistryObject<Block> RAW_LEAD_BLOCK = registerBlock("raw_lead_block", MetalBlock::new).canSmelt(() -> RegisterItems.LEAD_INGOT.get()).build();
-
-    //================================================================
 
     public static final RegistryObject<Block> TITANIUM_BLOCK = registerBlock("titanium_block", MetalBlock::new).craftingRecipes().stonecutter().cutBlock("titanium_block_cut").makeStairs().makeSlab().build();
     public static final RegistryObject<Block> TITANIUM_BLOCK_CUT = registerBlock("titanium_block_cut", MetalBlock::new).craftingRecipes().stonecutter().makeStairs().makeSlab().build();
@@ -93,8 +85,6 @@ public class RegisterBlocks {
     public static final RegistryObject<Block> ALLUMINIUM_BLOCK_CUT = registerBlock("alluminium_block_cut", MetalBlock::new).craftingRecipes().stonecutter().makeStairs().makeSlab().build();
 
     public static final RegistryObject<Block> LEAD_BLOCK = registerBlock("lead_block", MetalBlock::new).craftingRecipes().stonecutter().makeStairs().makeSlab().build();
-
-    //================================================================
 
     public static class RegisterOres {
 

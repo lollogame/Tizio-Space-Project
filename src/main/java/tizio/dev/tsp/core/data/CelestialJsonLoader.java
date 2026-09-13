@@ -51,7 +51,7 @@ public final class CelestialJsonLoader {
     private static final float MAX_PLANET_RADIUS = DataConfig.Body.MAX_RADIUS;
     private static final float MAX_STAR_RADIUS = DataConfig.Star.MAX_RADIUS;
 
-    private static final Map<String, SolarSystemData> activeSystems = new LinkedHashMap<>();
+    private static final Map<String, SolarSystemData> activeSystems = new java.util.concurrent.ConcurrentHashMap<>();
     private static volatile LoadedData loadedData = LoadedData.EMPTY;
     private static volatile long nextRefreshMs = 0L;
     private static volatile ResourceLocation currentDimension = ResourceLocation.tryParse(SolarSystemData.DEFAULT_SPACE_DIMENSION);
@@ -112,20 +112,30 @@ public final class CelestialJsonLoader {
 
     public static void applyDatapackData(LoadedData data) {
         loadedData = data == null ? LoadedData.EMPTY : data;
-        activeSystems.clear();
+        Map<String, SolarSystemData> newSystems = new java.util.concurrent.ConcurrentHashMap<>();
 
         for (LoadedJson systemJson : loadedData.solarSystems()) {
             try {
                 SolarSystemData systemConfig = parseSolarSystem(systemJson.id(), systemJson.root());
                 if (systemConfig != null) {
-                    activeSystems.put(systemConfig.id, systemConfig);
+                    newSystems.put(systemConfig.id, systemConfig);
                 }
             } catch (Exception e) {
                 LOGGER.error("Failed to parse solar system json '{}'", systemJson.id(), e);
             }
         }
 
-        forceFullRebuild();
+        activeSystems.clear();
+        activeSystems.putAll(newSystems);
+
+        if (isClientSide()) {
+            Minecraft minecraft = Minecraft.getInstance();
+            if (minecraft != null && !minecraft.isSameThread()) {
+                minecraft.execute(CelestialJsonLoader::forceFullRebuild);
+            } else {
+                forceFullRebuild();
+            }
+        }
         LOGGER.info("Loaded {} solar system(s) into active memory", activeSystems.size());
     }
 
@@ -306,6 +316,10 @@ public final class CelestialJsonLoader {
         if (bodiesArr != null) {
             for (JsonElement elem : bodiesArr) {
                 if (!elem.isJsonObject()) continue;
+                if (config.bodies.size() >= DataConfig.System.MAX_BODIES_LIMIT) {
+                    LOGGER.warn("System '{}' exceeded max body limit of {}. Ignoring remaining bodies.", config.id, DataConfig.System.MAX_BODIES_LIMIT);
+                    break;
+                }
                 PlanetInstance.Config body = parseBody(elem.getAsJsonObject(), DataConfig.Body.TYPE_DEF, DataConfig.Body.PARENT_ID_DEF);
                 if (body != null) {
                     config.bodies.add(body);
@@ -320,7 +334,8 @@ public final class CelestialJsonLoader {
         SunInstance.Config star = new SunInstance.Config();
         star.id = safeId(string(starObj, "id", DataConfig.Star.ID_DEF), DataConfig.Star.ID_DEF);
         star.type = string(starObj, "type", DataConfig.Star.TYPE_DEF);
-        star.radius = (float) number(starObj, "radius", DataConfig.Star.RADIUS.def());
+        double rawStarRadius = number(starObj, "radius", DataConfig.Star.RADIUS.def());
+        star.radius = (float) Utils.clamp(rawStarRadius > 1.0 ? DataConfig.Star.normalize((float) rawStarRadius) : rawStarRadius, DataConfig.Star.RADIUS.min(), DataConfig.Star.RADIUS.max());
         star.colorHex = colorHex(starObj, DataConfig.Star.COLOR_HEX_DEF);
         star.enabled = bool(starObj, "enabled", DataConfig.Star.ENABLED_DEF);
         star.diskRotationSpeed = (float) number(starObj, "diskRotationSpeed", DataConfig.Star.DISK_ROTATION_SPEED.def());
@@ -360,7 +375,8 @@ public final class CelestialJsonLoader {
 
         JsonObject orbitObj = object(obj, "orbit");
         body.orbit = new PlanetInstance.Orbit();
-        body.orbit.radius = number(obj, "orbitRadius", number(obj, "distance", number(orbitObj, "radius", number(orbitObj, "distance", DataConfig.Orbit.RADIUS_FALLBACK))));
+        double rawOrbit = number(obj, "orbitRadius", number(obj, "distance", number(orbitObj, "radius", number(orbitObj, "distance", DataConfig.Orbit.RADIUS_FALLBACK))));
+        body.orbit.radius = rawOrbit > 1.0 ? DataConfig.Orbit.normalize(rawOrbit) : rawOrbit;
         body.orbit.periodDays = number(obj, "orbitalPeriodDays", number(orbitObj, "periodDays", DataConfig.Orbit.PERIOD_DAYS_FALLBACK));
         body.orbit.epochAngle = number(obj, "epochAngleDeg", number(orbitObj, "epochAngle", number(orbitObj, "angleDeg", DataConfig.Orbit.EPOCH_ANGLE.def())));
         body.orbit.epochUtc = string(obj, "epochUtc", string(orbitObj, "epochUtc", DataConfig.Orbit.EPOCH_UTC_DEF));
@@ -486,7 +502,7 @@ public final class CelestialJsonLoader {
         if (system.star != null && system.star.enabled) {
             String starId = safeId(system.star.id, DataConfig.Star.ID_DEF);
             Vec3 starPosition = bodyPositions.getOrDefault(starId, origin);
-            float radius = (float) Utils.clamp(system.star.radius * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
+            float radius = (float) Utils.clamp(DataConfig.Star.toBlocks(system.star.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
             Vector3f color = parseColor(system.star.colorHex, new Vector3f(1.0F, 0.9F, 0.65F));
             Vec3 rot = new Vec3(system.star.yaw, system.star.pitch, system.star.roll);
 
@@ -508,14 +524,14 @@ public final class CelestialJsonLoader {
             String fullBodyId = registryPrefix + "/" + body.id;
 
             if (body.isBlackHole()) {
-                float radius = (float) Utils.clamp(body.radius * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_PLANET_RADIUS);
+                float radius = (float) Utils.clamp(DataConfig.Body.toBlocks(body.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_PLANET_RADIUS);
                 Vector3f color = parseColor(body.colorHex, new Vector3f(1.0F, 0.72F, 0.22F));
                 Vec3 rot = new Vec3(body.yaw, body.pitch, body.roll);
 
                 registerBlackHole(fullBodyId, bodyPos, radius, color, rot, body.diskRotationSpeed, body.intensity);
                 activeBlackHoleKeys.add(ClientRenderRegistries.BLACK_HOLES.id(fullBodyId));
             } else if ("star".equalsIgnoreCase(body.type) || "sun".equalsIgnoreCase(body.type)) {
-                float radius = (float) Utils.clamp(body.radius * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
+                float radius = (float) Utils.clamp(DataConfig.Body.toBlocks(body.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
                 Vector3f color = parseColor(body.colorHex, new Vector3f(1.0F, 0.9F, 0.65F));
                 Vec3 rot = new Vec3(body.yaw, body.pitch, body.roll);
 
@@ -674,7 +690,7 @@ public final class CelestialJsonLoader {
             return null;
         }
         float globalScale = (float) Utils.clamp(system.globalScale, DataConfig.System.SCALE.min(), DataConfig.System.SCALE.max());
-        return (float) Utils.clamp(system.star.radius * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
+        return (float) Utils.clamp(DataConfig.Star.toBlocks(system.star.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
     }
 
     public static SolarSystemData getSolarSystemForBodyDimension(String bodyDimensionId) {
@@ -715,7 +731,7 @@ public final class CelestialJsonLoader {
                 Vec3 pos = positions.get(body.id);
                 if (pos == null) continue;
 
-                double physRadius = Math.max(DataConfig.Body.MIN_PHYSICAL_RADIUS, body.radius * globalScale);
+                double physRadius = Math.max(DataConfig.Body.MIN_PHYSICAL_RADIUS, DataConfig.Body.toBlocks(body.radius) * globalScale);
                 double visualRadius = resolveAtmosphereRadiusConfig(body.atmosphere, (float) physRadius);
                 result.add(new BodySpatialInfo(system, body, pos, physRadius, visualRadius, body.dimension));
             }
@@ -733,7 +749,7 @@ public final class CelestialJsonLoader {
                     Vec3 pos = positions.get(body.id);
                     if (pos == null) continue;
 
-                    double physRadius = Math.max(DataConfig.Body.MIN_PHYSICAL_RADIUS, body.radius * globalScale);
+                    double physRadius = Math.max(DataConfig.Body.MIN_PHYSICAL_RADIUS, DataConfig.Body.toBlocks(body.radius) * globalScale);
                     double visualRadius = resolveAtmosphereRadiusConfig(body.atmosphere, (float) physRadius);
                     return new BodySpatialInfo(system, body, pos, physRadius, visualRadius, body.dimension);
                 }
@@ -846,7 +862,7 @@ public final class CelestialJsonLoader {
                                              Set<ResourceLocation> activeRockKeys,
                                              Set<ResourceLocation> activeAtmosKeys) {
 
-        float radius = (float) Utils.clamp(body.radius * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_PLANET_RADIUS);
+        float radius = (float) Utils.clamp(DataConfig.Body.toBlocks(body.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_PLANET_RADIUS);
         Vector3f color = parseColor(body.colorHex, new Vector3f(0.55F, 0.78F, 1.0F));
         Vec3 rotation = new Vec3(body.yaw, body.pitch, body.roll);
         Vector3f lightDir = lightDirection(lightPosition.toVector3f(), position.toVector3f());
@@ -896,8 +912,9 @@ public final class CelestialJsonLoader {
             float rawInner = body.ring.innerRadius;
             float rawOuter = body.ring.outerRadius;
 
-            float baseInner = (rawInner <= 15.0F || rawInner < body.radius) ? rawInner * radius : rawInner * globalScale;
-            float baseOuter = (rawOuter <= 15.0F || rawOuter < body.radius) ? rawOuter * radius : rawOuter * globalScale;
+            float bodyRadiusBlocks = DataConfig.Body.toBlocks(body.radius);
+            float baseInner = (rawInner <= 15.0F || rawInner < bodyRadiusBlocks) ? rawInner * radius : rawInner * globalScale;
+            float baseOuter = (rawOuter <= 15.0F || rawOuter < bodyRadiusBlocks) ? rawOuter * radius : rawOuter * globalScale;
 
             if (baseOuter <= baseInner) {
                 baseOuter = baseInner + radius * 0.15F;
@@ -1016,7 +1033,7 @@ public final class CelestialJsonLoader {
             return parentPosition;
         }
 
-        double radius = body.orbit.radius * globalScale;
+        double radius = DataConfig.Orbit.toBlocks(body.orbit.radius) * globalScale;
         double angleDeg = orbitAngleConfig(body.orbit, now);
         double inclinationDeg = body.orbit.inclination;
         double ascendingNodeDeg = body.orbit.ascendingNode;
@@ -1066,7 +1083,11 @@ public final class CelestialJsonLoader {
 
     private static float radius(JsonObject source, float fallback) {
         JsonObject surface = object(source, "surface");
-        return (float) Utils.clamp(number(source, "radius", number(surface, "radius", fallback)), DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_PLANET_RADIUS);
+        double val = number(source, "radius", number(surface, "radius", fallback));
+        if (val > 1.0) {
+            val = DataConfig.Body.normalize((float) val);
+        }
+        return (float) Utils.clamp(val, DataConfig.Body.RADIUS.min(), DataConfig.Body.RADIUS.max());
     }
 
     private static float surfaceQuadRadius(float radius) {

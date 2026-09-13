@@ -4,6 +4,11 @@ uniform float PlanetRadius;
 uniform float RingInnerRadius;
 uniform float RingOuterRadius;
 uniform vec3 LightDirection;
+uniform int LightCount;
+uniform vec3 LightDirection0;
+uniform vec3 LightDirection1;
+uniform vec3 LightDirection2;
+uniform vec3 LightDirection3;
 uniform vec3 CameraLocalPos;
 uniform sampler2D Sampler0;
 
@@ -77,21 +82,46 @@ void main() {
     float angle = atan(hitPos.z, hitPos.x) / (2.0 * 3.14159265358979) + 0.5;
     vec2 uv = vec2(fract(angle), v);
 
-    vec3 sunDir = normalize(LightDirection);
+    const int MAX_LIGHTS = 4;
+    vec3 sunDirs[MAX_LIGHTS];
+    sunDirs[0] = normalize(LightDirection0);
+    sunDirs[1] = normalize(LightDirection1);
+    sunDirs[2] = normalize(LightDirection2);
+    sunDirs[3] = normalize(LightDirection3);
 
-    float tCA = -dot(hitPos, sunDir);
-    float shadow = 1.0;
-    if (tCA > 0.0) {
-        vec3 closest = hitPos + sunDir * tCA;
-        float dist = length(closest);
-        float softness = max(ShadowSoftness, 0.001) * PlanetRadius;
-        shadow = smoothstep(PlanetRadius - softness, PlanetRadius + softness, dist);
+    float softness = max(ShadowSoftness, 0.001) * PlanetRadius;
+    float directAccum = 0.0;
+
+    if (LightCount <= 0) {
+        vec3 sunDir = normalize(LightDirection);
+        float tCA = -dot(hitPos, sunDir);
+        float s = 1.0;
+        if (tCA > 0.0) {
+            vec3 closest = hitPos + sunDir * tCA;
+            float dist = length(closest);
+            s = smoothstep(PlanetRadius - softness, PlanetRadius + softness, dist);
+        }
+        directAccum = s;
+    } else {
+        for (int i = 0; i < MAX_LIGHTS; ++i) {
+            if (i >= LightCount) break;
+            vec3 sunDir = sunDirs[i];
+            float tCA = -dot(hitPos, sunDir);
+            float s = 1.0;
+            if (tCA > 0.0) {
+                vec3 closest = hitPos + sunDir * tCA;
+                float dist = length(closest);
+                s = smoothstep(PlanetRadius - softness, PlanetRadius + softness, dist);
+            }
+            directAccum += s;
+        }
+        directAccum /= float(LightCount);
     }
 
     vec4 ringColor = texture(Sampler0, uv);
     if (ringColor.a < 0.001) discard;
 
-    float lighting = mix(AmbientLight, RingAmbient, shadow);
+    float lighting = mix(AmbientLight, RingAmbient, directAccum);
     float fade = proximityFade(hitPos, viewRay.origin);
     float alpha = ringColor.a * fade;
     if (alpha < 0.001) discard;

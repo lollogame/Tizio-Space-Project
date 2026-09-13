@@ -3,6 +3,11 @@
 uniform float PlanetRadius;
 uniform vec3  CameraLocalPos;
 uniform vec3  LightDirection;
+uniform int   LightCount;
+uniform vec3  LightDirection0;
+uniform vec3  LightDirection1;
+uniform vec3  LightDirection2;
+uniform vec3  LightDirection3;
 uniform sampler2D Sampler0;
 
 in vec3  fragLocalPos;
@@ -65,12 +70,33 @@ void main() {
         }
     }
 
-    vec3 flatNormal = normalize(fragNormal);
-    vec3 sunDir     = normalize(LightDirection);
-    float NdotL     = max(dot(flatNormal, sunDir), 0.0);
+    const int MAX_LIGHTS = 4;
+    vec3 sunDirs[MAX_LIGHTS];
+    sunDirs[0] = normalize(LightDirection0);
+    sunDirs[1] = normalize(LightDirection1);
+    sunDirs[2] = normalize(LightDirection2);
+    sunDirs[3] = normalize(LightDirection3);
 
-    float shadow      = computePlanetShadow(fragLocalPos, sunDir);
-    float lightFactor = mix(AmbientLight, 1.0, NdotL * shadow);
+    vec3 flatNormal = normalize(fragNormal);
+    float directLightAccum = 0.0;
+
+    if (LightCount <= 0) {
+        vec3 sunDir = normalize(LightDirection);
+        float NdotL = max(dot(flatNormal, sunDir), 0.0);
+        float shadow = computePlanetShadow(fragLocalPos, sunDir);
+        directLightAccum = NdotL * shadow;
+    } else {
+        for (int i = 0; i < MAX_LIGHTS; ++i) {
+            if (i >= LightCount) break;
+            vec3 sunDir = sunDirs[i];
+            float NdotL = max(dot(flatNormal, sunDir), 0.0);
+            float shadow = computePlanetShadow(fragLocalPos, sunDir);
+            directLightAccum += NdotL * shadow;
+        }
+        directLightAccum = directLightAccum / float(LightCount);
+    }
+
+    float lightFactor = mix(AmbientLight, 1.0, clamp(directLightAccum, 0.0, 1.0));
 
     fragColor = vec4(texColor.rgb * lightFactor, 1.0);
 }

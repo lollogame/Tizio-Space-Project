@@ -11,7 +11,7 @@
   "star": {
     "id": "sun",
     "type": "star",
-    "radius": 1000.0,
+    "radius": 0.1,
     "color": "#FFF1B7"
   },
   "bodies": [
@@ -22,12 +22,12 @@
       "gravity": 9.81,
       "oxygen": false,
       "temperature": 0.8,
-      "radius": 200.0,
+      "radius": 0.11111111,
       "texture": "mercury",
       "color": "#a5f0ee",
       "spinHours": 24.0,
       "orbit": {
-        "radius": 7207.2072072074125,
+        "radius": 0.07207207,
         "periodDays": 87.97,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
@@ -43,7 +43,7 @@
       "gravity": 8.87,
       "oxygen": false,
       "temperature": 1.0,
-      "radius": 320.0,
+      "radius": 0.17777778,
       "texture": "venus",
       "color": "#FFBB22",
       "spinHours": 24.0,
@@ -66,7 +66,7 @@
         "useRenderDistance": true
       },
       "orbit": {
-        "radius": 14556.962025316438,
+        "radius": 0.14556962,
         "periodDays": 224.7,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
@@ -105,7 +105,7 @@
       "gravity": 9.81,
       "oxygen": true,
       "temperature": 0.0,
-      "radius": 335.0,
+      "radius": 0.18611111,
       "texture": "earth_mat_0",
       "nightTexture": "earth_mat_1",
       "color": "#00F42F",
@@ -134,7 +134,7 @@
         "useRenderDistance": true
       },
       "orbit": {
-        "radius": 17216.2162,
+        "radius": 0.17216216,
         "periodDays": 365.26,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
@@ -173,7 +173,7 @@
       "gravity": 3.72,
       "oxygen": false,
       "temperature": 0.0176,
-      "radius": 300.0,
+      "radius": 0.16666667,
       "texture": "mars",
       "color": "#FF4D26",
       "spinHours": 24.6,
@@ -196,7 +196,7 @@
         "useRenderDistance": true
       },
       "orbit": {
-        "radius": 19936.708860759492,
+        "radius": 0.19936709,
         "periodDays": 686.98,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
@@ -234,7 +234,7 @@
       "gravity": 9.81,
       "oxygen": false,
       "temperature": -0.5,
-      "radius": 486.0,
+      "radius": 0.27,
       "texture": "jupiter",
       "color": "#FFD96B",
       "rotation": {
@@ -244,7 +244,7 @@
       },
       "spinHours": 9.9,
       "orbit": {
-        "radius": 22784.81012658228,
+        "radius": 0.2278481,
         "periodDays": 4332.59,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
@@ -273,7 +273,7 @@
       "gravity": 9.81,
       "oxygen": false,
       "temperature": -0.7,
-      "radius": 440.0,
+      "radius": 0.24444444,
       "texture": "saturn",
       "color": "#FFFFFF",
       "rotation": {
@@ -283,7 +283,7 @@
       },
       "spinHours": 10.7,
       "orbit": {
-        "radius": 25632.91139240506,
+        "radius": 0.25632911,
         "periodDays": 10759.22,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
@@ -331,7 +331,7 @@
       "gravity": 9.81,
       "oxygen": false,
       "temperature": -0.8,
-      "radius": 430.0,
+      "radius": 0.23888889,
       "texture": "uranus",
       "color": "#60FFFC",
       "rotation": {
@@ -341,7 +341,7 @@
       },
       "spinHours": -17.2,
       "orbit": {
-        "radius": 28481.01265822785,
+        "radius": 0.28481013,
         "periodDays": 30688.5,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
@@ -389,7 +389,7 @@
       "gravity": 9.81,
       "oxygen": false,
       "temperature": -0.9,
-      "radius": 496.0,
+      "radius": 0.27555555,
       "texture": "neptune",
       "color": "#2200EB",
       "rotation": {
@@ -399,7 +399,7 @@
       },
       "spinHours": 0.0,
       "orbit": {
-        "radius": 31329.113924050635,
+        "radius": 0.31329114,
         "periodDays": 60000.0,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",
@@ -429,7 +429,7 @@
       "gravity": 1.6,
       "oxygen": false,
       "temperature": -0.8,
-      "radius": 60.0,
+      "radius": 0.033333335,
       "texture": "moon",
       "color": "#0DFF04",
       "spinHours": 655.2,
@@ -452,7 +452,7 @@
         "useRenderDistance": true
       },
       "orbit": {
-        "radius": 1799.9999999999998,
+        "radius": 0.018,
         "periodDays": 27.3,
         "epochAngle": 0.0,
         "epochUtc": "2000-01-01T12:00:00Z",

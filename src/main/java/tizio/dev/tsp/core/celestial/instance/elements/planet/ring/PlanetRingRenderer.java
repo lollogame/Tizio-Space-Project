@@ -13,12 +13,14 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
+import tizio.dev.tsp.core.celestial.instance.elements.sun.SunInstance;
 import tizio.dev.tsp.core.client.ClientRenderRegistries;
 import tizio.dev.tsp.core.client.ClientRenderTypes;
 import tizio.dev.tsp.core.utils.Materials;
 import tizio.dev.tsp.core.utils.volume.PreparedVolume;
 import tizio.dev.tsp.core.utils.volume.VolumeRenderUtil;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,13 +54,37 @@ public final class PlanetRingRenderer {
 
         PreparedVolume volume = VolumeRenderUtil.prepareVolume(instance, camera, poseStack);
         Matrix3f localFromWorld = new Matrix3f().rotation(instance.orientation()).invert();
-        Vector3f lightLocal = localFromWorld.transform(instance.lightDirection()).normalize();
+
+        int maxLights = 4;
+        List<SunInstance> nearestSuns = ClientRenderRegistries.SUNS.instances().stream()
+                .sorted(Comparator.comparingDouble(s -> s.position().subtract(instance.position()).lengthSqr()))
+                .limit(maxLights)
+                .collect(Collectors.toList());
+
+        int lightCount;
+        Vector3f[] lightDirsLocal = new Vector3f[maxLights];
+
+        if (!nearestSuns.isEmpty()) {
+            lightCount = nearestSuns.size();
+            for (int i = 0; i < lightCount; i++) {
+                net.minecraft.world.phys.Vec3 rel = nearestSuns.get(i).position().subtract(instance.position());
+                Vector3f worldDir = new Vector3f((float) rel.x, (float) rel.y, (float) rel.z).normalize();
+                lightDirsLocal[i] = localFromWorld.transform(worldDir).normalize();
+            }
+        } else {
+            lightCount = 1;
+            lightDirsLocal[0] = localFromWorld.transform(new Vector3f(instance.lightDirection())).normalize();
+        }
 
         VolumeRenderUtil.setFloat(shader, "PlanetRadius", instance.planetRadius());
         VolumeRenderUtil.setFloat(shader, "RingInnerRadius", instance.ringInnerRadius());
         VolumeRenderUtil.setFloat(shader, "RingOuterRadius", instance.ringOuterRadius());
         VolumeRenderUtil.setVec3(shader, "BaseColor", instance.color());
-        VolumeRenderUtil.setVec3(shader, "LightDirection", lightLocal);
+        VolumeRenderUtil.setVec3(shader, "LightDirection", lightDirsLocal[0]);
+        VolumeRenderUtil.setInt(shader, "LightCount", lightCount);
+        for (int i = 0; i < lightCount; i++) {
+            VolumeRenderUtil.setVec3(shader, "LightDirection" + i, lightDirsLocal[i]);
+        }
         VolumeRenderUtil.setSampler(shader, "Sampler0", Materials.resolveTextureLocation(instance.ringTexture()), 0);
         VolumeRenderUtil.setVec3(shader, "CenterRelative", volume.centerRelativeView());
         VolumeRenderUtil.setVec3(shader, "CameraLocalPos", volume.cameraLocalPos());

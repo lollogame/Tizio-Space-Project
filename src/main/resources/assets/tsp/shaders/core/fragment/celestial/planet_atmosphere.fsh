@@ -7,14 +7,20 @@ uniform float Exposure;
 uniform float RayleighScaleHeight;
 uniform float RayleighStrength;
 uniform vec3 BaseColor;
-uniform vec3 LightDirection;
 uniform vec3 CameraLocalPos;
 uniform vec3 WaveLengths;
+
+uniform int LightCount;
+uniform vec3 LightDirection0;
+uniform vec3 LightDirection1;
+uniform vec3 LightDirection2;
+uniform vec3 LightDirection3;
 
 in vec3 fragLocalPos;
 
 out vec4 fragColor;
 
+const int MAX_LIGHTS = 4;
 const int LIGHT_SAMPLES = 6;
 const int VIEW_SAMPLES = 6;
 const float REFERENCE_ATMOSPHERE_THICKNESS = 55.0;
@@ -90,7 +96,7 @@ float integrateOpticalDepth(vec3 startPoint, vec3 stepVec, float innerRadius, fl
     return totalDensity;
 }
 
-vec4 calculateAtmosphereEffect(Ray viewRay, vec3 sunDirection, AtmosphereProperties props) {
+vec4 calculateAtmosphereEffect(Ray viewRay, AtmosphereProperties props) {
     float innerRadius = props.planetRadius;
     float outerRadius = props.planetRadius + props.atmosphereThickness;
     vec3 viewPath = getPathInAtmosphereShell(viewRay, innerRadius, outerRadius);
@@ -106,12 +112,9 @@ vec4 calculateAtmosphereEffect(Ray viewRay, vec3 sunDirection, AtmospherePropert
     int lightSteps = LIGHT_SAMPLES;
 
     if (relDist > 25.0) {
-
         viewSteps = max(1, VIEW_SAMPLES / 2);
         lightSteps = max(1, LIGHT_SAMPLES / 2);
-
     } else if (relDist > 8.0) {
-
         viewSteps = max(1, (VIEW_SAMPLES * 2) / 3);
         lightSteps = max(1, (LIGHT_SAMPLES * 2) / 3);
     }
@@ -123,6 +126,12 @@ vec4 calculateAtmosphereEffect(Ray viewRay, vec3 sunDirection, AtmospherePropert
         MAX_SCALE_COMPENSATION
     );
     float viewStepLength = length(viewStep) * scaleCompensation;
+
+    vec3 sunDirs[MAX_LIGHTS];
+    sunDirs[0] = normalize(LightDirection0);
+    sunDirs[1] = normalize(LightDirection1);
+    sunDirs[2] = normalize(LightDirection2);
+    sunDirs[3] = normalize(LightDirection3);
 
     vec3 accumulatedLight = vec3(0.0);
     float viewOpticalDepth = 0.0;
@@ -136,16 +145,21 @@ vec4 calculateAtmosphereEffect(Ray viewRay, vec3 sunDirection, AtmospherePropert
         float densityHere = getDensityAtPoint(currentPoint, innerRadius, outerRadius, props.densityFalloff) * viewStepLength;
         viewOpticalDepth += densityHere;
 
-        Ray sunRay = Ray(currentPoint, sunDirection);
-        vec2 sunRayHits = getRaySphereIntersection(sunRay, outerRadius);
-        vec3 sunStep = sunDirection * (sunRayHits.y - sunRayHits.x) / float(lightSteps);
+        vec3 stepLight = vec3(0.0);
+        for (int l = 0; l < MAX_LIGHTS; ++l) {
+            if (l >= LightCount) break;
 
-        float sunOpticalDepth = integrateOpticalDepth(currentPoint, sunStep, innerRadius, outerRadius, props.densityFalloff, scaleCompensation, lightSteps);
+            vec3 sunDir = sunDirs[l];
+            Ray sunRay = Ray(currentPoint, sunDir);
+            vec2 sunRayHits = getRaySphereIntersection(sunRay, outerRadius);
+            vec3 sunStep = sunDir * (sunRayHits.y - sunRayHits.x) / float(lightSteps);
 
-        vec3 totalOpticalDepth = (sunOpticalDepth + viewOpticalDepth) * scatterCoefficients;
-        vec3 transmittance = exp(-totalOpticalDepth);
-        accumulatedLight += densityHere * transmittance;
+            float sunOpticalDepth = integrateOpticalDepth(currentPoint, sunStep, innerRadius, outerRadius, props.densityFalloff, scaleCompensation, lightSteps);
+            vec3 totalOpticalDepth = (sunOpticalDepth + viewOpticalDepth) * scatterCoefficients;
+            stepLight = max(stepLight, exp(-totalOpticalDepth));
+        }
 
+        accumulatedLight += densityHere * stepLight;
         currentPoint += viewStep;
     }
 
@@ -160,7 +174,13 @@ vec4 calculateAtmosphereEffect(Ray viewRay, vec3 sunDirection, AtmospherePropert
 
     float heightFactor = 1.0 / (max(length(viewRay.origin) - innerRadius, 0.0) * 20.0 + 1.0);
     heightFactor *= heightFactor;
-    float sunAngleFactor = clamp(dot(normalize(viewRay.origin), sunDirection) * 5.3, 0.0, 1.0);
+
+    float maxSunAngle = -1.0;
+    for (int l = 0; l < MAX_LIGHTS; ++l) {
+        if (l >= LightCount) break;
+        maxSunAngle = max(maxSunAngle, dot(normalize(viewRay.origin), sunDirs[l]));
+    }
+    float sunAngleFactor = clamp(maxSunAngle * 5.3, 0.0, 1.0);
 
     vec4 powerDay = vec4(0.7, 0.9, 0.3, 0.5);
     vec4 multiplierDay = vec4(1.2, 0.9, 2.5, 1.2);
@@ -175,7 +195,6 @@ vec4 calculateAtmosphereEffect(Ray viewRay, vec3 sunDirection, AtmospherePropert
 }
 
 void main() {
-
     if (!gl_FrontFacing) discard;
 
     AtmosphereProperties atmosphereProps;
@@ -190,8 +209,7 @@ void main() {
     viewRay.origin = CameraLocalPos;
     viewRay.direction = normalize(fragLocalPos - CameraLocalPos);
 
-    vec3 sunDirection = normalize(LightDirection);
-    vec4 color = calculateAtmosphereEffect(viewRay, sunDirection, atmosphereProps);
+    vec4 color = calculateAtmosphereEffect(viewRay, atmosphereProps);
 
     if (color.a <= 0.0001) {
         discard;

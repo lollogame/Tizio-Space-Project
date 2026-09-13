@@ -12,6 +12,7 @@ import tizio.dev.tsp.config.ConfigManager;
 import tizio.dev.tsp.core.celestial.camera.CameraPlanetOrbit;
 import tizio.dev.tsp.core.celestial.instance.elements.SolarSystemData;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
+import tizio.dev.tsp.core.celestial.instance.elements.planet.OrbitCollisionUtil;
 import tizio.dev.tsp.core.celestial.instance.elements.sun.SunInstance;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
 import tizio.dev.tsp.core.gui.theme.SystemEditorTheme;
@@ -103,6 +104,7 @@ public class SystemEditor extends Screen {
     private ColorPreviewWidget cloudColorPicker;
     private ColorPreviewWidget starsColorPicker;
     private ColorPreviewWidget fogColorPicker;
+    private boolean isDraggingCamera = false;
 
     public SystemEditor() {
         super(Component.literal("Development System Editor"));
@@ -152,7 +154,7 @@ public class SystemEditor extends Screen {
             SunInstance.Config star = activeSystem.star;
             Vec3 pos = new Vec3(activeSystem.originX, activeSystem.originY, activeSystem.originZ);
             float globalScale = activeSystem.globalScale;
-            double visualRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, Math.min((double) DataConfig.Star.MAX_RADIUS, star.radius * globalScale));
+            double visualRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, Math.min((double) DataConfig.Star.MAX_RADIUS, DataConfig.Star.toBlocks(star.radius) * globalScale));
             CameraPlanetOrbit.updateFocus(star.id, pos, visualRadius);
         }
     }
@@ -174,13 +176,15 @@ public class SystemEditor extends Screen {
         CelestialJsonLoader.BodySpatialInfo existing = baseInfo.get();
 
         double scaleRatio = (existing.physicalRadius() > 0) ? (existing.visualRadius() / existing.physicalRadius()) : 1.0D;
-        double liveVisualRadius = Math.max(existing.visualRadius(), selectedBody.radius * scaleRatio);
+        float globalScale = activeSystem != null ? activeSystem.globalScale : 1.0F;
+        double livePhysRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, DataConfig.Body.toBlocks(selectedBody.radius) * globalScale);
+        double liveVisualRadius = Math.max(existing.visualRadius(), livePhysRadius * scaleRatio);
 
         return Optional.of(new CelestialJsonLoader.BodySpatialInfo(
                 existing.system(),
                 selectedBody,
                 existing.spacePosition(),
-                selectedBody.radius,
+                livePhysRadius,
                 liveVisualRadius,
                 existing.dimension()
         ));
@@ -208,7 +212,7 @@ public class SystemEditor extends Screen {
         SunInstance.Config star = activeSystem.star;
         Vec3 pos = new Vec3(activeSystem.originX, activeSystem.originY, activeSystem.originZ);
         float globalScale = Math.max(0.0001F, activeSystem.globalScale <= 0.0F ? 1.0F : activeSystem.globalScale);
-        double visualRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, Math.min((double) DataConfig.Star.MAX_RADIUS, star.radius * globalScale));
+        double visualRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, Math.min((double) DataConfig.Star.MAX_RADIUS, DataConfig.Star.toBlocks(star.radius) * globalScale));
         CameraPlanetOrbit.activate(star.id, pos, visualRadius);
     }
 
@@ -222,7 +226,7 @@ public class SystemEditor extends Screen {
             return Optional.empty();
         }
         float globalScale = Math.max(0.0001F, activeSystem.globalScale <= 0.0F ? 1.0F : activeSystem.globalScale);
-        double physRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, selectedBody.radius * globalScale);
+        double physRadius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, DataConfig.Body.toBlocks(selectedBody.radius) * globalScale);
         double visualRadius = CelestialJsonLoader.resolveAtmosphereRadiusConfig(selectedBody.atmosphere, (float) physRadius);
         return Optional.of(new CelestialJsonLoader.BodySpatialInfo(
                 activeSystem, selectedBody, pos, physRadius, visualRadius, selectedBody.dimension));
@@ -240,7 +244,7 @@ public class SystemEditor extends Screen {
     private void showStatus(String msg, boolean error) {
         this.statusMessage = msg;
         this.statusIsError = error;
-        this.statusMessageTime = System.currentTimeMillis() + 4000;
+        this.statusMessageTime = System.currentTimeMillis() + 2200;
     }
 
     private void buildLayout() {
@@ -388,7 +392,7 @@ public class SystemEditor extends Screen {
 
         if (selectedNode == NodeType.BODY && selectedBody != null) {
             addRenderableWidget(new Button(panelX, this.height - 22, width, ROW_H,
-                    Component.literal("Reset this body."), b -> promptResetBody())
+                    Component.literal("Reset Body"), b -> promptResetBody())
                     .compact(true)
                     .accentColor(SystemEditorTheme.RED));
         }
@@ -494,7 +498,7 @@ public class SystemEditor extends Screen {
         return box;
     }
 
-    private void addCustomSlider(int x, int relativeY, int width, String label, double current, double def, double min, double max, Consumer<Double> onChange) {
+    private LabeledSlider addCustomSlider(int x, int relativeY, int width, String label, double current, double def, double min, double max, Consumer<Double> onChange) {
         int formY = HEADER_H + 44;
         int sliderW = width - 24;
         LabeledSlider slider = new LabeledSlider(x, formY + relativeY, sliderW, ROW_H, label, current, def, min, max, onChange);
@@ -502,10 +506,11 @@ public class SystemEditor extends Screen {
 
         Button resetBtn = new Button(x + sliderW + 2, formY + relativeY, 22, ROW_H, Component.literal("R"), b -> slider.resetToDefault()).compact(true).accentColor(SystemEditorTheme.RED);
         addInspectorWidget(resetBtn, relativeY, ROW_H, null);
+        return slider;
     }
 
-    private void addCustomSlider(int x, int relativeY, int width, String label, double current, DataConfig.Slider slider, Consumer<Double> onChange) {
-        addCustomSlider(x, relativeY, width, label, current, slider.def(), slider.min(), slider.max(), onChange);
+    private LabeledSlider addCustomSlider(int x, int relativeY, int width, String label, double current, DataConfig.Slider slider, Consumer<Double> onChange) {
+        return addCustomSlider(x, relativeY, width, label, current, slider.def(), slider.min(), slider.max(), onChange);
     }
 
     private void buildSystemTab(int x, int y, int width) {
@@ -565,7 +570,24 @@ public class SystemEditor extends Screen {
         int relY = 0;
         int formY = HEADER_H + 44;
 
-        starIdEditBox = addLabeledEditBox(x, relY, width, "Star ID:", star.id, val -> { star.id = val; notifyChanged(); }); relY += 22;
+        starIdEditBox = addLabeledEditBox(x, relY, width, "Star ID:", star.id, val -> {
+            if (val == null || val.isBlank()) return;
+            val = val.trim();
+            if (val.equalsIgnoreCase(star.id)) return;
+            if (activeSystem.findBody(val) != null) {
+                showStatus("ID in use: " + val, true);
+                return;
+            }
+            String oldStarId = star.id;
+            star.id = val;
+            for (PlanetInstance.Config b : activeSystem.bodies) {
+                if (oldStarId.equalsIgnoreCase(b.parentId) || "sun".equalsIgnoreCase(b.parentId)) {
+                    b.parentId = val;
+                }
+            }
+            notifyChanged();
+            if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, val);
+        }); relY += 22;
 
         Button typeBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Type: " + (star.isBlackHole() ? "Black Hole" : "Star")), b -> { star.type = star.isBlackHole() ? "star" : "blackhole"; notifyChanged(); buildLayout(); });
         addInspectorWidget(typeBtn, relY, ROW_H, null); relY += 22;
@@ -584,14 +606,27 @@ public class SystemEditor extends Screen {
         });
         addInspectorWidget(starColorEditBox, relY, ROW_H, "Color:");
 
-        starColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, star.colorHex, hex -> {
+        starColorPicker = new ColorPreviewWidget(x + width - 26, formY + relY, 26, ROW_H, star.colorHex != null ? star.colorHex : DataConfig.Star.COLOR_HEX_DEF, hex -> {
             star.colorHex = hex;
             if (starColorEditBox != null) starColorEditBox.setValue(hex);
             notifyChanged();
         });
-
         addInspectorWidget(starColorPicker, relY, ROW_H, null); relY += 22;
-        addCustomSlider(x, relY, width, "Radius", star.radius, DataConfig.Star.RADIUS, val -> { star.radius = val.floatValue(); notifyChanged(); }); relY += 22;
+
+        addCustomSlider(x, relY, width, "Radius", star.radius, DataConfig.Star.RADIUS, val -> {
+            star.radius = val.floatValue();
+            for (PlanetInstance.Config body : activeSystem.bodies) {
+                if (body.parentId == null || body.parentId.isBlank() || body.parentId.equalsIgnoreCase(star.id) || "sun".equalsIgnoreCase(body.parentId)) {
+                    if (body.orbit != null) {
+                        double minSafe = OrbitCollisionUtil.getMinimumSafeOrbitRadius(activeSystem, body);
+                        if (body.orbit.radius < minSafe) {
+                            body.orbit.radius = minSafe;
+                        }
+                    }
+                }
+            }
+            notifyChanged();
+        }); relY += 22;
 
         if (star.isBlackHole()) {
             addCustomSlider(x, relY, width, "Disk Speed", star.diskRotationSpeed, DataConfig.Star.DISK_ROTATION_SPEED, val -> { star.diskRotationSpeed = val.floatValue(); notifyChanged(); }); relY += 22;
@@ -609,12 +644,38 @@ public class SystemEditor extends Screen {
         int formY = HEADER_H + 44;
 
         Button typeBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Type: " + selectedBody.type), b -> {
-            selectedBody.type = switch (selectedBody.type.toLowerCase(Locale.ROOT)) {
-                case "planet"    -> "moon";
-                case "moon"      -> "star";
-                case "star"      -> "blackhole";
-                default          -> "planet";
-            };
+            String currType = selectedBody.type != null ? selectedBody.type.toLowerCase(Locale.ROOT) : "planet";
+            String nextType;
+            if ("planet".equals(currType)) {
+                List<PlanetInstance.Config> childMoons = activeSystem.getMoonsOf(selectedBody.id);
+                if (!childMoons.isEmpty()) {
+                    showStatus("Cannot convert: has moons", true);
+                    nextType = "star";
+                } else {
+                    PlanetInstance.Config availablePlanet = activeSystem.bodies.stream()
+                            .filter(other -> other != selectedBody && other.isPlanet())
+                            .findFirst().orElse(null);
+                    if (availablePlanet == null) {
+                        showStatus("No parent planet available", true);
+                        nextType = "star";
+                    } else {
+                        nextType = "moon";
+                        selectedBody.parentId = availablePlanet.id;
+                    }
+                }
+            } else if ("moon".equals(currType)) {
+                nextType = "star";
+                selectedBody.parentId = (activeSystem.star != null && activeSystem.star.id != null && !activeSystem.star.id.isBlank())
+                        ? activeSystem.star.id : DataConfig.Body.PARENT_ID_DEF;
+            } else if ("star".equals(currType)) {
+                nextType = "blackhole";
+            } else {
+                nextType = "planet";
+                selectedBody.parentId = (activeSystem.star != null && activeSystem.star.id != null && !activeSystem.star.id.isBlank())
+                        ? activeSystem.star.id : DataConfig.Body.PARENT_ID_DEF;
+            }
+
+            selectedBody.type = nextType;
             if (selectedBody.isBlackHole()) {
                 selectedBody.atmosphere.enabled = false;
                 selectedBody.ring.enabled = false;
@@ -625,13 +686,78 @@ public class SystemEditor extends Screen {
         addInspectorWidget(typeBtn, relY, ROW_H, null); relY += 22;
 
         bodyIdEditBox = addLabeledEditBox(x, relY, width, "ID:", selectedBody.id, val -> {
+            if (val == null || val.isBlank()) return;
+            val = val.trim();
+            if (val.equalsIgnoreCase(selectedBody.id)) return;
+            String starId = activeSystem.star != null ? activeSystem.star.id : "sun";
+            if (val.equalsIgnoreCase(starId) || activeSystem.findBody(val) != null) {
+                showStatus("ID in use: " + val, true);
+                return;
+            }
+            String oldId = selectedBody.id;
             selectedBody.id = val;
+            for (PlanetInstance.Config body : activeSystem.bodies) {
+                if (oldId.equalsIgnoreCase(body.parentId)) {
+                    body.parentId = val;
+                }
+            }
             notifyChanged();
             if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, val);
         }); relY += 22;
 
         bodyParentEditBox = addLabeledEditBox(x, relY, width, "Parent:", selectedBody.parentId != null ? selectedBody.parentId : DataConfig.Body.PARENT_ID_DEF, val -> {
+            if (val == null) return;
+            val = val.trim();
+            if (val.equalsIgnoreCase(selectedBody.parentId)) return;
+
+            if (val.equalsIgnoreCase(selectedBody.id)) {
+                showStatus("Self-parenting invalid", true);
+                return;
+            }
+
+            String starId = activeSystem.star != null ? activeSystem.star.id : "sun";
+
+            if (selectedBody.isMoon()) {
+                if (val.isBlank() || val.equalsIgnoreCase(starId) || "sun".equalsIgnoreCase(val)) {
+                    showStatus("Moons must orbit planets", true);
+                    return;
+                }
+                PlanetInstance.Config targetParent = activeSystem.findBody(val);
+                if (targetParent == null || !targetParent.isPlanet()) {
+                    showStatus("Invalid parent planet", true);
+                    return;
+                }
+                if (activeSystem.isDescendant(val, selectedBody.id)) {
+                    showStatus("Circular orbit detected", true);
+                    return;
+                }
+                selectedBody.parentId = val;
+                selectedBody.orbit.radius = OrbitCollisionUtil.resolveSafeOrbitRadius(activeSystem, selectedBody, selectedBody.orbit.radius, 0.0D);
+                notifyChanged();
+                if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, selectedBody.id);
+                return;
+            }
+
+            if (val.isBlank() || val.equalsIgnoreCase(starId) || "sun".equalsIgnoreCase(val)) {
+                selectedBody.parentId = starId;
+                selectedBody.orbit.radius = OrbitCollisionUtil.resolveSafeOrbitRadius(activeSystem, selectedBody, selectedBody.orbit.radius, 0.0D);
+                notifyChanged();
+                if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, selectedBody.id);
+                return;
+            }
+
+            PlanetInstance.Config targetParent = activeSystem.findBody(val);
+            if (targetParent != null && targetParent.isMoon()) {
+                showStatus("Moons cannot have moons", true);
+                return;
+            }
+            if (activeSystem.isDescendant(val, selectedBody.id)) {
+                showStatus("Circular orbit detected", true);
+                return;
+            }
+
             selectedBody.parentId = val;
+            selectedBody.orbit.radius = OrbitCollisionUtil.resolveSafeOrbitRadius(activeSystem, selectedBody, selectedBody.orbit.radius, 0.0D);
             notifyChanged();
             if (treeWidget != null) treeWidget.rebuildFromSystem(activeSystem, selectedBody.id);
         }); relY += 22;
@@ -655,7 +781,29 @@ public class SystemEditor extends Screen {
         });
 
         addInspectorWidget(orbBtn, relY, ROW_H, null); relY += 22;
-        addCustomSlider(x, relY, width, "Orbit Radius",  selectedBody.orbit.radius,       DataConfig.Orbit.RADIUS, val -> { selectedBody.orbit.radius       = val; notifyChanged(); }); relY += 22;
+
+        double minSafeRadius = OrbitCollisionUtil.getMinimumSafeOrbitRadius(activeSystem, selectedBody);
+        double maxSafeRadius = OrbitCollisionUtil.getMaximumSafeOrbitRadius(activeSystem, selectedBody);
+        if (selectedBody.orbit.radius < minSafeRadius) {
+            selectedBody.orbit.radius = minSafeRadius;
+            notifyChanged();
+        } else if (selectedBody.orbit.radius > maxSafeRadius) {
+            selectedBody.orbit.radius = maxSafeRadius;
+            notifyChanged();
+        }
+
+        double defRadius = Math.max(minSafeRadius, Math.min(maxSafeRadius, selectedBody.isMoon() ? DataConfig.Orbit.MOON_RADIUS : DataConfig.Orbit.RADIUS.def()));
+        final LabeledSlider[] orbitSliderHolder = new LabeledSlider[1];
+        orbitSliderHolder[0] = addCustomSlider(x, relY, width, "Orbit Radius", selectedBody.orbit.radius,
+                defRadius, minSafeRadius, maxSafeRadius, val -> {
+                    double safeVal = OrbitCollisionUtil.resolveSafeOrbitRadius(activeSystem, selectedBody, val, selectedBody.orbit.radius);
+                    selectedBody.orbit.radius = safeVal;
+                    if (orbitSliderHolder[0] != null) {
+                        orbitSliderHolder[0].setValueQuiet(safeVal);
+                    }
+                    notifyChanged();
+                });
+        relY += 22;
         addCustomSlider(x, relY, width, "Period (Days)", selectedBody.orbit.periodDays,    DataConfig.Orbit.PERIOD_DAYS, val -> { selectedBody.orbit.periodDays    = val; notifyChanged(); }); relY += 22;
         addCustomSlider(x, relY, width, "Inclination°",  selectedBody.orbit.inclination,   DataConfig.Orbit.INCLINATION, val -> { selectedBody.orbit.inclination   = val; notifyChanged(); }); relY += 22;
         addCustomSlider(x, relY, width, "Asc Node°",     selectedBody.orbit.ascendingNode, DataConfig.Orbit.ASCENDING_NODE, val -> { selectedBody.orbit.ascendingNode = val; notifyChanged(); }); relY += 22;
@@ -671,7 +819,24 @@ public class SystemEditor extends Screen {
         int relY = 0;
         int formY = HEADER_H + 44;
 
-        addCustomSlider(x, relY, width, "Body Radius", selectedBody.radius, DataConfig.Body.RADIUS, val -> { selectedBody.radius = val.floatValue(); notifyChanged(); }); relY += 22;
+        addCustomSlider(x, relY, width, "Body Radius", selectedBody.radius, DataConfig.Body.RADIUS, val -> {
+            selectedBody.radius = val.floatValue();
+            if (selectedBody.orbit != null) {
+                double minSafe = OrbitCollisionUtil.getMinimumSafeOrbitRadius(activeSystem, selectedBody);
+                if (selectedBody.orbit.radius < minSafe) {
+                    selectedBody.orbit.radius = minSafe;
+                }
+            }
+            for (PlanetInstance.Config moon : activeSystem.getMoonsOf(selectedBody.id)) {
+                if (moon.orbit != null) {
+                    double moonMinSafe = OrbitCollisionUtil.getMinimumSafeOrbitRadius(activeSystem, moon);
+                    if (moon.orbit.radius < moonMinSafe) {
+                        moon.orbit.radius = moonMinSafe;
+                    }
+                }
+            }
+            notifyChanged();
+        }); relY += 22;
         addCustomSlider(x, relY, width, "Gravity", selectedBody.gravity, DataConfig.Body.GRAVITY, val -> {selectedBody.gravity = val.floatValue();notifyChanged();});relY += 22;
 
         Button oxygenBtn = new Button(x, formY + relY, width, ROW_H, Component.literal("Oxygen: " + (selectedBody.oxygen ? "True" : "False")), b -> {
@@ -804,7 +969,22 @@ public class SystemEditor extends Screen {
         addInspectorWidget(rngBtn, relY, ROW_H, null); relY += 22;
 
         addCustomSlider(x, relY, width, "Inner Radius", selectedBody.ring.innerRadius, DataConfig.Ring.INNER_RADIUS, val -> {float newInner = val.floatValue();selectedBody.ring.innerRadius = newInner;if (selectedBody.ring.outerRadius <= newInner) {selectedBody.ring.outerRadius = newInner + 0.1F;}notifyChanged();});relY += 22;
-        addCustomSlider(x, relY, width, "Outer Radius", selectedBody.ring.outerRadius, DataConfig.Ring.OUTER_RADIUS, val -> {float newOuter = val.floatValue();selectedBody.ring.outerRadius = newOuter;if (selectedBody.ring.innerRadius >= newOuter) {selectedBody.ring.innerRadius = Math.max(DataConfig.Ring.INNER_RADIUS.minF(), newOuter);}notifyChanged();});relY += 22;
+        addCustomSlider(x, relY, width, "Outer Radius", selectedBody.ring.outerRadius, DataConfig.Ring.OUTER_RADIUS, val -> {
+            float newOuter = val.floatValue();
+            selectedBody.ring.outerRadius = newOuter;
+            if (selectedBody.ring.innerRadius >= newOuter) {
+                selectedBody.ring.innerRadius = Math.max(DataConfig.Ring.INNER_RADIUS.minF(), newOuter);
+            }
+            for (PlanetInstance.Config moon : activeSystem.getMoonsOf(selectedBody.id)) {
+                if (moon.orbit != null) {
+                    double moonMinSafe = OrbitCollisionUtil.getMinimumSafeOrbitRadius(activeSystem, moon);
+                    if (moon.orbit.radius < moonMinSafe) {
+                        moon.orbit.radius = moonMinSafe;
+                    }
+                }
+            }
+            notifyChanged();
+        }); relY += 22;
 
         ringTextureEditBox = addLabeledEditBox(x, relY, width, "Ring:", selectedBody.ring.texture != null ? selectedBody.ring.texture : DataConfig.Ring.TEXTURE_DEF, val -> { selectedBody.ring.texture = val; notifyChanged(); }); relY += 22;
         rockTextureEditBox = addLabeledEditBox(x, relY, width, "Rock:", selectedBody.ring.rockTexture != null ? selectedBody.ring.rockTexture : DataConfig.Ring.ROCK_TEXTURE_DEF, val -> { selectedBody.ring.rockTexture = val; notifyChanged(); }); relY += 22;
@@ -968,7 +1148,9 @@ public class SystemEditor extends Screen {
             g.fill(0, HEADER_H, leftW, this.height, SystemEditorTheme.PANEL_BG);
             g.fill(leftW - 1, HEADER_H, leftW, this.height, SystemEditorTheme.PANEL_BORDER);
             if (!systemDropdownOpen) {
-                g.drawString(this.font, "SYSTEM TREE", 6, HEADER_H + 5, SystemEditorTheme.PANEL_TITLE_TEXT, SystemEditorTheme.TEXT_SHADOW);
+                int bodyCount = activeSystem != null ? activeSystem.bodies.size() : 0;
+                String treeTitle = "SYSTEM TREE (" + bodyCount + "/" + DataConfig.System.MAX_BODIES_LIMIT + ")";
+                g.drawString(this.font, treeTitle, 6, HEADER_H + 5, SystemEditorTheme.PANEL_TITLE_TEXT, SystemEditorTheme.TEXT_SHADOW);
             }
         }
 
@@ -1063,22 +1245,22 @@ public class SystemEditor extends Screen {
         }
 
         if (System.currentTimeMillis() < statusMessageTime) {
-            int textWidth  = this.font.width(statusMessage);
-            int toastWidth = textWidth + 24;
-            int toastHeight = 18;
+            int textWidth   = this.font.width(statusMessage);
+            int toastWidth  = textWidth + 16;
+            int toastHeight = 15;
 
             int x1 = (this.width - toastWidth) / 2;
-            int y1 = HEADER_H + 6;
+            int y1 = HEADER_H + 4;
             int x2 = x1 + toastWidth;
             int y2 = y1 + toastHeight;
 
-            int bgColor     = 0xD0121318;
-            int textColor   = 0xFFEEEEEE;
+            int bgColor     = 0xE6141414;
             int accentColor = statusIsError ? SystemEditorTheme.TOAST_ERROR_TEXT : SystemEditorTheme.TOAST_SUCCESS_TEXT;
+            int textColor   = statusIsError ? SystemEditorTheme.TOAST_ERROR_TEXT : SystemEditorTheme.TEXT_HI;
 
-            g.fill(x1, y1, x2, y2, accentColor);
-
-            g.drawString(this.font, statusMessage, x1 + 8, y1 + 5, textColor, SystemEditorTheme.TEXT_SHADOW);
+            g.fill(x1, y1, x2, y2, bgColor);
+            g.renderOutline(x1, y1, toastWidth, toastHeight, accentColor);
+            g.drawString(this.font, statusMessage, x1 + 8, y1 + 4, textColor, SystemEditorTheme.TEXT_SHADOW);
         }
     }
 
@@ -1201,6 +1383,11 @@ public class SystemEditor extends Screen {
             w.active = true;
         }
 
+        if (!result && button == 0 && CameraPlanetOrbit.isActive() && isInViewport(mouseX, mouseY)) {
+            setFocused(null);
+            isDraggingCamera = true;
+        }
+
         ColorPreviewWidget openPickerAfter = findOpenColorPicker();
         if (openPickerAfter != null && openPickerAfter != openPickerBefore) {
             closeOtherColorPickers(openPickerAfter);
@@ -1210,16 +1397,31 @@ public class SystemEditor extends Screen {
     }
 
     @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            isDraggingCamera = false;
+        }
+        ColorPreviewWidget openPicker = findOpenColorPicker();
+        if (openPicker != null) {
+            openPicker.handleMouseReleased();
+        }
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
         ColorPreviewWidget openPicker = findOpenColorPicker();
         if (openPicker != null && openPicker.handlePaletteDrag(mouseX, mouseY)) {
             return true;
         }
-        if (button == 0 && CameraPlanetOrbit.isActive() && isInViewport(mouseX, mouseY)) {
+        if (super.mouseDragged(mouseX, mouseY, button, dragX, dragY)) {
+            return true;
+        }
+        if (button == 0 && CameraPlanetOrbit.isActive() && (isDraggingCamera || isInViewport(mouseX, mouseY))) {
             CameraPlanetOrbit.handleDrag(dragX, dragY);
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return false;
     }
 
     private boolean handleSystemDropdownClick(double mouseX, double mouseY) {
@@ -1239,7 +1441,7 @@ public class SystemEditor extends Screen {
                     selectedBody = null;
                     notifyChanged();
                     systemDropdownOpen = false;
-                    showStatus("Selected System: " + activeSystem.id, false);
+                    showStatus("Selected: " + activeSystem.id, false);
                     buildLayout();
                     return true;
                 }
@@ -1310,7 +1512,7 @@ public class SystemEditor extends Screen {
         activeTab    = Tab.SYSTEM;
         selectedBody = null;
         notifyChanged();
-        showStatus("Created new system: " + newId, false);
+        showStatus("Created: " + newId, false);
         buildLayout();
     }
 
@@ -1341,7 +1543,7 @@ public class SystemEditor extends Screen {
         selectedNode = NodeType.SYSTEM;
         activeTab    = Tab.SYSTEM;
         selectedBody = null;
-        showStatus("Removed system: " + removedId, false);
+        showStatus("Removed: " + removedId, false);
         buildLayout();
     }
 
@@ -1349,17 +1551,58 @@ public class SystemEditor extends Screen {
         if (activeSystem == null) return;
         try {
             File exported = CelestialJsonLoader.exportActiveSystem(activeSystem.id);
-            showStatus("Exported " + exported.getName(), false);
+            showStatus("Exported: " + exported.getName(), false);
         } catch (Exception e) {
-            showStatus("Export Error: " + e.getMessage(), true);
+            showStatus("Export failed: " + e.getMessage(), true);
         }
     }
 
     private void addBody(String type) {
         if (activeSystem == null) return;
-        String newId    = type + "_" + (activeSystem.bodies.size() + 1);
-        String parentId = "moon".equalsIgnoreCase(type) && selectedBody != null ? selectedBody.id : DataConfig.Body.PARENT_ID_DEF;
-        float  radius   = "moon".equalsIgnoreCase(type) ? DataConfig.Body.MOON_RADIUS : ("blackhole".equalsIgnoreCase(type) ? DataConfig.Body.BLACKHOLE_RADIUS : DataConfig.Body.PLANET_RADIUS);
+
+        if (activeSystem.bodies.size() >= DataConfig.System.MAX_BODIES_LIMIT) {
+            showStatus("Body limit reached (" + DataConfig.System.MAX_BODIES_LIMIT + ")", true);
+            return;
+        }
+
+        String parentId;
+        double orbitRadius;
+        double orbitPeriodDays;
+
+        if ("moon".equalsIgnoreCase(type)) {
+            if (selectedNode != NodeType.BODY || selectedBody == null) {
+                showStatus("Select a planet first", true);
+                return;
+            }
+            if (selectedBody.isMoon()) {
+                showStatus("Moons cannot have moons", true);
+                return;
+            }
+            if (!selectedBody.isPlanet()) {
+                showStatus("Moons must orbit planets", true);
+                return;
+            }
+
+            parentId = selectedBody.id;
+            long moonCount = activeSystem.getMoonsOf(parentId).size();
+            orbitRadius = DataConfig.Orbit.MOON_RADIUS + (moonCount * DataConfig.Orbit.MOON_STEP_RADIUS);
+            orbitPeriodDays = DataConfig.Orbit.MOON_PERIOD_DAYS + (moonCount * DataConfig.Orbit.MOON_STEP_PERIOD_DAYS);
+        } else {
+            parentId = (activeSystem.star != null && activeSystem.star.id != null && !activeSystem.star.id.isBlank())
+                    ? activeSystem.star.id : DataConfig.Body.PARENT_ID_DEF;
+            orbitRadius = (activeSystem.bodies.size() + 1) * DataConfig.Orbit.BODY_STEP_RADIUS;
+            orbitPeriodDays = (activeSystem.bodies.size() + 1) * DataConfig.Orbit.BODY_STEP_PERIOD_DAYS;
+        }
+
+        String baseId = type + "_";
+        int counter = activeSystem.bodies.size() + 1;
+        String newId = baseId + counter;
+        while (activeSystem.findBody(newId) != null || (activeSystem.star != null && newId.equalsIgnoreCase(activeSystem.star.id))) {
+            counter++;
+            newId = baseId + counter;
+        }
+
+        float radius = "moon".equalsIgnoreCase(type) ? DataConfig.Body.MOON_RADIUS : ("blackhole".equalsIgnoreCase(type) ? DataConfig.Body.BLACKHOLE_RADIUS : DataConfig.Body.PLANET_RADIUS);
         PlanetInstance.Config newBody = new PlanetInstance.Config(newId, type, parentId, radius, DataConfig.Body.TEXTURE_DEF, DataConfig.Body.COLOR_HEX_DEF);
 
         if (newBody.isBlackHole()) {
@@ -1367,58 +1610,119 @@ public class SystemEditor extends Screen {
             newBody.ring.enabled = false;
         }
 
-        newBody.orbit.radius     = "moon".equalsIgnoreCase(type) ? DataConfig.Orbit.MOON_RADIUS : (activeSystem.bodies.size() + 1) * DataConfig.Orbit.BODY_STEP_RADIUS;
-        newBody.orbit.periodDays = "moon".equalsIgnoreCase(type) ? DataConfig.Orbit.MOON_PERIOD_DAYS : (activeSystem.bodies.size() + 1) * DataConfig.Orbit.BODY_STEP_PERIOD_DAYS;
+        newBody.orbit.radius = OrbitCollisionUtil.resolveSafeOrbitRadius(activeSystem, newBody, orbitRadius, 0.0D);
+        newBody.orbit.periodDays = orbitPeriodDays;
         activeSystem.bodies.add(newBody);
         selectedBody = newBody;
         selectedNode = NodeType.BODY;
-        activeTab    = Tab.GENERAL;
+        activeTab = Tab.GENERAL;
         notifyChanged();
-        showStatus("Added " + type + ": " + newId, false);
+        showStatus("Added: " + newId, false);
         buildLayout();
     }
 
     private void duplicateSelectedBody() {
         if (activeSystem == null || selectedBody == null) return;
+
+        if (activeSystem.bodies.size() >= DataConfig.System.MAX_BODIES_LIMIT) {
+            showStatus("Body limit reached (" + DataConfig.System.MAX_BODIES_LIMIT + ")", true);
+            return;
+        }
+
         PlanetInstance.Config copy = selectedBody.copy();
-        copy.id = selectedBody.id + DataConfig.Body.COPY_SUFFIX;
-        copy.orbit.radius += DataConfig.Body.COPY_ORBIT_OFFSET;
+
+        String baseCopyId = selectedBody.id + DataConfig.Body.COPY_SUFFIX;
+        String uniqueId = baseCopyId;
+        int copyIndex = 1;
+        while (activeSystem.findBody(uniqueId) != null || (activeSystem.star != null && uniqueId.equalsIgnoreCase(activeSystem.star.id))) {
+            uniqueId = baseCopyId + "_" + copyIndex;
+            copyIndex++;
+        }
+        copy.id = uniqueId;
+
+        if (copy.isMoon()) {
+            copy.orbit.radius += DataConfig.Orbit.MOON_STEP_RADIUS;
+            copy.orbit.periodDays += DataConfig.Orbit.MOON_STEP_PERIOD_DAYS;
+        } else {
+            copy.orbit.radius += DataConfig.Body.COPY_ORBIT_OFFSET;
+        }
+        copy.orbit.radius = OrbitCollisionUtil.resolveSafeOrbitRadius(activeSystem, copy, copy.orbit.radius, selectedBody.orbit.radius);
+
         activeSystem.bodies.add(copy);
         selectedBody = copy;
         selectedNode = NodeType.BODY;
         notifyChanged();
-        showStatus("Duplicated body: " + copy.id, false);
+        showStatus("Duplicated: " + copy.id, false);
         buildLayout();
     }
 
     private void removeSelectedBody() {
         if (activeSystem == null || selectedBody == null) return;
         String removedId = selectedBody.id;
-        activeSystem.bodies.remove(selectedBody);
+
+        List<PlanetInstance.Config> childMoons = activeSystem.getMoonsOf(removedId);
+        int childCount = childMoons.size();
+
+        activeSystem.bodies.removeIf(b -> b.id.equalsIgnoreCase(removedId) || removedId.equalsIgnoreCase(b.parentId));
+
         selectedBody = activeSystem.bodies.isEmpty() ? null : activeSystem.bodies.get(0);
         selectedNode = selectedBody != null ? NodeType.BODY : NodeType.SYSTEM;
         if (selectedNode == NodeType.SYSTEM) activeTab = Tab.SYSTEM;
         notifyChanged();
-        showStatus("Deleted body: " + removedId, false);
+
+        String statusMsg = childCount > 0
+                ? "Deleted: " + removedId + " (+" + childCount + ")"
+                : "Deleted: " + removedId;
+        showStatus(statusMsg, false);
         buildLayout();
     }
 
     private void copySelectedBodyConfig() {
         if (selectedBody != null) {
             copiedBodyConfig = selectedBody.copy();
-            showStatus("Copied config of " + selectedBody.id, false);
+            showStatus("Copied: " + selectedBody.id, false);
         }
     }
 
     private void pasteBodyConfig() {
-        if (selectedBody != null && copiedBodyConfig != null) {
+        if (selectedBody != null && copiedBodyConfig != null && activeSystem != null) {
             String targetId = selectedBody.id;
-            selectedBody = copiedBodyConfig.copy();
-            selectedBody.id = targetId;
-            int idx = activeSystem.bodies.indexOf(selectedBody);
-            if (idx >= 0) activeSystem.bodies.set(idx, selectedBody);
+            String originalType = selectedBody.type;
+            String originalParent = selectedBody.parentId;
+
+            int targetIndex = -1;
+            for (int i = 0; i < activeSystem.bodies.size(); i++) {
+                if (targetId.equalsIgnoreCase(activeSystem.bodies.get(i).id)) {
+                    targetIndex = i;
+                    break;
+                }
+            }
+
+            if (targetIndex < 0) {
+                showStatus("Target not found", true);
+                return;
+            }
+
+            PlanetInstance.Config pasted = copiedBodyConfig.copy();
+            pasted.id = targetId;
+
+            if ("moon".equalsIgnoreCase(originalType)) {
+                pasted.type = "moon";
+                pasted.parentId = originalParent;
+            } else {
+                List<PlanetInstance.Config> children = activeSystem.getMoonsOf(targetId);
+                if (!children.isEmpty() && "moon".equalsIgnoreCase(pasted.type)) {
+                    pasted.type = originalType;
+                    pasted.parentId = originalParent;
+                } else if (!"moon".equalsIgnoreCase(pasted.type)) {
+                    pasted.parentId = originalParent;
+                }
+            }
+
+            activeSystem.bodies.set(targetIndex, pasted);
+            selectedBody = pasted;
             notifyChanged();
-            showStatus("Pasted config onto " + targetId, false);
+            showStatus("Pasted: " + targetId, false);
             buildLayout();
         }
     }
@@ -1439,7 +1743,7 @@ public class SystemEditor extends Screen {
         selectedBody.temperature = DataConfig.Body.TEMPERATURE.defF();
         selectedBody.yaw = selectedBody.pitch = selectedBody.roll = DataConfig.Body.ROT_YAW.defF();
         notifyChanged();
-        showStatus("Reset this body.", false);
+        showStatus("Reset: " + selectedBody.id, false);
         buildLayout();
     }
 
