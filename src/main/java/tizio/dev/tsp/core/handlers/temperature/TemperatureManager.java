@@ -59,15 +59,13 @@ public final class TemperatureManager {
         player.getPersistentData().putFloat(TEMPERATURE_TAG, clamped);
     }
 
+    //fucking stupid fix
     public static float getEnvironmentTemperature(Level level) {
         if (level == null) return NEUTRAL_TEMPERATURE;
         String dimId = Utils.getDimensionId(level);
         Float jsonTemp = CelestialJsonLoader.getTemperatureForDimension(dimId);
         if (jsonTemp != null) {
             return Utils.clamp(jsonTemp, MIN_TEMPERATURE, MAX_TEMPERATURE);
-        }
-        if ("minecraft:overworld".equalsIgnoreCase(dimId)) {
-            return NEUTRAL_TEMPERATURE;
         }
         if (CelestialJsonLoader.isSpaceDimension(dimId)) {
             return MIN_TEMPERATURE;

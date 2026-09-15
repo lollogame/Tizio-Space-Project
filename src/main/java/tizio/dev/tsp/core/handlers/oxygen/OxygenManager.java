@@ -58,6 +58,7 @@ public final class OxygenManager {
         return count;
     }
 
+    //fucking stupid fix
     public static boolean hasOxygenInEnvironment(Level level) {
         if (level == null) return true;
         String dimId = Utils.getDimensionId(level);
@@ -65,7 +66,7 @@ public final class OxygenManager {
         if (hasOxygen != null) {
             return hasOxygen;
         }
-        return "minecraft:overworld".equalsIgnoreCase(dimId);
+        return !CelestialJsonLoader.isSpaceDimension(dimId);
     }
 
     public static void tickOxygen(ServerPlayer player) {
