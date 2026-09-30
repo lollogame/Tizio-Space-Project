@@ -211,7 +211,7 @@ public class Materials {
 
     public static synchronized AnimatedGif getSecretGif() {
         if (SECRET_GIF == null) {
-            SECRET_GIF = new AnimatedGif("", "sus", true);
+            SECRET_GIF = new AnimatedGif(new ResourceLocation(MainClass.MODID, "textures/gui/secret.gif"), "secret");
         }
         return SECRET_GIF;
     }
@@ -639,13 +639,4 @@ public class Materials {
             return loaded;
         }
     }
-
-
-
-
-
-
-
-
-
 }
