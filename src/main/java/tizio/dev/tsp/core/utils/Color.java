@@ -87,9 +87,9 @@ public class Color {
     public static void applyColor(int argb) {
         RenderSystem.setShaderColor(
                 (argb >> 16 & 255) / 255.0F,
-                (argb >>  8 & 255) / 255.0F,
-                (argb       & 255) / 255.0F,
-                (argb >>> 24)      / 255.0F);
+                (argb >> 8 & 255) / 255.0F,
+                (argb & 255) / 255.0F,
+                (argb >>> 24) / 255.0F);
     }
 
     public static int packColor(int a, int r, int g, int b) {

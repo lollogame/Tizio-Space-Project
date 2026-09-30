@@ -30,7 +30,7 @@ public class RockFeature extends Feature<SpacingFeatureConfiguration> {
         WorldGenLevel level = context.level();
         BlockPos origin = context.origin();
         RandomSource random = context.random();
-        int spacing = context.config().spacing;
+        int spacing = context.config().spacing();
 
         BlockPos surfacePos = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE_WG, origin);
 

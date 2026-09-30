@@ -30,15 +30,37 @@ public class ItemFactory {
         this(name, () -> new Item(new Item.Properties()));
     }
 
-    public String getName() { return name; }
-    public RegistryObject<Item> getItemRegistryObject() { return itemRegistryObject; }
+    public String getName() {
+        return name;
+    }
 
-    public Supplier<? extends ItemLike> getNuggetSupplier() { return nuggetSupplier; }
-    public Supplier<? extends ItemLike> getBlockSupplier() { return blockSupplier; }
-    public Supplier<? extends ItemLike> getSmeltingResultSupplier() { return smeltingResultSupplier; }
-    public float getSmeltingXp() { return smeltingXp; }
-    public int getSmeltingTime() { return smeltingTime; }
-    public boolean canSmelt() { return canSmelt; }
+    public RegistryObject<Item> getItemRegistryObject() {
+        return itemRegistryObject;
+    }
+
+    public Supplier<? extends ItemLike> getNuggetSupplier() {
+        return nuggetSupplier;
+    }
+
+    public Supplier<? extends ItemLike> getBlockSupplier() {
+        return blockSupplier;
+    }
+
+    public Supplier<? extends ItemLike> getSmeltingResultSupplier() {
+        return smeltingResultSupplier;
+    }
+
+    public float getSmeltingXp() {
+        return smeltingXp;
+    }
+
+    public int getSmeltingTime() {
+        return smeltingTime;
+    }
+
+    public boolean canSmelt() {
+        return canSmelt;
+    }
 
     public ItemFactory makeNuggets(Supplier<? extends ItemLike> nuggetSupplier) {
         this.nuggetSupplier = nuggetSupplier;

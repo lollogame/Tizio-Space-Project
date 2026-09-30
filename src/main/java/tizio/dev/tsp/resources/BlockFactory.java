@@ -15,23 +15,19 @@ import java.util.function.Supplier;
 public class BlockFactory {
 
     private final String name;
-    private Supplier<Block> blockSupplier;
     private final List<String> customModels = new ArrayList<>();
+    private final List<CutBlockInfo> cutBlocks = new ArrayList<>();
+    private final Supplier<Block> blockSupplier;
     private String customItemModel = null;
     private boolean isRandomRotation = false;
     private boolean createSlab = false;
     private boolean createStairs = false;
-
     private boolean createCraftingRecipes = false;
     private boolean createStonecutterRecipes = false;
-
     private Supplier<? extends ItemLike> smeltingResultSupplier = null;
     private float smeltingXp = 0.7f;
     private int smeltingTime = 200;
     private boolean canSmelt = false;
-
-    private final List<CutBlockInfo> cutBlocks = new ArrayList<>();
-
     private RegistryObject<Block> mainBlock;
     private RegistryObject<Block> slabBlock;
     private RegistryObject<Block> stairsBlock;
@@ -47,25 +43,69 @@ public class BlockFactory {
         return textureFolder;
     }
 
-    public String getName() { return name; }
-    public List<String> getCustomModels() { return customModels; }
-    public String getCustomItemModel() { return customItemModel; }
-    public boolean isRandomRotation() { return isRandomRotation; }
-    public boolean hasSlab() { return createSlab; }
-    public boolean hasStairs() { return createStairs; }
+    public String getName() {
+        return name;
+    }
 
-    public boolean hasCraftingRecipes() { return createCraftingRecipes; }
-    public boolean hasStonecutterRecipes() { return createStonecutterRecipes; }
+    public List<String> getCustomModels() {
+        return customModels;
+    }
 
-    public Supplier<? extends ItemLike> getSmeltingResultSupplier() { return smeltingResultSupplier; }
-    public float getSmeltingXp() { return smeltingXp; }
-    public int getSmeltingTime() { return smeltingTime; }
-    public boolean canSmelt() { return canSmelt; }
+    public String getCustomItemModel() {
+        return customItemModel;
+    }
 
-    public RegistryObject<Block> getMainBlock() { return mainBlock; }
-    public RegistryObject<Block> getSlabBlock() { return slabBlock; }
-    public RegistryObject<Block> getStairsBlock() { return stairsBlock; }
-    public List<CutBlockInfo> getCutBlocks() { return cutBlocks; }
+    public boolean isRandomRotation() {
+        return isRandomRotation;
+    }
+
+    public boolean hasSlab() {
+        return createSlab;
+    }
+
+    public boolean hasStairs() {
+        return createStairs;
+    }
+
+    public boolean hasCraftingRecipes() {
+        return createCraftingRecipes;
+    }
+
+    public boolean hasStonecutterRecipes() {
+        return createStonecutterRecipes;
+    }
+
+    public Supplier<? extends ItemLike> getSmeltingResultSupplier() {
+        return smeltingResultSupplier;
+    }
+
+    public float getSmeltingXp() {
+        return smeltingXp;
+    }
+
+    public int getSmeltingTime() {
+        return smeltingTime;
+    }
+
+    public boolean canSmelt() {
+        return canSmelt;
+    }
+
+    public RegistryObject<Block> getMainBlock() {
+        return mainBlock;
+    }
+
+    public RegistryObject<Block> getSlabBlock() {
+        return slabBlock;
+    }
+
+    public RegistryObject<Block> getStairsBlock() {
+        return stairsBlock;
+    }
+
+    public List<CutBlockInfo> getCutBlocks() {
+        return cutBlocks;
+    }
 
     public BlockFactory customModel(String modelPath) {
         this.customModels.add(modelPath);
@@ -150,16 +190,6 @@ public class BlockFactory {
         return mainBlock;
     }
 
-    public static class CutBlockInfo {
-        private final String targetBlockName;
-        private final int count;
-
-        public CutBlockInfo(String targetBlockName, int count) {
-            this.targetBlockName = targetBlockName;
-            this.count = count;
-        }
-
-        public String getTargetBlockName() { return targetBlockName; }
-        public int getCount() { return count; }
+    public record CutBlockInfo(String targetBlockName, int count) {
     }
 }

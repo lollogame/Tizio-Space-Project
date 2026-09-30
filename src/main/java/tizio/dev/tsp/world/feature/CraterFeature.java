@@ -81,7 +81,7 @@ public class CraterFeature extends Feature<CraterConfiguration> {
                     for (int y = columnSurfaceY; y > columnSurfaceY - depth; y--) {
                         pos.set(x, y, z);
                         if (!level.isEmptyBlock(pos)) {
-                            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                            level.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
                             placed = true;
                         }
                     }
@@ -93,7 +93,7 @@ public class CraterFeature extends Feature<CraterConfiguration> {
                     for (int y = columnSurfaceY; y < columnSurfaceY + height; y++) {
                         pos.set(x, y, z);
                         if (level.isEmptyBlock(pos)) {
-                            level.setBlock(pos, fillState, 3);
+                            level.setBlock(pos, fillState, 2);
                             placed = true;
                         }
                     }

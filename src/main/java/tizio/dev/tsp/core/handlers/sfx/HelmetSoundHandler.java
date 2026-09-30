@@ -11,9 +11,9 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.handlers.oxygen.OxygenManager;
+import tizio.dev.tsp.core.utils.Utils;
 import tizio.dev.tsp.registry.RegisterSounds;
 import tizio.dev.tsp.resources.armor.CustomArmorItem;
-import tizio.dev.tsp.core.utils.Utils;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MainClass.MODID)
 public final class HelmetSoundHandler {
@@ -67,9 +67,9 @@ public final class HelmetSoundHandler {
 
             SoundEvent soundToPlay;
             if (isCustomHelmet) {
-                soundToPlay = hasOxygen ? RegisterSounds.HELMET_EQUIP_NO_OXYGEN.get() : RegisterSounds.HELMET_EQUIP_OXYGEN.get();
+                soundToPlay = hasOxygen ? RegisterSounds.HELMET_EQUIP_OXYGEN.get() : RegisterSounds.HELMET_EQUIP_NO_OXYGEN.get();
             } else {
-                soundToPlay = hasOxygen ? RegisterSounds.HELMET_REMOVE_NO_OXYGEN.get() : RegisterSounds.HELMET_REMOVE_OXYGEN.get();
+                soundToPlay = hasOxygen ? RegisterSounds.HELMET_REMOVE_OXYGEN.get() : RegisterSounds.HELMET_REMOVE_NO_OXYGEN.get();
             }
 
             SoundMuffleState.suppressNextVanillaEquipSound = true;

@@ -32,6 +32,7 @@ public class SpaceTeleporter implements ITeleporter {
     public Entity placeEntity(Entity entity, ServerLevel currentWorld, ServerLevel destWorld, float yaw, Function<Boolean, Entity> repositionEntity) {
         Entity repositioned = repositionEntity.apply(false);
         if (repositioned != null) {
+            repositioned.resetFallDistance();
             repositioned.moveTo(targetPos.x, targetPos.y, targetPos.z, targetYaw, targetPitch);
             if (applyDeltaMovement && targetDeltaMovement != null) {
                 repositioned.setDeltaMovement(targetDeltaMovement);

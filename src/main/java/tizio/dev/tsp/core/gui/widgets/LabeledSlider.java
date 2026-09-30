@@ -143,7 +143,7 @@ public class LabeledSlider extends AbstractSliderButton {
 
         boolean hovered = this.isHoveredOrFocused();
         int borderColor = hovered ? SystemEditorTheme.SLIDER_BORDER_HOVER : SystemEditorTheme.SLIDER_BORDER_NORMAL;
-        int bgColor     = hovered ? SystemEditorTheme.SLIDER_CONTAINER_HOVER_BG : SystemEditorTheme.SLIDER_CONTAINER_BG;
+        int bgColor = hovered ? SystemEditorTheme.SLIDER_CONTAINER_HOVER_BG : SystemEditorTheme.SLIDER_CONTAINER_BG;
 
         g.fill(getX(), getY(), getX() + width, getY() + height, bgColor);
         g.fill(getX(), getY(), getX() + width, getY() + 1, borderColor);
@@ -175,8 +175,8 @@ public class LabeledSlider extends AbstractSliderButton {
             int handleY1 = getY() + 2;
             int handleY2 = getY() + height - 2;
 
-            int handleBg     = hovered ? SystemEditorTheme.SLIDER_HANDLE_HOVER : SystemEditorTheme.SLIDER_HANDLE_NORMAL;
-            int borderCol    = 0xFF101216;
+            int handleBg = hovered ? SystemEditorTheme.SLIDER_HANDLE_HOVER : SystemEditorTheme.SLIDER_HANDLE_NORMAL;
+            int borderCol = 0xFF101216;
             int highlightCol = 0x40FFFFFF;
 
             g.fill(handleX, handleY1, handleX + handleW, handleY2, borderCol);

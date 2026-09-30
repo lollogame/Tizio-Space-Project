@@ -24,11 +24,10 @@ import java.util.WeakHashMap;
 @Mod.EventBusSubscriber(value = Dist.CLIENT, modid = MainClass.MODID)
 public final class SoundMuffleHandler {
 
-    private static Field channelSourceField;
-
     private static final Map<Channel, SoundInstance> ACTIVE_CHANNELS = Collections.synchronizedMap(new WeakHashMap<>());
-    private static boolean lastMuffledState = false;
     private static final float FADE_SPEED = 0.5f;
+    private static Field channelSourceField;
+    private static boolean lastMuffledState = false;
 
     @SubscribeEvent
     public static void onSoundEngineLoad(SoundEngineLoadEvent event) {

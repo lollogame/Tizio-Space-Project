@@ -17,11 +17,12 @@ public class RegisterStructures {
 
     public static final RegistryObject<StructureType<CraterStructure>> CRATER_STRUCTURE_TYPE = STRUCTURE_TYPES.register("giant_crater", () -> () -> CraterStructure.CODEC);
 
-    public static final RegistryObject<StructurePieceType> CRATER_PIECE = STRUCTURE_PIECES.register("giant_crater_piece", () -> CraterPiece::new);
-
     public static void register(IEventBus modBus) {
         STRUCTURE_TYPES.register(modBus);
         STRUCTURE_PIECES.register(modBus);
     }
+
+    public static final RegistryObject<StructurePieceType> CRATER_PIECE = STRUCTURE_PIECES.register("giant_crater_piece", () -> CraterPiece::new);
+
 
 }

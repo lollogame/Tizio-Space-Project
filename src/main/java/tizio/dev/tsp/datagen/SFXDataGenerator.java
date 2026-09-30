@@ -24,7 +24,7 @@ public class SFXDataGenerator extends SoundDefinitionsProvider {
 
     private void addSound(RegistryObject<SoundEvent> soundRegistryObject) {
         String soundName = soundRegistryObject.getId().getPath();
-        System.out.println("Generating sound definition for: " + soundName);
+        MainClass.LOGGER.info("Generating sound definition for: " + soundName);
         add(soundRegistryObject, definition().with(sound(new ResourceLocation(MainClass.MODID, soundName))));
     }
 }

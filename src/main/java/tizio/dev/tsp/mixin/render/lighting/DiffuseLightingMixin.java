@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import tizio.dev.tsp.core.celestial.lighting.LightShadeManager;
+import tizio.dev.tsp.engine.lighting.LightShadeManager;
 
 @OnlyIn(Dist.CLIENT)
 @Mixin(RenderSystem.class)

@@ -10,6 +10,7 @@ uniform vec3 CameraLocalPos;
 uniform float TerminatorSoftness;
 uniform float UseNightTexture;
 uniform float EmissiveStrength;
+uniform float UseSpecularMap;
 
 uniform float Time;
 uniform float CloudsEnabled;
@@ -23,6 +24,7 @@ uniform float SurfaceRotation;
 uniform sampler2D Sampler0;
 uniform sampler2D Sampler1;
 uniform sampler2D Sampler2;
+uniform sampler2D Sampler3;
 
 uniform int ShadowPlanetCount;
 uniform vec4 ShadowPlanet0;
@@ -40,6 +42,9 @@ const float NIGHT_BOOST_STRENGTH = 0.5;
 const vec3  NIGHT_COLOR_TINT    = vec3(0.55, 0.65, 1.00);
 const float NIGHT_TINT_STRENGTH = 0.35;
 const float SHADOW_SMOOTHNESS   = 0.15;
+const float BUMP_STRENGTH       = 2.0;
+const float SPECULAR_SHININESS  = 35.0;
+const float SPECULAR_STRENGTH   = 0.55;
 
 struct Ray {
     vec3 origin;
@@ -79,6 +84,29 @@ vec3 rotateZ(vec3 v, float a) {
     float c = cos(a);
     float s = sin(a);
     return vec3(c * v.x - s * v.y, s * v.x + c * v.y, v.z);
+}
+
+float heightAt(vec2 uv) {
+    vec3 c = textureLod(Sampler0, vec2(fract(uv.x), clamp(uv.y, 0.0, 1.0)), 0.0).rgb;
+    return dot(c, vec3(0.299, 0.587, 0.114));
+}
+
+vec3 heightNormalTS(vec2 uv) {
+    vec2 texel = 1.0 / vec2(textureSize(Sampler0, 0));
+    float hE = heightAt(uv + vec2(texel.x, 0.0));
+    float hW = heightAt(uv - vec2(texel.x, 0.0));
+    float hN = heightAt(uv - vec2(0.0, texel.y));
+    float hS = heightAt(uv + vec2(0.0, texel.y));
+    return normalize(vec3((hW - hE) * BUMP_STRENGTH, (hS - hN) * BUMP_STRENGTH, 1.0));
+}
+
+vec3 perturbNormal(vec3 n, vec3 m) {
+    vec3 t = vec3(n.z, 0.0, -n.x);
+    float len = length(t);
+    if (len < 0.0001) return n;
+    t /= len;
+    vec3 b = cross(n, t);
+    return normalize(t * m.x + b * m.y + n * m.z);
 }
 
 float sampleTexValue(sampler2D samp, vec2 uv) {
@@ -202,6 +230,12 @@ void main() {
     vec3 surfNormal = (SurfaceRotation != 0.0) ? rotateY(normal, -SurfaceRotation) : normal;
     vec2 uv = sphericalUV(surfNormal);
 
+    float specMask = (UseSpecularMap > 0.5) ? clamp(texture(Sampler3, uv).r, 0.0, 1.0) : 0.0;
+    vec3 bumpTS = normalize(mix(heightNormalTS(uv), vec3(0.0, 0.0, 1.0), specMask));
+    vec3 perturbedSurf = perturbNormal(surfNormal, bumpTS);
+    vec3 shadingNormal = (SurfaceRotation != 0.0) ? rotateY(perturbedSurf, SurfaceRotation) : perturbedSurf;
+    vec3 surfaceViewDir = -viewRay.direction;
+
     vec3 sunDirs[MAX_LIGHTS];
     sunDirs[0] = normalize(LightDirection0);
     sunDirs[1] = normalize(LightDirection1);
@@ -218,6 +252,8 @@ void main() {
 
     float dayBlendAccum = 0.0;
     float diffuseAccum = 0.0;
+    float bumpAccum = 0.0;
+    float specAccum = 0.0;
     float groundCloudShadowFactor = 1.0;
 
     for (int i = 0; i < MAX_LIGHTS; ++i) {
@@ -232,6 +268,9 @@ void main() {
         float effectiveDayBlend = dayBlend * eclipseShadow;
         dayBlendAccum = min(dayBlendAccum + effectiveDayBlend, 1.0);
         diffuseAccum += max(NdotL, 0.0) * eclipseShadow;
+        bumpAccum += max(dot(shadingNormal, sunDir), 0.0) * eclipseShadow;
+        vec3 halfDir = normalize(sunDir + surfaceViewDir);
+        specAccum += pow(max(dot(shadingNormal, halfDir), 0.0), SPECULAR_SHININESS) * eclipseShadow * smoothstep(0.0, softness * 2.0, NdotL);
 
         if (CloudsEnabled > 0.5) {
             vec3 shadowSamplePos = normalize(hitPos + sunDir * (PlanetRadius * max(CloudHeight, 0.01) * 2.0));
@@ -239,7 +278,10 @@ void main() {
             groundCloudShadowFactor *= 1.0 - cloudShadowDensity * 0.45 * effectiveDayBlend;
         }
     }
+    float bumpRatio = bumpAccum / max(diffuseAccum, 0.05);
+    float bumpFactor = mix(1.0, clamp(bumpRatio, 0.35, 1.6), smoothstep(0.0, 0.25, diffuseAccum));
     diffuseAccum = min(diffuseAccum, 1.0);
+    vec3 specColor = vec3(1.0) * min(specAccum, 1.0) * specMask * SPECULAR_STRENGTH * groundCloudShadowFactor;
 
     vec4 dayColor = texture(Sampler0, uv);
     vec3 finalSurface;
@@ -247,7 +289,7 @@ void main() {
 
     if (UseNightTexture > 0.5) {
         vec4 nightColor = texture(Sampler1, uv);
-        vec3 litDayColor = dayColor.rgb * (0.35 + 0.65 * diffuseAccum) * groundCloudShadowFactor;
+        vec3 litDayColor = dayColor.rgb * (0.35 + 0.65 * diffuseAccum) * groundCloudShadowFactor * bumpFactor + specColor;
         vec3 blendedColor = mix(nightColor.rgb, litDayColor, dayBlendAccum);
         finalSurface = mix(blendedColor, dayColor.rgb, clamp(EmissiveStrength, 0.0, 1.0));
     } else {
@@ -255,9 +297,9 @@ void main() {
         vec4 nightColor = vec4(tintedNight, dayColor.a);
 
         vec4 surfaceColor = mix(nightColor, dayColor, dayBlendAccum);
-        float lighting = mix(NIGHT_BRIGHTNESS, 1.0, dayBlendAccum) * (1.0 - (1.0 - diffuseAccum) * (1.0 - dayBlendAccum) * 0.4) * groundCloudShadowFactor;
+        float lighting = mix(NIGHT_BRIGHTNESS, 1.0, dayBlendAccum) * (1.0 - (1.0 - diffuseAccum) * (1.0 - dayBlendAccum) * 0.4) * groundCloudShadowFactor * mix(1.0, bumpFactor, dayBlendAccum);
 
-        finalSurface = surfaceColor.rgb * max(lighting, max(EmissiveStrength, 0.0));
+        finalSurface = surfaceColor.rgb * max(lighting, max(EmissiveStrength, 0.0)) + specColor * dayBlendAccum;
         surfaceAlpha = surfaceColor.a;
     }
 

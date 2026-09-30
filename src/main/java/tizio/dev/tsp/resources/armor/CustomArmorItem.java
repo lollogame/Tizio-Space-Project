@@ -6,7 +6,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import tizio.dev.tsp.MainClass;
-import tizio.dev.tsp.core.client.ArmorRenderRegistry;
+import tizio.dev.tsp.engine.client.ArmorRenderRegistry;
 import tizio.dev.tsp.resources.ArmorProperties;
 
 import java.util.function.Consumer;
@@ -35,6 +35,10 @@ public class CustomArmorItem extends ArmorItem {
 
     @Override
     public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(ArmorRenderRegistry.CLIENT_ARMOR_EXTENSION);
+        consumer.accept(ClientExtensions.INSTANCE);
+    }
+
+    private static class ClientExtensions {
+        private static final IClientItemExtensions INSTANCE = ArmorRenderRegistry.CLIENT_ARMOR_EXTENSION;
     }
 }

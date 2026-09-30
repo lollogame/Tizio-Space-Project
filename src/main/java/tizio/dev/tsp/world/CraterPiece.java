@@ -85,7 +85,7 @@ public class CraterPiece extends StructurePiece {
                     for (int y = columnSurfaceY; y > columnSurfaceY - depth; y--) {
                         mpos.set(x, y, z);
                         if (chunkBox.isInside(mpos) && !level.isEmptyBlock(mpos)) {
-                            level.setBlock(mpos, Blocks.AIR.defaultBlockState(), 3);
+                            level.setBlock(mpos, Blocks.AIR.defaultBlockState(), 2);
                         }
                     }
                 } else {
@@ -96,7 +96,7 @@ public class CraterPiece extends StructurePiece {
                     for (int y = columnSurfaceY; y < columnSurfaceY + height; y++) {
                         mpos.set(x, y, z);
                         if (chunkBox.isInside(mpos) && level.isEmptyBlock(mpos)) {
-                            level.setBlock(mpos, fillState, 3);
+                            level.setBlock(mpos, fillState, 2);
                         }
                     }
                 }

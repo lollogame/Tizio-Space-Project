@@ -13,22 +13,26 @@
     "gravity.PrimedTntGravityMixin",
     "gravity.ThrowableProjectileGravityMixin",
 
-    "other.SLWeatherHandlerMixin",
-    "other.LWeatherMixin"
-
+    "other.LWeatherMixin",
+    "other.SLWeatherHandlerMixin"
   ],
   "client": [
 
+    "render.accessor.ViewAreaAccessor",
+    "render.accessor.LevelRendererAccessor",
+    "render.accessor.WindowAccessor",
+
     "render.DepthMixin",
-    "render.lighting.GameRendererMixin",
-    "render.lighting.DiffuseLightingMixin",
-    "render.lighting.ShadingLevelMixin",
+    "render.FPArmRenderMixin",
+    "render.LevelRendererCloudsMixin",
+    "render.OverlayKiller",
+
     "render.camera.CameraInvoker",
     "render.camera.CameraMixin",
-    "render.LevelRendererCloudsMixin",
-    "render.FPSArmRenderMixin",
 
-    "other.ReceivingLevelScreenMixin"
+    "render.lighting.GameRendererMixin",
+    "render.lighting.DiffuseLightingMixin",
+    "render.lighting.ShadingLevelMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -9,8 +9,6 @@ import tizio.dev.tsp.MainClass;
 @Mod.EventBusSubscriber(modid = MainClass.MODID)
 public final class TemperatureEventHandler {
 
-    private TemperatureEventHandler() {}
-
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || event.player.level().isClientSide()) {

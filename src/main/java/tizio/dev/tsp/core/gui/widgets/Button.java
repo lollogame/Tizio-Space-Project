@@ -9,7 +9,7 @@ import tizio.dev.tsp.core.gui.theme.SystemEditorTheme;
 public class Button extends net.minecraft.client.gui.components.Button {
 
     private boolean activeTab = false;
-    private boolean compact   = false;
+    private boolean compact = false;
     private Integer customAccent = null;
 
     public Button(int x, int y, int width, int height, Component message, OnPress onPress) {
@@ -37,9 +37,9 @@ public class Button extends net.minecraft.client.gui.components.Button {
 
         boolean hovered = this.isHoveredOrFocused();
 
-        int bgColor     = activeTab ? SystemEditorTheme.TAB_ACTIVE_BG : (hovered ? SystemEditorTheme.BTN_BG_HOVER : SystemEditorTheme.BTN_BG_NORMAL);
+        int bgColor = activeTab ? SystemEditorTheme.TAB_ACTIVE_BG : (hovered ? SystemEditorTheme.BTN_BG_HOVER : SystemEditorTheme.BTN_BG_NORMAL);
         int borderColor = customAccent != null ? customAccent : (hovered || activeTab ? SystemEditorTheme.BTN_BORDER_HOVER : SystemEditorTheme.BTN_BORDER_NORMAL);
-        int textColor   = activeTab ? SystemEditorTheme.TAB_ACTIVE_ACCENT : (hovered ? SystemEditorTheme.BTN_TEXT_HOVER : SystemEditorTheme.BTN_TEXT_NORMAL);
+        int textColor = activeTab ? SystemEditorTheme.TAB_ACTIVE_ACCENT : (hovered ? SystemEditorTheme.BTN_TEXT_HOVER : SystemEditorTheme.BTN_TEXT_NORMAL);
 
         g.fill(getX(), getY(), getX() + width, getY() + height, bgColor);
 
@@ -53,7 +53,7 @@ public class Button extends net.minecraft.client.gui.components.Button {
         int textW = font.width(textStr);
 
         g.enableScissor(getX() + 1, getY() + 1, getX() + width - 1, getY() + height - 1);
-        int textX = compact ? getX() + (width - textW) / 2 : getX() + (width - textW) / 2;
+        int textX = getX() + (width - textW) / 2;
         int textY = getY() + (height - 8) / 2;
         g.drawString(font, textStr, textX, textY, textColor, SystemEditorTheme.TEXT_SHADOW);
         g.disableScissor();

@@ -7,8 +7,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
-import tizio.dev.tsp.resources.armor.CustomArmorItem;
 import tizio.dev.tsp.core.utils.Utils;
+import tizio.dev.tsp.resources.armor.CustomArmorItem;
 
 public final class OxygenManager {
 

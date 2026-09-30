@@ -54,7 +54,6 @@ void main() {
 
     if (!gl_FrontFacing) discard;
 
-
     Ray viewRay;
     viewRay.origin    = CameraLocalPos;
     viewRay.direction = normalize(fragLocalPos - CameraLocalPos);
@@ -66,10 +65,20 @@ void main() {
     float t = -dot(viewRay.origin, ringNormal) / denom;
     if (t < 0.0) discard;
 
-    if (dot(CameraLocalPos, CameraLocalPos) >= PlanetRadius * PlanetRadius) {
-        float sphereHit = raySphereIntersectNearest(viewRay, PlanetRadius);
-        if (sphereHit >= 0.0 && sphereHit < t - max(PlanetRadius * 0.0005, 0.0001)) {
+    float camDistSq = dot(CameraLocalPos, CameraLocalPos);
+    float planetRadiusSq = PlanetRadius * PlanetRadius;
+    float camDotDir = dot(CameraLocalPos, viewRay.direction);
+
+    if (camDistSq <= planetRadiusSq * 1.02) {
+        if (camDotDir < 0.0) {
             discard;
+        }
+    } else {
+        if (camDotDir < 0.0) {
+            float sphereHit = raySphereIntersectNearest(viewRay, PlanetRadius);
+            if (sphereHit > 0.0 && sphereHit < t) {
+                discard;
+            }
         }
     }
 

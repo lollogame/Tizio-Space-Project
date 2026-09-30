@@ -6,7 +6,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
-import tizio.dev.tsp.core.celestial.lighting.LightShadeManager;
+import tizio.dev.tsp.engine.lighting.LightShadeManager;
 
 @OnlyIn(Dist.CLIENT)
 @Mixin(ClientLevel.class)

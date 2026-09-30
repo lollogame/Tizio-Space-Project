@@ -22,7 +22,8 @@ public class SolarSystemData {
     public SunInstance.Config star = new SunInstance.Config();
     public List<PlanetInstance.Config> bodies = new ArrayList<>();
 
-    public SolarSystemData() {}
+    public SolarSystemData() {
+    }
 
     public SolarSystemData(String id, String dimension) {
         this.id = id;

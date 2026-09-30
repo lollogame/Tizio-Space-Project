@@ -17,7 +17,8 @@ import tizio.dev.tsp.core.data.CelestialJsonLoader;
 @Mod.EventBusSubscriber(modid = MainClass.MODID)
 public final class GravityEventHandler {
 
-    private GravityEventHandler() {}
+    private GravityEventHandler() {
+    }
 
     @SubscribeEvent
     public static void onServerAboutToStart(ServerAboutToStartEvent event) {

@@ -14,36 +14,12 @@ import java.util.function.Consumer;
 
 public class EditorTreeWidget extends AbstractWidget {
 
-    public static class TreeItem {
-        public final String id;
-        public final String label;
-        public final String type;
-        public final int depth;
-        public final String parentId;
-        public final PlanetInstance.Config bodyConfig;
-
-        public boolean expanded = true;
-        public boolean visible  = true;
-        public final List<TreeItem> children = new ArrayList<>();
-
-        public TreeItem(String id, String label, String type, int depth, String parentId, PlanetInstance.Config bodyConfig) {
-            this.id = id;
-            this.label = label;
-            this.type = type;
-            this.depth = depth;
-            this.parentId = parentId;
-            this.bodyConfig = bodyConfig;
-        }
-    }
-
-    private final List<TreeItem> rootItems      = new ArrayList<>();
-    private final List<TreeItem> visibleFlatList = new ArrayList<>();
-
-    private String selectedId = null;
-    private final Consumer<TreeItem> onSelect;
-
-    private int scrollOffset = 0;
     private static final int ROW_H = 18;
+    private final List<TreeItem> rootItems = new ArrayList<>();
+    private final List<TreeItem> visibleFlatList = new ArrayList<>();
+    private final Consumer<TreeItem> onSelect;
+    private String selectedId = null;
+    private int scrollOffset = 0;
     private String filterQuery = "";
 
     public EditorTreeWidget(int x, int y, int width, int height, Consumer<TreeItem> onSelect) {
@@ -74,10 +50,10 @@ public class EditorTreeWidget extends AbstractWidget {
         for (PlanetInstance.Config body : systemConfig.bodies) {
             String bType = body.type != null ? body.type.toLowerCase(Locale.ROOT) : "planet";
             String tag = switch (bType) {
-                case "moon"      -> "[M] ";
+                case "moon" -> "[M] ";
                 case "blackhole" -> "[BH] ";
-                case "star"      -> "[STAR] ";
-                default          -> "[PL] ";
+                case "star" -> "[STAR] ";
+                default -> "[PL] ";
             };
             TreeItem bItem = new TreeItem(body.id, tag + body.id, bType, 1, body.parentId, body);
             bodyItemMap.put(body.id, bItem);
@@ -232,12 +208,12 @@ public class EditorTreeWidget extends AbstractWidget {
 
             int textX = indentX + (!item.children.isEmpty() ? 10 : 4);
             int textColor = switch (item.type.toLowerCase(Locale.ROOT)) {
-                case "system"    -> SystemEditorTheme.TREE_TEXT_SYSTEM;
-                case "star"      -> SystemEditorTheme.TREE_TEXT_STAR;
-                case "planet"    -> SystemEditorTheme.TREE_TEXT_PLANET;
-                case "moon"      -> SystemEditorTheme.TREE_TEXT_MOON;
+                case "system" -> SystemEditorTheme.TREE_TEXT_SYSTEM;
+                case "star" -> SystemEditorTheme.TREE_TEXT_STAR;
+                case "planet" -> SystemEditorTheme.TREE_TEXT_PLANET;
+                case "moon" -> SystemEditorTheme.TREE_TEXT_MOON;
                 case "blackhole" -> SystemEditorTheme.TREE_TEXT_BLACKHOLE;
-                default          -> SystemEditorTheme.TREE_TEXT_PLANET;
+                default -> SystemEditorTheme.TREE_TEXT_PLANET;
             };
 
             g.drawString(font, item.label, textX, rowY + 5, textColor, SystemEditorTheme.TEXT_SHADOW);
@@ -258,5 +234,27 @@ public class EditorTreeWidget extends AbstractWidget {
     }
 
     @Override
-    protected void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput output) {}
+    protected void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput output) {
+    }
+
+    public static class TreeItem {
+        public final String id;
+        public final String label;
+        public final String type;
+        public final int depth;
+        public final String parentId;
+        public final PlanetInstance.Config bodyConfig;
+        public final List<TreeItem> children = new ArrayList<>();
+        public boolean expanded = true;
+        public boolean visible = true;
+
+        public TreeItem(String id, String label, String type, int depth, String parentId, PlanetInstance.Config bodyConfig) {
+            this.id = id;
+            this.label = label;
+            this.type = type;
+            this.depth = depth;
+            this.parentId = parentId;
+            this.bodyConfig = bodyConfig;
+        }
+    }
 }

@@ -96,7 +96,9 @@
   "item.tsp.titanium_ingot": "Titanium Ingot",
   "item.tsp.titanium_nugget": "Titanium Nugget",
   "key.categories.tsp": "T.S.P - Keybinds",
-  "key.tsp.planet_editor": "Development Editor",
+  "key.tsp.graphic_settings": "Graphics Config",
+  "key.tsp.photo_mode": "Photo mode.",
+  "key.tsp.planet_editor": "Development editor.",
   "tsp_tabs.armors": "Armors",
   "tsp_tabs.blocks": "Blocks",
   "tsp_tabs.materials": "Materials"

@@ -26,7 +26,9 @@ public class TSPLanguageGenerator extends LanguageProvider {
     protected void addTranslations() {
 
         this.add("key.categories.tsp", "T.S.P - Keybinds");
-        this.add("key.tsp.planet_editor", "Development Editor");
+        this.add("key.tsp.planet_editor", "Development editor.");
+        this.add("key.tsp.photo_mode", "Photo mode.");
+        this.add("key.tsp.graphic_settings", "Graphics Config");
 
         for (RegistryObject<Block> blockObject : RegisterBlocks.BLOCKS.getEntries()) {
             Block block = blockObject.get();

@@ -98,19 +98,6 @@ public class SurfaceStructureProvider implements DataProvider {
         return "Surface Structures Datagen";
     }
 
-    private static class StructureEntry {
-        final String name;
-        final String biomeId;
-        final int count;
-        final int rarity;
-        final int spacing;
-
-        public StructureEntry(String name, String biomeId, int count, int rarity, int spacing) {
-            this.name = name;
-            this.biomeId = biomeId;
-            this.count = count;
-            this.rarity = rarity;
-            this.spacing = spacing;
-        }
+    private record StructureEntry(String name, String biomeId, int count, int rarity, int spacing) {
     }
 }

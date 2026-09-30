@@ -2,7 +2,7 @@ package tizio.dev.tsp.core.celestial.instance.elements.blackhole;
 
 import net.minecraft.world.phys.Vec3;
 import tizio.dev.tsp.config.DataConfig.BlackHole;
-import tizio.dev.tsp.core.utils.volume.OrientedVolumeInstance;
+import tizio.dev.tsp.engine.volume.OrientedVolumeInstance;
 
 public final class BlackHoleInstance extends OrientedVolumeInstance {
 
@@ -15,6 +15,10 @@ public final class BlackHoleInstance extends OrientedVolumeInstance {
         this.radius = builder.radius;
         this.diskRotationSpeed = builder.diskRotationSpeed;
         this.intensity = builder.intensity;
+    }
+
+    public static Builder at(Vec3 position) {
+        return new Builder(position);
     }
 
     public float radius() {
@@ -32,10 +36,6 @@ public final class BlackHoleInstance extends OrientedVolumeInstance {
     @Override
     protected float getBaseRadius() {
         return this.radius;
-    }
-
-    public static Builder at(Vec3 position) {
-        return new Builder(position);
     }
 
     public static final class Builder extends OrientedVolumeInstance.Builder<BlackHoleInstance, Builder> {
@@ -80,7 +80,8 @@ public final class BlackHoleInstance extends OrientedVolumeInstance {
         public float diskRotationSpeed = BlackHole.DISK_ROTATION_SPEED_DEF;
         public float intensity = BlackHole.INTENSITY_DEF;
 
-        public Config() {}
+        public Config() {
+        }
 
         public Config copy() {
             Config copy = new Config();

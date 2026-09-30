@@ -4,10 +4,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.core.data.CelestialJsonLoader;
 import tizio.dev.tsp.core.handlers.oxygen.OxygenManager;
 import tizio.dev.tsp.core.utils.Utils;
@@ -31,18 +29,14 @@ public final class TemperatureManager {
 
     public static final int ARMOR_HEAT_DAMAGE_AMOUNT = 1;
     public static final int ARMOR_EXTREME_HEAT_DAMAGE_AMOUNT = 3;
-
-    public static float SOLAR_HEAT_TRIGGER_DISTANCE = 1.0F;
+    public static final float SUN_CONTACT_TEMPERATURE = 1000.0F;
     private static final double SOLAR_HEAT_MIN_SAFE_MULTIPLIER = 1.0;
     private static final double SOLAR_HEAT_MAX_SAFE_MULTIPLIER = 1.2;
-
-    public static final float SUN_CONTACT_TEMPERATURE = 1000.0F;
-
     private static final EquipmentSlot[] ARMOR_SLOTS = {
             EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET
     };
+    public static float SOLAR_HEAT_TRIGGER_DISTANCE = 1.0F;
 
-    private TemperatureManager() {}
 
     public static float getTemperature(Player player) {
         if (player == null) return NEUTRAL_TEMPERATURE;
@@ -90,7 +84,10 @@ public final class TemperatureManager {
         float sunRadius = sunRadiusBoxed;
 
         Vec3 playerPos = player.position();
-        Vec3 sunPos = DataConfig.System.ORIGIN_DEF;
+        Vec3 sunPos = CelestialJsonLoader.getStarPosition(dimId);
+        if (sunPos == null) {
+            return 0.0F;
+        }
 
         double distance = playerPos.distanceTo(sunPos);
 
@@ -162,7 +159,9 @@ public final class TemperatureManager {
             if (extremeHeat && player.tickCount % 20 == 0) {
                 player.hurt(player.damageSources().onFire(), TEMPERATURE_DAMAGE * (solarHeat >= 1.5F ? 2.0F : 1.0F));
             }
-            damageArmorFromHeat(player, extremeHeat ? ARMOR_EXTREME_HEAT_DAMAGE_AMOUNT : ARMOR_HEAT_DAMAGE_AMOUNT);
+            if (player.tickCount % 20 == 0) {
+                damageArmorFromHeat(player, extremeHeat ? ARMOR_EXTREME_HEAT_DAMAGE_AMOUNT : ARMOR_HEAT_DAMAGE_AMOUNT);
+            }
         }
 
         setTemperature(player, currentTemp);

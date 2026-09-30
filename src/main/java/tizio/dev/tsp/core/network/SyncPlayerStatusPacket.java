@@ -4,6 +4,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
+import tizio.dev.tsp.engine.client.ClientPacketHandler;
 
 import java.util.function.Supplier;
 
@@ -35,3 +36,4 @@ public class SyncPlayerStatusPacket {
         ctx.setPacketHandled(true);
     }
 }
+

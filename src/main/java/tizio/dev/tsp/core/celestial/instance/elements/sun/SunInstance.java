@@ -3,8 +3,8 @@ package tizio.dev.tsp.core.celestial.instance.elements.sun;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import tizio.dev.tsp.config.DataConfig.Star;
-import tizio.dev.tsp.core.utils.volume.OrientedVolumeInstance;
 import tizio.dev.tsp.core.utils.Utils;
+import tizio.dev.tsp.engine.volume.OrientedVolumeInstance;
 
 public final class SunInstance extends OrientedVolumeInstance {
 
@@ -15,6 +15,10 @@ public final class SunInstance extends OrientedVolumeInstance {
         super(builder);
         this.planetRadius = builder.planetRadius;
         this.sunRadius = builder.sunRadius;
+    }
+
+    public static Builder at(Vec3 position) {
+        return new Builder(position);
     }
 
     public float planetRadius() {
@@ -28,10 +32,6 @@ public final class SunInstance extends OrientedVolumeInstance {
     @Override
     protected float getBaseRadius() {
         return this.sunRadius;
-    }
-
-    public static Builder at(Vec3 position) {
-        return new Builder(position);
     }
 
     public static final class Builder extends OrientedVolumeInstance.Builder<SunInstance, Builder> {
@@ -76,7 +76,8 @@ public final class SunInstance extends OrientedVolumeInstance {
         public float diskRotationSpeed = Star.DISK_ROTATION_SPEED.defF();
         public float intensity = Star.INTENSITY.defF();
 
-        public Config() {}
+        public Config() {
+        }
 
         public Config(String id, float radius, String colorHex) {
             this.id = id;

@@ -9,6 +9,14 @@ public final class OpenALMuffleFilter {
     private static boolean supported = false;
 
     public static void reset() {
+        if (filterId > 0) {
+            try {
+                if (EXTEfx.alIsFilter(filterId)) {
+                    EXTEfx.alDeleteFilters(filterId);
+                }
+            } catch (Throwable ignored) {
+            }
+        }
         filterId = 0;
         supported = false;
     }
@@ -47,7 +55,8 @@ public final class OpenALMuffleFilter {
                 EXTEfx.alFilterf(fId, EXTEfx.AL_LOWPASS_GAIN, gain);
                 EXTEfx.alFilterf(fId, EXTEfx.AL_LOWPASS_GAINHF, gainHF);
             }
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
     }
 
     public static void apply(int sourceId) {
@@ -55,7 +64,8 @@ public final class OpenALMuffleFilter {
         if (fId > 0) {
             try {
                 AL10.alSourcei(sourceId, EXTEfx.AL_DIRECT_FILTER, fId);
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
         }
     }
 
@@ -63,7 +73,8 @@ public final class OpenALMuffleFilter {
         if (supported && filterId > 0) {
             try {
                 AL10.alSourcei(sourceId, EXTEfx.AL_DIRECT_FILTER, EXTEfx.AL_FILTER_NULL);
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
         }
     }
 }

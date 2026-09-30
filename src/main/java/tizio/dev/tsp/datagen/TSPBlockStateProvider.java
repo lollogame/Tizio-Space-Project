@@ -12,7 +12,6 @@ import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import tizio.dev.tsp.MainClass;
-
 import tizio.dev.tsp.registry.RegisterBlocks;
 import tizio.dev.tsp.resources.BlockFactory;
 import tizio.dev.tsp.resources.OreProperties;

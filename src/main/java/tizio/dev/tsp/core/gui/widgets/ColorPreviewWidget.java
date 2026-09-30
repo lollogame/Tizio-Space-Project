@@ -17,17 +17,13 @@ public class ColorPreviewWidget extends AbstractWidget {
     private static final int FIELD_H = 76;
     private static final int FIELD_STEP = 1;
     private static final int TEXT_COLOR = 0xFFE0E0E0;
-
+    private final Consumer<String> onColorSelected;
+    private final LabeledSlider vSlider;
     private float currentHue = 0.0f;
     private float currentSat = 1.0f;
     private float currentVal = 1.0f;
-
     private int currentColor = 0xFFFFFFFF;
-    private final Consumer<String> onColorSelected;
-
     private boolean paletteOpen = false;
-
-    private final LabeledSlider vSlider;
     private boolean updatingSlider = false;
     private boolean isDraggingSlider = false;
 
@@ -38,6 +34,84 @@ public class ColorPreviewWidget extends AbstractWidget {
         this.vSlider = new LabeledSlider(0, 0, 124, 16, "V", 1.0, 0.0, 1.0, this::onVSliderChanged);
 
         setHexColor(initialHex);
+    }
+
+    private static String toHex(int argb) {
+        return String.format("#%06X", argb & 0xFFFFFF);
+    }
+
+    private static int hsbToRgb(float h, float s, float v) {
+        float r, g, b;
+        if (s <= 0f) {
+            r = g = b = v;
+        } else {
+            float hh = (h % 1.0f) * 6f;
+            if (hh < 0f) hh += 6f;
+            int i = (int) hh;
+            float f = hh - i;
+            float p = v * (1f - s);
+            float q = v * (1f - s * f);
+            float t = v * (1f - s * (1f - f));
+            switch (i % 6) {
+                case 0 -> {
+                    r = v;
+                    g = t;
+                    b = p;
+                }
+                case 1 -> {
+                    r = q;
+                    g = v;
+                    b = p;
+                }
+                case 2 -> {
+                    r = p;
+                    g = v;
+                    b = t;
+                }
+                case 3 -> {
+                    r = p;
+                    g = q;
+                    b = v;
+                }
+                case 4 -> {
+                    r = t;
+                    g = p;
+                    b = v;
+                }
+                default -> {
+                    r = v;
+                    g = p;
+                    b = q;
+                }
+            }
+        }
+        int ri = Mth.clamp(Math.round(r * 255f), 0, 255);
+        int gi = Mth.clamp(Math.round(g * 255f), 0, 255);
+        int bi = Mth.clamp(Math.round(b * 255f), 0, 255);
+        return 0xFF000000 | (ri << 16) | (gi << 8) | bi;
+    }
+
+    private static float[] rgbToHsb(int r, int g, int b) {
+        float rf = r / 255f, gf = g / 255f, bf = b / 255f;
+        float max = Math.max(rf, Math.max(gf, bf));
+        float min = Math.min(rf, Math.min(gf, bf));
+        float delta = max - min;
+
+        float h;
+        if (delta == 0f) {
+            h = 0f;
+        } else if (max == rf) {
+            h = (((gf - bf) / delta) % 6f) / 6f;
+        } else if (max == gf) {
+            h = (((bf - rf) / delta) + 2f) / 6f;
+        } else {
+            h = (((rf - gf) / delta) + 4f) / 6f;
+        }
+        if (h < 0f) h += 1f;
+
+        float s = max == 0f ? 0f : delta / max;
+        float v = max;
+        return new float[]{h, s, v};
     }
 
     public void setHexColor(String hex) {
@@ -54,7 +128,8 @@ public class ColorPreviewWidget extends AbstractWidget {
                 this.currentVal = hsb[2];
 
                 syncSliderWithColor();
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
     }
 
@@ -314,60 +389,7 @@ public class ColorPreviewWidget extends AbstractWidget {
         g.fill(cx - 1, cy, cx + 2, cy + 1, 0xFFFFFFFF);
     }
 
-    private static String toHex(int argb) {
-        return String.format("#%06X", argb & 0xFFFFFF);
-    }
-
-    private static int hsbToRgb(float h, float s, float v) {
-        float r, g, b;
-        if (s <= 0f) {
-            r = g = b = v;
-        } else {
-            float hh = (h % 1.0f) * 6f;
-            if (hh < 0f) hh += 6f;
-            int i = (int) hh;
-            float f = hh - i;
-            float p = v * (1f - s);
-            float q = v * (1f - s * f);
-            float t = v * (1f - s * (1f - f));
-            switch (i % 6) {
-                case 0 -> { r = v; g = t; b = p; }
-                case 1 -> { r = q; g = v; b = p; }
-                case 2 -> { r = p; g = v; b = t; }
-                case 3 -> { r = p; g = q; b = v; }
-                case 4 -> { r = t; g = p; b = v; }
-                default -> { r = v; g = p; b = q; }
-            }
-        }
-        int ri = Mth.clamp(Math.round(r * 255f), 0, 255);
-        int gi = Mth.clamp(Math.round(g * 255f), 0, 255);
-        int bi = Mth.clamp(Math.round(b * 255f), 0, 255);
-        return 0xFF000000 | (ri << 16) | (gi << 8) | bi;
-    }
-
-    private static float[] rgbToHsb(int r, int g, int b) {
-        float rf = r / 255f, gf = g / 255f, bf = b / 255f;
-        float max = Math.max(rf, Math.max(gf, bf));
-        float min = Math.min(rf, Math.min(gf, bf));
-        float delta = max - min;
-
-        float h;
-        if (delta == 0f) {
-            h = 0f;
-        } else if (max == rf) {
-            h = (((gf - bf) / delta) % 6f) / 6f;
-        } else if (max == gf) {
-            h = (((bf - rf) / delta) + 2f) / 6f;
-        } else {
-            h = (((rf - gf) / delta) + 4f) / 6f;
-        }
-        if (h < 0f) h += 1f;
-
-        float s = max == 0f ? 0f : delta / max;
-        float v = max;
-        return new float[]{h, s, v};
-    }
-
     @Override
-    protected void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput output) {}
+    protected void updateWidgetNarration(net.minecraft.client.gui.narration.NarrationElementOutput output) {
+    }
 }

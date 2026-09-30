@@ -4,7 +4,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -14,19 +13,20 @@ import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import tizio.dev.tsp.MainClass;
+import tizio.dev.tsp.core.gui.GraphicsSettings;
 import tizio.dev.tsp.core.gui.theme.SuitHudTheme;
 import tizio.dev.tsp.core.handlers.gravity.GravityManager;
 import tizio.dev.tsp.core.handlers.oxygen.OxygenManager;
 import tizio.dev.tsp.core.handlers.temperature.TemperatureManager;
+import tizio.dev.tsp.core.utils.Materials;
 import tizio.dev.tsp.resources.armor.CustomArmorItem;
 
 @Mod.EventBusSubscriber(modid = MainClass.MODID, value = Dist.CLIENT)
 public final class SuitHudOverlay {
 
-    private static final Minecraft mc = Minecraft.getInstance();
-    private static final ResourceLocation VISOR_BACKGROUND_OVERLAY = new ResourceLocation(MainClass.MODID, "textures/gui/visor_overlay_c.png");
-
-    private SuitHudOverlay() {}
+    private static Minecraft mc() {
+        return Minecraft.getInstance();
+    }
 
     @SubscribeEvent
     public static void onRenderOverlay(RenderGuiOverlayEvent.Post event) {
@@ -34,7 +34,13 @@ public final class SuitHudOverlay {
             return;
         }
 
+
+        Minecraft mc = mc();
         if (mc.options.hideGui || mc.player == null || mc.level == null) {
+            return;
+        }
+
+        if (mc.screen instanceof GraphicsSettings) {
             return;
         }
 
@@ -59,7 +65,7 @@ public final class SuitHudOverlay {
     }
 
     private static void drawCyberVisorHud(GuiGraphics g, Player player, int screenW, int screenH) {
-        Font font = mc.font;
+        Font font = mc().font;
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
@@ -69,7 +75,6 @@ public final class SuitHudOverlay {
         boolean hasSuit = OxygenManager.hasFullSpaceSuit(player);
 
         drawVisorBackgroundOverlay(g, screenW, screenH);
-        drawVisorFrame(g, screenW, screenH);
         drawTopCompassTape(g, font, player, screenW);
         drawTopLeftTelemetry(g, font, player);
         drawMidLeftVitals(g, font, player, oxygen, temperature, envTemp, hasSuit);
@@ -83,24 +88,7 @@ public final class SuitHudOverlay {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        g.blit(VISOR_BACKGROUND_OVERLAY, 0, 0, 0.0F, 0.0F, screenW, screenH, screenW, screenH);
-    }
-
-    private static void drawVisorFrame(GuiGraphics g, int screenW, int screenH) {
-        int color = SuitHudTheme.VISOR_BRACKET;
-        int len = 20;
-
-        g.fill(6, 6, 6 + len, 7, color);
-        g.fill(6, 6, 7, 6 + len, color);
-
-        g.fill(screenW - 6 - len, 6, screenW - 6, 7, color);
-        g.fill(screenW - 7, 6, screenW - 6, 6 + len, color);
-
-        g.fill(6, screenH - 7, 6 + len, screenH - 6, color);
-        g.fill(6, screenH - 6 - len, 7, screenH - 6, color);
-
-        g.fill(screenW - 6 - len, screenH - 7, screenW - 6, screenH - 6, color);
-        g.fill(screenW - 7, screenH - 6 - len, screenW - 6, screenH - 6, color);
+        g.blit(Materials.SUIT_HUD_VIGNETTE, 0, 0, 0.0F, 0.0F, screenW, screenH, screenW, screenH);
     }
 
     private static void drawTopCompassTape(GuiGraphics g, Font font, Player player, int screenW) {
@@ -120,9 +108,9 @@ public final class SuitHudOverlay {
         g.drawString(font, headNum, centerX - (hnW / 2), tapeY - 1, SuitHudTheme.AMBER_BRIGHT, SuitHudTheme.TEXT_SHADOW);
         g.fill(tapeX, tapeY + 9, tapeX + tapeW, tapeY + 10, SuitHudTheme.AMBER_SUB);
 
-        double scale = mc.getWindow().getGuiScale();
+        double scale = mc().getWindow().getGuiScale();
         int scissorX = (int) (tapeX * scale);
-        int scissorY = (int) ((mc.getWindow().getGuiScaledHeight() - (tapeY + tapeH + 9)) * scale);
+        int scissorY = (int) ((mc().getWindow().getGuiScaledHeight() - (tapeY + tapeH + 9)) * scale);
         int scissorW = (int) (tapeW * scale);
         int scissorH = (int) ((tapeH + 9) * scale);
 
@@ -186,10 +174,14 @@ public final class SuitHudOverlay {
         String gravStr = gravG < 0.05 ? "0.00G (ZERO-G)" : String.format("%.2fG (%.1f m/s²)", gravG, gravMs2);
 
         rowY += 1;
-        drawTelemetryRow(g, font, "HDG", String.format("%s %03.0f°", dir, northYaw), x, rowY); rowY += 9;
-        drawTelemetryRow(g, font, "SPD", String.format("%.1f KM/H", spdKmh), x, rowY); rowY += 9;
-        drawTelemetryRow(g, font, "TIME", String.format("%02d:%02d  DAY %d", hours, mins, day), x, rowY); rowY += 9;
-        drawTelemetryRow(g, font, "SECTOR", dimId, x, rowY); rowY += 9;
+        drawTelemetryRow(g, font, "HDG", String.format("%s %03.0f°", dir, northYaw), x, rowY);
+        rowY += 9;
+        drawTelemetryRow(g, font, "SPD", String.format("%.1f KM/H", spdKmh), x, rowY);
+        rowY += 9;
+        drawTelemetryRow(g, font, "TIME", String.format("%02d:%02d  DAY %d", hours, mins, day), x, rowY);
+        rowY += 9;
+        drawTelemetryRow(g, font, "SECTOR", dimId, x, rowY);
+        rowY += 9;
         drawTelemetryRow(g, font, "GRAV", gravStr, x, rowY);
     }
 
@@ -327,10 +319,14 @@ public final class SuitHudOverlay {
         g.drawString(font, suitPct + "%", x + 66, rowY, barCol, SuitHudTheme.TEXT_SHADOW);
         rowY += 9;
 
-        drawArmorPieceRow(g, font, "HELM", player.getItemBySlot(EquipmentSlot.HEAD), x, rowY); rowY += 8;
-        drawArmorPieceRow(g, font, "CHEST", player.getItemBySlot(EquipmentSlot.CHEST), x, rowY); rowY += 8;
-        drawArmorPieceRow(g, font, "LEGS", player.getItemBySlot(EquipmentSlot.LEGS), x, rowY); rowY += 8;
-        drawArmorPieceRow(g, font, "BOOTS", player.getItemBySlot(EquipmentSlot.FEET), x, rowY); rowY += 9;
+        drawArmorPieceRow(g, font, "HELM", player.getItemBySlot(EquipmentSlot.HEAD), x, rowY);
+        rowY += 8;
+        drawArmorPieceRow(g, font, "CHEST", player.getItemBySlot(EquipmentSlot.CHEST), x, rowY);
+        rowY += 8;
+        drawArmorPieceRow(g, font, "LEGS", player.getItemBySlot(EquipmentSlot.LEGS), x, rowY);
+        rowY += 8;
+        drawArmorPieceRow(g, font, "BOOTS", player.getItemBySlot(EquipmentSlot.FEET), x, rowY);
+        rowY += 9;
 
         String sysStatus = hasSuit ? "Systems: EVA ONLINE" : "Systems: EXPOSED";
         int sysCol = hasSuit ? SuitHudTheme.EMERALD_GREEN : SuitHudTheme.ALERT_RED;

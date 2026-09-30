@@ -25,7 +25,7 @@ public class RegisterTabs {
                         RegisterBlocks.BLOCKS.getEntries().stream()
                                 .map(RegistryObject::get)
                                 .sorted(Comparator
-                                        .<Block, Integer>comparing(RegisterTabs::getBlockCategoryPriority)
+                                        .comparing(RegisterTabs::getBlockCategoryPriority)
                                         .thenComparing(block -> Objects.requireNonNull(ForgeRegistries.BLOCKS.getKey(block)).getPath())
                                 )
                                 .forEach(block -> output.accept(new ItemStack(block)));
@@ -47,7 +47,7 @@ public class RegisterTabs {
                                 .filter(item -> !(item instanceof BlockItem))
                                 .filter(item -> !armorItems.contains(item))
                                 .sorted(Comparator
-                                        .<Item, Integer>comparing(RegisterTabs::getItemCategoryPriority)
+                                        .comparing(RegisterTabs::getItemCategoryPriority)
                                         .thenComparing(item -> Objects.requireNonNull(ForgeRegistries.ITEMS.getKey(item)).getPath())
                                 )
                                 .forEach(item -> output.accept(new ItemStack(item)));
@@ -71,10 +71,14 @@ public class RegisterTabs {
                                 .forEach(properties -> {
                                     Map<ArmorItem.Type, RegistryObject<Item>> pieces = RegisterItems.ARMOR_PIECES.get(properties.getId());
                                     if (pieces == null) return;
-                                    if (pieces.containsKey(ArmorItem.Type.HELMET)) output.accept(new ItemStack(pieces.get(ArmorItem.Type.HELMET).get()));
-                                    if (pieces.containsKey(ArmorItem.Type.CHESTPLATE)) output.accept(new ItemStack(pieces.get(ArmorItem.Type.CHESTPLATE).get()));
-                                    if (pieces.containsKey(ArmorItem.Type.LEGGINGS)) output.accept(new ItemStack(pieces.get(ArmorItem.Type.LEGGINGS).get()));
-                                    if (pieces.containsKey(ArmorItem.Type.BOOTS)) output.accept(new ItemStack(pieces.get(ArmorItem.Type.BOOTS).get()));
+                                    if (pieces.containsKey(ArmorItem.Type.HELMET))
+                                        output.accept(new ItemStack(pieces.get(ArmorItem.Type.HELMET).get()));
+                                    if (pieces.containsKey(ArmorItem.Type.CHESTPLATE))
+                                        output.accept(new ItemStack(pieces.get(ArmorItem.Type.CHESTPLATE).get()));
+                                    if (pieces.containsKey(ArmorItem.Type.LEGGINGS))
+                                        output.accept(new ItemStack(pieces.get(ArmorItem.Type.LEGGINGS).get()));
+                                    if (pieces.containsKey(ArmorItem.Type.BOOTS))
+                                        output.accept(new ItemStack(pieces.get(ArmorItem.Type.BOOTS).get()));
                                 });
                     })
                     .build()

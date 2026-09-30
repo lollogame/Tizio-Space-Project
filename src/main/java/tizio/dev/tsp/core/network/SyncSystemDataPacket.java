@@ -23,18 +23,6 @@ public class SyncSystemDataPacket {
         this.solarSystems = readList(buf);
     }
 
-    public void encode(FriendlyByteBuf buf) {
-        writeList(buf, solarSystems);
-    }
-
-    public void handle(Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
-        ctx.enqueueWork(() -> CelestialJsonLoader.applyDatapackData(
-                new CelestialJsonLoader.LoadedData(solarSystems, List.of())
-        ));
-        ctx.setPacketHandled(true);
-    }
-
     private static void writeList(FriendlyByteBuf buf, List<CelestialJsonLoader.LoadedJson> list) {
         buf.writeVarInt(list.size());
         for (CelestialJsonLoader.LoadedJson entry : list) {
@@ -53,6 +41,22 @@ public class SyncSystemDataPacket {
             result.add(new CelestialJsonLoader.LoadedJson(id, root));
         }
         return result;
+    }
+
+    public void encode(FriendlyByteBuf buf) {
+        writeList(buf, solarSystems);
+    }
+
+    public void handle(Supplier<NetworkEvent.Context> ctxSupplier) {
+        NetworkEvent.Context ctx = ctxSupplier.get();
+        if (!ctx.getDirection().getReceptionSide().isClient()) {
+            ctx.setPacketHandled(true);
+            return;
+        }
+        ctx.enqueueWork(() -> CelestialJsonLoader.applyDatapackData(
+                new CelestialJsonLoader.LoadedData(solarSystems, List.of())
+        ));
+        ctx.setPacketHandled(true);
     }
 
 }

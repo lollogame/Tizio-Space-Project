@@ -4,14 +4,12 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.DimensionSpecialEffects;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -20,118 +18,16 @@ import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import tizio.dev.tsp.MainClass;
-import tizio.dev.tsp.core.celestial.lighting.LightShadeManager;
+import tizio.dev.tsp.core.data.CelestialJsonLoader;
+import tizio.dev.tsp.engine.lighting.LightShadeManager;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 @Mod.EventBusSubscriber
 public class CFDimension {
 
     @Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
-    public static class SpaceSpecialEffectsHandler {
-
-        @SubscribeEvent
-        @OnlyIn(Dist.CLIENT)
-        public static void registerDimensionSpecialEffects(RegisterDimensionSpecialEffectsEvent event) {
-            DimensionSpecialEffects customEffect = new DimensionSpecialEffects(192f, true, DimensionSpecialEffects.SkyType.NONE, false, false) {
-                @Override
-                public Vec3 getBrightnessDependentFogColor(Vec3 color, float sunHeight) {
-                    return color;
-                }
-
-                @Override
-                public boolean isFoggyAt(int x, int y) {
-                    return false;
-                }
-
-                @Override
-                public void adjustLightmapColors(ClientLevel level, float partialTick, float skyDarken, float blockLightRedFlicker, float skyLight, int pixelX, int pixelY, Vector3f colors) {
-                    LightShadeManager.adjustLightmapColors(level, partialTick, skyDarken, blockLightRedFlicker, skyLight, pixelX, pixelY, colors);
-                }
-            };
-            event.register(new ResourceLocation(MainClass.MODID, "space"), customEffect);
-            for (String dimId : tizio.dev.tsp.core.data.CelestialJsonLoader.getAllConfiguredSpaceDimensions()) {
-                ResourceLocation loc = ResourceLocation.tryParse(dimId);
-                if (loc != null) {
-                    event.register(loc, customEffect);
-                }
-            }
-        }
-    }
-
-    @Mod.EventBusSubscriber(value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
-    public class SkySetup {
-
-        public static abstract class TspDimensionEffects extends DimensionSpecialEffects {
-            public static final List<Predicate<Object[]>> CUSTOM_CLOUDS = new ArrayList<>();
-            public static final List<Predicate<Object[]>> CUSTOM_SKY = new ArrayList<>();
-            public static final List<Predicate<Object[]>> CUSTOM_WEATHER = new ArrayList<>();
-            public static final List<Predicate<Object[]>> CUSTOM_EFFECTS = new ArrayList<>();
-            public static final List<Consumer<Object[]>> CUSTOM_LIGHTS = new ArrayList<>();
-
-            public TspDimensionEffects(float cloudHeight, boolean hasGround, SkyType skyType, boolean forceBrightLightmap, boolean constantAmbientLight) {
-                super(cloudHeight, hasGround, skyType, forceBrightLightmap, constantAmbientLight);
-            }
-
-            @Override
-            public boolean renderClouds(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, double camX, double camY, double camZ, Matrix4f projectionMatrix) {
-                boolean flag = false;
-                if (CUSTOM_CLOUDS != null && !CUSTOM_CLOUDS.isEmpty()) {
-                    for (Predicate<Object[]> predicate : CUSTOM_CLOUDS)
-                        flag |= predicate.test(new Object[]{level, ticks, partialTick, poseStack, camX, camY, camZ, projectionMatrix});
-                    CUSTOM_CLOUDS.clear();
-                }
-                return flag;
-            }
-
-            @Override
-            public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
-                boolean flag = false;
-                if (CUSTOM_SKY != null && !CUSTOM_SKY.isEmpty()) {
-                    for (Predicate<Object[]> predicate : CUSTOM_SKY)
-                        flag |= predicate.test(new Object[]{level, ticks, partialTick, poseStack, camera, projectionMatrix, isFoggy, setupFog});
-                    CUSTOM_SKY.clear();
-                }
-                return flag;
-            }
-
-            @Override
-            public boolean renderSnowAndRain(ClientLevel level, int ticks, float partialTick, LightTexture lightTexture, double camX, double camY, double camZ) {
-                boolean flag = false;
-                if (CUSTOM_WEATHER != null && !CUSTOM_WEATHER.isEmpty()) {
-                    for (Predicate<Object[]> predicate : CUSTOM_WEATHER)
-                        flag |= predicate.test(new Object[]{level, ticks, partialTick, lightTexture, camX, camY, camZ});
-                    CUSTOM_WEATHER.clear();
-                }
-                return flag;
-            }
-
-            @Override
-            public boolean tickRain(ClientLevel level, int ticks, Camera camera) {
-                boolean flag = false;
-                if (CUSTOM_EFFECTS != null && !CUSTOM_EFFECTS.isEmpty()) {
-                    for (Predicate<Object[]> predicate : CUSTOM_EFFECTS)
-                        flag |= predicate.test(new Object[]{level, ticks, camera});
-                    CUSTOM_EFFECTS.clear();
-                }
-                return flag;
-            }
-
-            @Override
-            public void adjustLightmapColors(ClientLevel level, float partialTick, float skyDarken, float blockLightRedFlicker, float skyLight, int pixelX, int pixelY, Vector3f colors) {
-                LightShadeManager.adjustLightmapColors(level, partialTick, skyDarken, blockLightRedFlicker, skyLight, pixelX, pixelY, colors);
-                if (CUSTOM_LIGHTS != null && !CUSTOM_LIGHTS.isEmpty()) {
-                    for (Consumer<Object[]> consumer : CUSTOM_LIGHTS)
-                        consumer.accept(new Object[]{level, partialTick, skyDarken, blockLightRedFlicker, skyLight, pixelX, pixelY, colors});
-                    if (pixelX == 15 && pixelY == 15)
-                        CUSTOM_LIGHTS.clear();
-                }
-            }
-        }
+    public static class SkySetup {
 
         private static RegisterDimensionSpecialEffectsEvent provider = null;
 
@@ -164,8 +60,34 @@ public class CFDimension {
         }
 
         private static void run(@Nullable Event event) {
-            register(ResourceKey.create(Registries.DIMENSION, new ResourceLocation(MainClass.MODID, "space")), createOverworldEffects(false, false, false));
-            register(Level.OVERWORLD, createOverworldEffects(false, false, false));
+            DimensionSpecialEffects effects = createOverworldEffects(false, false, false);
+            register(ResourceKey.create(Registries.DIMENSION, new ResourceLocation(MainClass.MODID, "space")), effects);
+            register(Level.OVERWORLD, effects);
+
+            for (String dimId : CelestialJsonLoader.getAllConfiguredSpaceDimensions()) {
+                ResourceLocation location = ResourceLocation.tryParse(dimId);
+                if (location != null) {
+                    register(ResourceKey.create(Registries.DIMENSION, location), effects);
+                }
+            }
+        }
+
+        public static abstract class TspDimensionEffects extends DimensionSpecialEffects {
+            public TspDimensionEffects(float cloudHeight, boolean hasGround, SkyType skyType, boolean forceBrightLightmap, boolean constantAmbientLight) {
+                super(cloudHeight, hasGround, skyType, forceBrightLightmap, constantAmbientLight);
+            }
+
+            @Override
+            public void adjustLightmapColors(ClientLevel level, float partialTick, float skyDarken, float blockLightRedFlicker, float skyLight, int pixelX, int pixelY, Vector3f colors) {
+                LightShadeManager.adjustLightmapColors(level, partialTick, skyDarken, blockLightRedFlicker, skyLight, pixelX, pixelY, colors);
+            }
+
+            @Override
+            public boolean renderSky(ClientLevel level, int ticks, float partialTick, PoseStack poseStack, Camera camera, Matrix4f projectionMatrix, boolean isFoggy, Runnable setupFog) {
+                return tizio.dev.tsp.engine.celestial.renderer.environment.SkyEnvironmentRenderer.render(
+                        level, ticks, partialTick, poseStack, camera, projectionMatrix, setupFog
+                );
+            }
         }
     }
 }

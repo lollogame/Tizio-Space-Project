@@ -35,7 +35,7 @@ public class TSPBiomeTagsProvider extends BiomeTagsProvider {
         );
     }
 
-    private ResourceKey<Biome> myBiome(String id){
+    private ResourceKey<Biome> myBiome(String id) {
         return ResourceKey.create(Registries.BIOME, new ResourceLocation(MainClass.MODID, id));
     }
 }

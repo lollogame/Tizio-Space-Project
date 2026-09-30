@@ -9,6 +9,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -20,10 +21,11 @@ import tizio.dev.tsp.config.DataConfig;
 import tizio.dev.tsp.core.celestial.instance.elements.SolarSystemData;
 import tizio.dev.tsp.core.celestial.instance.elements.blackhole.BlackHoleInstance;
 import tizio.dev.tsp.core.celestial.instance.elements.planet.PlanetInstance;
-import tizio.dev.tsp.core.celestial.instance.elements.planet.ring.PlanetRingRockRenderer;
 import tizio.dev.tsp.core.celestial.instance.elements.sun.SunInstance;
-import tizio.dev.tsp.core.client.ClientRenderRegistries;
+import tizio.dev.tsp.core.utils.Materials;
 import tizio.dev.tsp.core.utils.Utils;
+import tizio.dev.tsp.engine.celestial.instance.elements.planet.ring.PlanetRingRockRenderer;
+import tizio.dev.tsp.engine.client.ClientRenderRegistries;
 
 import java.io.File;
 import java.io.Reader;
@@ -52,12 +54,11 @@ public final class CelestialJsonLoader {
     private static final float MAX_STAR_RADIUS = DataConfig.Star.MAX_RADIUS;
 
     private static final Map<String, SolarSystemData> activeSystems = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Set<String> VANILLA_DIMENSION_BLACKLIST = DataConfig.System.VANILLA_DIMENSION_BLACKLIST;
     private static volatile LoadedData loadedData = LoadedData.EMPTY;
     private static volatile long nextRefreshMs = 0L;
     private static volatile ResourceLocation currentDimension = ResourceLocation.tryParse(SolarSystemData.DEFAULT_SPACE_DIMENSION);
     private static volatile String activeSelectedSystemId = null;
-
-    private static final java.util.Set<String> VANILLA_DIMENSION_BLACKLIST = DataConfig.System.VANILLA_DIMENSION_BLACKLIST;
 
     public static String getActiveSelectedSystemId() {
         return activeSelectedSystemId;
@@ -99,8 +100,13 @@ public final class CelestialJsonLoader {
         if (config == null) {
             throw new IllegalArgumentException("Solar system not found: " + systemId);
         }
+        String safeName = safeId(config.id, "system").replace("/", "_").replace("\\", "_");
         File gameDir = FMLPaths.GAMEDIR.get().toFile();
-        File exportFile = new File(gameDir, DataConfig.System.EXPORT_DIR + config.id + ".json");
+        File exportDir = new File(gameDir, DataConfig.System.EXPORT_DIR);
+        File exportFile = new File(exportDir, safeName + ".json");
+        if (!exportFile.getCanonicalPath().startsWith(exportDir.getCanonicalPath())) {
+            throw new SecurityException("Invalid export path: " + config.id);
+        }
         return CelestialJsonExporter.exportToFile(config, exportFile);
     }
 
@@ -131,8 +137,12 @@ public final class CelestialJsonLoader {
         if (isClientSide()) {
             Minecraft minecraft = Minecraft.getInstance();
             if (minecraft != null && !minecraft.isSameThread()) {
-                minecraft.execute(CelestialJsonLoader::forceFullRebuild);
+                minecraft.execute(() -> {
+                    preloadTexturesFor(activeSystems.values());
+                    forceFullRebuild();
+                });
             } else {
+                preloadTexturesFor(activeSystems.values());
                 forceFullRebuild();
             }
         }
@@ -165,6 +175,74 @@ public final class CelestialJsonLoader {
     public static void ensureLoaded() {
         if (activeSystems.isEmpty() && loadedData == LoadedData.EMPTY) {
             reloadFromClientResources();
+        }
+    }
+
+    public static void preloadTextures(ResourceManager resourceManager) {
+        if (!isClientSide() || resourceManager == null) {
+            return;
+        }
+        List<SolarSystemData> systems = new ArrayList<>();
+        for (LoadedJson systemJson : loadJsonFolder(resourceManager, "solar_systems")) {
+            try {
+                SolarSystemData system = parseSolarSystem(systemJson.id(), systemJson.root());
+                if (system != null) {
+                    systems.add(system);
+                }
+            } catch (Exception e) {
+                LOGGER.error("Failed to parse solar system json '{}' during texture preload", systemJson.id(), e);
+            }
+        }
+        preloadTexturesFor(systems);
+    }
+
+    private static void preloadTexturesFor(Collection<SolarSystemData> systems) {
+        try {
+            Set<String> dayTextures = new LinkedHashSet<>();
+            Set<String> otherTextures = new LinkedHashSet<>();
+            Set<String> skyTextures = new LinkedHashSet<>();
+
+            for (SolarSystemData system : systems) {
+                if (system == null) {
+                    continue;
+                }
+                for (PlanetInstance.Config body : system.bodies) {
+                    if (body == null || body.isBlackHole() || "star".equalsIgnoreCase(body.type) || "sun".equalsIgnoreCase(body.type)) {
+                        continue;
+                    }
+                    if (body.surfaceEnabled) {
+                        dayTextures.add(texture(body.texture, "debug"));
+                        String night = texture(body.nightTexture, "");
+                        if (!night.isBlank()) {
+                            otherTextures.add(night);
+                        }
+                        if (body.clouds != null && body.clouds.enabled) {
+                            otherTextures.add(texture(body.clouds.texture, DataConfig.Clouds.TEXTURE_DEF));
+                        }
+                    }
+                    if (body.ring != null && body.ring.enabled) {
+                        otherTextures.add(texture(body.ring.texture, DataConfig.Ring.TEXTURE_DEF));
+                        if (body.ring.rocksEnabled && body.ring.rockCount > 0) {
+                            otherTextures.add(texture(body.ring.rockTexture, "debug"));
+                        }
+                    }
+                    if (body.sky != null) {
+                        String skybox = texture(body.sky.skyboxTexture, "");
+                        if (!skybox.isBlank()) {
+                            skyTextures.add(skybox);
+                        }
+                    }
+                }
+            }
+
+            Materials.clearTextureCaches();
+            Materials.PreloadResult result = Materials.preloadCaches(dayTextures, otherTextures, skyTextures);
+            LOGGER.info("Reloaded {}/{} texture(s) successfully", result.loaded(), result.loaded() + result.missing().size());
+            for (String name : result.missing()) {
+                LOGGER.warn("Texture not found: {}", name);
+            }
+        } catch (Exception e) {
+            LOGGER.error("Failed to preload textures", e);
         }
     }
 
@@ -291,7 +369,7 @@ public final class CelestialJsonLoader {
         String systemId = safeId(string(root, "id", stripJsonExtension(resourceId)), stripJsonExtension(resourceId));
         String dimension = string(root, "dimension", SolarSystemData.DEFAULT_SPACE_DIMENSION);
         if (isBlacklistedForSpaceDimension(dimension)) {
-            LOGGER.warn("["+ MainClass.MODID.toUpperCase()+"] Solar system '{}': dimension '{}' is blacklisted for space use. Falling back to '{}'.",
+            LOGGER.warn("[" + MainClass.MODID.toUpperCase() + "] Solar system '{}': dimension '{}' is blacklisted for space use. Falling back to '{}'.",
                     systemId, dimension, SolarSystemData.DEFAULT_SPACE_DIMENSION);
             dimension = SolarSystemData.DEFAULT_SPACE_DIMENSION;
         }
@@ -451,11 +529,16 @@ public final class CelestialJsonLoader {
 
                 JsonObject rocksObj = object(ringObj, "rocks");
                 body.ring.rocksEnabled = bool(ringObj, "rocksEnabled", bool(rocksObj, "enabled", DataConfig.Ring.ROCKS_ENABLED_DEF));
-                body.ring.rockCount = (int) number(ringObj, "rockCount", number(rocksObj, "count", DataConfig.Ring.ROCK_COUNT.def()));
-                body.ring.rockMinSize = (float) number(ringObj, "rockMinSize", number(rocksObj, "minSize", DataConfig.Ring.ROCK_MIN_SIZE.def()));
-                body.ring.rockMaxSize = (float) number(ringObj, "rockMaxSize", number(rocksObj, "maxSize", DataConfig.Ring.ROCK_MAX_SIZE.def()));
-                body.ring.rockHeight = (float) number(ringObj, "rockHeight", number(rocksObj, "height", DataConfig.Ring.ROCK_HEIGHT_FALLBACK));
-                body.ring.rockOrbitSpeed = (float) number(ringObj, "rockOrbitSpeed", number(rocksObj, "orbitSpeed", DataConfig.Ring.ROCK_ORBIT_SPEED_FALLBACK));
+                body.ring.rockCount = Utils.clamp((int) number(ringObj, "rockCount", number(rocksObj, "count", DataConfig.Ring.ROCK_COUNT.def())), DataConfig.Ring.ROCK_COUNT.minI(), DataConfig.Ring.ROCK_COUNT.maxI());
+                body.ring.rockMinSize = Utils.clamp((float) number(ringObj, "rockMinSize", number(rocksObj, "minSize", DataConfig.Ring.ROCK_MIN_SIZE.def())), DataConfig.Ring.ROCK_MIN_SIZE.minF(), DataConfig.Ring.ROCK_MIN_SIZE.maxF());
+                body.ring.rockMaxSize = Utils.clamp((float) number(ringObj, "rockMaxSize", number(rocksObj, "maxSize", DataConfig.Ring.ROCK_MAX_SIZE.def())), DataConfig.Ring.ROCK_MAX_SIZE.minF(), DataConfig.Ring.ROCK_MAX_SIZE.maxF());
+                if (body.ring.rockMaxSize < body.ring.rockMinSize) {
+                    float size = body.ring.rockMinSize;
+                    body.ring.rockMinSize = body.ring.rockMaxSize;
+                    body.ring.rockMaxSize = size;
+                }
+                body.ring.rockHeight = Utils.clamp((float) number(ringObj, "rockHeight", number(rocksObj, "height", DataConfig.Ring.ROCK_HEIGHT_FALLBACK)), 0.0F, DataConfig.Ring.ROCK_HEIGHT.maxF());
+                body.ring.rockOrbitSpeed = Utils.clamp((float) number(ringObj, "rockOrbitSpeed", number(rocksObj, "orbitSpeed", DataConfig.Ring.ROCK_ORBIT_SPEED_FALLBACK)), (float) DataConfig.Ring.ROCK_ORBIT_SPEED.min(), (float) DataConfig.Ring.ROCK_ORBIT_SPEED.max());
             } else {
                 body.ring = new PlanetInstance.Ring();
                 body.ring.enabled = false;
@@ -502,7 +585,7 @@ public final class CelestialJsonLoader {
         if (system.star != null && system.star.enabled) {
             String starId = safeId(system.star.id, DataConfig.Star.ID_DEF);
             Vec3 starPosition = bodyPositions.getOrDefault(starId, origin);
-            float radius = (float) Utils.clamp(DataConfig.Star.toBlocks(system.star.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
+            float radius = Utils.clamp(DataConfig.Star.toBlocks(system.star.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
             Vector3f color = parseColor(system.star.colorHex, new Vector3f(1.0F, 0.9F, 0.65F));
             Vec3 rot = new Vec3(system.star.yaw, system.star.pitch, system.star.roll);
 
@@ -524,14 +607,14 @@ public final class CelestialJsonLoader {
             String fullBodyId = registryPrefix + "/" + body.id;
 
             if (body.isBlackHole()) {
-                float radius = (float) Utils.clamp(DataConfig.Body.toBlocks(body.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_PLANET_RADIUS);
+                float radius = Utils.clamp(DataConfig.Body.toBlocks(body.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_PLANET_RADIUS);
                 Vector3f color = parseColor(body.colorHex, new Vector3f(1.0F, 0.72F, 0.22F));
                 Vec3 rot = new Vec3(body.yaw, body.pitch, body.roll);
 
                 registerBlackHole(fullBodyId, bodyPos, radius, color, rot, body.diskRotationSpeed, body.intensity);
                 activeBlackHoleKeys.add(ClientRenderRegistries.BLACK_HOLES.id(fullBodyId));
             } else if ("star".equalsIgnoreCase(body.type) || "sun".equalsIgnoreCase(body.type)) {
-                float radius = (float) Utils.clamp(DataConfig.Body.toBlocks(body.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
+                float radius = Utils.clamp(DataConfig.Body.toBlocks(body.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
                 Vector3f color = parseColor(body.colorHex, new Vector3f(1.0F, 0.9F, 0.65F));
                 Vec3 rot = new Vec3(body.yaw, body.pitch, body.roll);
 
@@ -546,6 +629,10 @@ public final class CelestialJsonLoader {
     }
 
     public static Map<String, Vec3> calculateBodyPositions(SolarSystemData system, Instant now) {
+        return calculateBodyPositions(system, now, true);
+    }
+
+    public static Map<String, Vec3> calculateBodyPositions(SolarSystemData system, Instant now, boolean clampOrbit) {
         if (system == null) return Collections.emptyMap();
         float globalScale = (float) Utils.clamp(system.globalScale, DataConfig.System.SCALE.min(), DataConfig.System.SCALE.max());
         Vec3 origin = new Vec3(system.originX, system.originY, system.originZ);
@@ -578,7 +665,7 @@ public final class CelestialJsonLoader {
                     if (parentPos == null) {
                         parentPos = lightPosition;
                     }
-                    Vec3 bodyPos = resolveBodyPosition(body, origin, parentPos, now, globalScale);
+                    Vec3 bodyPos = resolveBodyPosition(body, origin, parentPos, now, globalScale, clampOrbit);
                     bodyPositions.put(body.id, bodyPos);
                     String safeBodyId = safeId(body.id, DataConfig.Body.ID_DEF);
                     if (!safeBodyId.equals(body.id)) {
@@ -598,7 +685,7 @@ public final class CelestialJsonLoader {
                 if (parentPos == null) {
                     parentPos = lightPosition;
                 }
-                Vec3 bodyPos = resolveBodyPosition(body, origin, parentPos, now, globalScale);
+                Vec3 bodyPos = resolveBodyPosition(body, origin, parentPos, now, globalScale, clampOrbit);
                 bodyPositions.put(body.id, bodyPos);
                 String safeBodyId = safeId(body.id, DataConfig.Body.ID_DEF);
                 if (!safeBodyId.equals(body.id)) {
@@ -636,9 +723,14 @@ public final class CelestialJsonLoader {
         return isSpaceDimension(dimension.toString());
     }
 
-    public static boolean isSpaceDimension(net.minecraft.world.level.Level level) {
+    public static boolean isSpaceDimension(Level level) {
         if (level == null) return false;
         return isSpaceDimension(level.dimension().location());
+    }
+
+    public static boolean isBodyDimension(String dimensionId) {
+        if (dimensionId == null) return false;
+        return getSolarSystemForBodyDimension(dimensionId) != null;
     }
 
     public static boolean isBlacklistedForSpaceDimension(String dimensionId) {
@@ -690,7 +782,7 @@ public final class CelestialJsonLoader {
             return null;
         }
         float globalScale = (float) Utils.clamp(system.globalScale, DataConfig.System.SCALE.min(), DataConfig.System.SCALE.max());
-        return (float) Utils.clamp(DataConfig.Star.toBlocks(system.star.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
+        return Utils.clamp(DataConfig.Star.toBlocks(system.star.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_STAR_RADIUS);
     }
 
     public static SolarSystemData getSolarSystemForBodyDimension(String bodyDimensionId) {
@@ -705,6 +797,14 @@ public final class CelestialJsonLoader {
         return null;
     }
 
+    public static Vec3 getStarPosition(String spaceDimensionId) {
+        SolarSystemData system = getSolarSystemForSpaceDimension(spaceDimensionId);
+        if (system == null || system.star == null || !system.star.enabled) {
+            return null;
+        }
+        return new Vec3(system.originX, system.originY, system.originZ);
+    }
+
     public static String getSpaceDimensionForBodyDimension(String bodyDimensionId) {
         SolarSystemData system = getSolarSystemForBodyDimension(bodyDimensionId);
         if (system != null && system.dimension != null && !system.dimension.isBlank()) {
@@ -714,7 +814,7 @@ public final class CelestialJsonLoader {
     }
 
     public static List<BodySpatialInfo> getDimensionBodiesInSpace(Instant now) {
-        return getDimensionBodiesInSpace((String) null, now);
+        return getDimensionBodiesInSpace(null, now);
     }
 
     public static List<BodySpatialInfo> getDimensionBodiesInSpace(String spaceDimensionId, Instant now) {
@@ -862,7 +962,7 @@ public final class CelestialJsonLoader {
                                              Set<ResourceLocation> activeRockKeys,
                                              Set<ResourceLocation> activeAtmosKeys) {
 
-        float radius = (float) Utils.clamp(DataConfig.Body.toBlocks(body.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_PLANET_RADIUS);
+        float radius = Utils.clamp(DataConfig.Body.toBlocks(body.radius) * globalScale, DataConfig.Body.MIN_PHYSICAL_RADIUS, MAX_PLANET_RADIUS);
         Vector3f color = parseColor(body.colorHex, new Vector3f(0.55F, 0.78F, 1.0F));
         Vec3 rotation = new Vec3(body.yaw, body.pitch, body.roll);
         Vector3f lightDir = lightDirection(lightPosition.toVector3f(), position.toVector3f());
@@ -920,8 +1020,8 @@ public final class CelestialJsonLoader {
                 baseOuter = baseInner + radius * 0.15F;
             }
 
-            float innerRadius = (float) Utils.clamp(baseInner, radius * 1.02F, radius * 8.0F);
-            float outerRadius = (float) Utils.clamp(baseOuter, innerRadius + radius * 0.10F, radius * 10.0F);
+            float innerRadius = Utils.clamp(baseInner, radius * 1.02F, radius * 8.0F);
+            float outerRadius = Utils.clamp(baseOuter, innerRadius + radius * 0.10F, radius * 10.0F);
             float quadRadius = outerRadius * 1.04F;
 
             String ringId = id + "_ring";
@@ -1028,7 +1128,7 @@ public final class CelestialJsonLoader {
         }
     }
 
-    private static Vec3 resolveBodyPosition(PlanetInstance.Config body, Vec3 origin, Vec3 parentPosition, Instant now, float globalScale) {
+    private static Vec3 resolveBodyPosition(PlanetInstance.Config body, Vec3 origin, Vec3 parentPosition, Instant now, float globalScale, boolean clampOrbit) {
         if (body.orbit == null || !body.orbit.enabled) {
             return parentPosition;
         }
@@ -1039,7 +1139,7 @@ public final class CelestialJsonLoader {
         double ascendingNodeDeg = body.orbit.ascendingNode;
         double verticalOffset = body.orbit.verticalOffset * globalScale;
 
-        Vec3 offset = orbitOffset(radius, angleDeg, inclinationDeg, ascendingNodeDeg, verticalOffset);
+        Vec3 offset = orbitOffset(radius, angleDeg, inclinationDeg, ascendingNodeDeg, verticalOffset, clampOrbit);
         return parentPosition.add(offset);
     }
 
@@ -1064,7 +1164,11 @@ public final class CelestialJsonLoader {
     }
 
     public static Vec3 orbitOffset(double radius, double angleDeg, double inclinationDeg, double ascendingNodeDeg, double verticalOffset) {
-        radius = Utils.clamp(radius, 0.0D, DataConfig.Orbit.MAX_SCALED_RADIUS);
+        return orbitOffset(radius, angleDeg, inclinationDeg, ascendingNodeDeg, verticalOffset, true);
+    }
+
+    public static Vec3 orbitOffset(double radius, double angleDeg, double inclinationDeg, double ascendingNodeDeg, double verticalOffset, boolean clampOrbit) {
+        radius = clampOrbit ? Utils.clamp(radius, 0.0D, DataConfig.Orbit.MAX_SCALED_RADIUS) : Math.max(0.0D, radius);
         double angle = Math.toRadians(angleDeg);
         double x = Math.cos(angle) * radius;
         double y = verticalOffset;
@@ -1112,9 +1216,9 @@ public final class CelestialJsonLoader {
             return planetRadius * (1.0F + DEFAULT_ATMOSPHERE_THICKNESS);
         }
         if (thickness <= 2.0F) {
-            return (float) Utils.clamp(planetRadius * (1.0F + thickness), minRadius, maxRadius);
+            return Utils.clamp(planetRadius * (1.0F + thickness), minRadius, maxRadius);
         }
-        return (float) Utils.clamp(thickness, minRadius, maxRadius);
+        return Utils.clamp(thickness, minRadius, maxRadius);
     }
 
     private static Vector3f wavelengths(JsonObject atmosphere, Vector3f fallback) {
@@ -1147,7 +1251,8 @@ public final class CelestialJsonLoader {
                 int g = Integer.parseInt(hex.substring(3, 5), 16);
                 int b = Integer.parseInt(hex.substring(5, 7), 16);
                 return new Vector3f(r / 255.0F, g / 255.0F, b / 255.0F);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
         return new Vector3f(fallback);
     }
@@ -1168,7 +1273,7 @@ public final class CelestialJsonLoader {
     }
 
     private static Vec3 vec3(JsonObject source, String name, Vec3 fallback) {
-        if (source == null || !has(source, name)) {
+        if (!has(source, name)) {
             return fallback;
         }
 
@@ -1230,28 +1335,28 @@ public final class CelestialJsonLoader {
     }
 
     private static JsonObject object(JsonObject source, String name) {
-        if (source == null || !has(source, name) || !source.get(name).isJsonObject()) {
+        if (!has(source, name) || !source.get(name).isJsonObject()) {
             return null;
         }
         return source.getAsJsonObject(name);
     }
 
     private static JsonArray array(JsonObject source, String name) {
-        if (source == null || !has(source, name) || !source.get(name).isJsonArray()) {
+        if (!has(source, name) || !source.get(name).isJsonArray()) {
             return null;
         }
         return source.getAsJsonArray(name);
     }
 
     private static String string(JsonObject source, String name, String fallback) {
-        if (source == null || !has(source, name) || !source.get(name).isJsonPrimitive()) {
+        if (!has(source, name) || !source.get(name).isJsonPrimitive()) {
             return fallback;
         }
         return source.get(name).getAsString();
     }
 
     private static double number(JsonObject source, String name, double fallback) {
-        if (source == null || !has(source, name) || !source.get(name).isJsonPrimitive()) {
+        if (!has(source, name) || !source.get(name).isJsonPrimitive()) {
             return fallback;
         }
 
@@ -1263,7 +1368,7 @@ public final class CelestialJsonLoader {
     }
 
     private static boolean bool(JsonObject source, String name, boolean fallback) {
-        if (source == null || !has(source, name) || !source.get(name).isJsonPrimitive()) {
+        if (!has(source, name) || !source.get(name).isJsonPrimitive()) {
             return fallback;
         }
         return source.get(name).getAsBoolean();
@@ -1285,8 +1390,6 @@ public final class CelestialJsonLoader {
         public static final LoadedData EMPTY = new LoadedData(List.of(), List.of());
     }
 
-    public record LoadedJson(ResourceLocation id, JsonObject root) {
-    }
-
-    public record BodySpatialInfo(SolarSystemData system, PlanetInstance.Config body, Vec3 spacePosition, double physicalRadius, double visualRadius, String dimension) {}
+    public record LoadedJson(ResourceLocation id, JsonObject root) { }
+    public record BodySpatialInfo(SolarSystemData system, PlanetInstance.Config body, Vec3 spacePosition, double physicalRadius, double visualRadius, String dimension) { }
 }

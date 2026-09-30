@@ -1,16 +1,14 @@
 package tizio.dev.tsp.mixin.render.lighting;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import tizio.dev.tsp.core.celestial.lighting.LightShadeManager;
+import tizio.dev.tsp.engine.lighting.LightShadeManager;
 
 @OnlyIn(Dist.CLIENT)
 @Mixin(GameRenderer.class)

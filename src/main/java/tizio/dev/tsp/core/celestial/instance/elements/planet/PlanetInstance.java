@@ -3,38 +3,10 @@ package tizio.dev.tsp.core.celestial.instance.elements.planet;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 import tizio.dev.tsp.config.DataConfig;
-import tizio.dev.tsp.core.utils.volume.OrientedVolumeInstance;
 import tizio.dev.tsp.core.utils.Utils;
+import tizio.dev.tsp.engine.volume.OrientedVolumeInstance;
 
-public final class PlanetInstance {
-
-    private final Config config;
-    private final SurfaceInstance surface;
-    private final AtmosphereInstance atmosphere;
-    private final RingInstance ring;
-
-    public PlanetInstance(Config config, SurfaceInstance surface, AtmosphereInstance atmosphere, RingInstance ring) {
-        this.config = config;
-        this.surface = surface;
-        this.atmosphere = atmosphere;
-        this.ring = ring;
-    }
-
-    public Config config() {
-        return this.config;
-    }
-
-    public SurfaceInstance surface() {
-        return this.surface;
-    }
-
-    public AtmosphereInstance atmosphere() {
-        return this.atmosphere;
-    }
-
-    public RingInstance ring() {
-        return this.ring;
-    }
+public record PlanetInstance(Config config, SurfaceInstance surface, AtmosphereInstance atmosphere, RingInstance ring) {
 
     public static final class Config {
         public String id = DataConfig.Body.UNNAMED_BODY_ID;
@@ -63,7 +35,8 @@ public final class PlanetInstance {
         public Sky sky = new Sky();
         public SurfaceInstance.SurfaceFog fog = new SurfaceInstance.SurfaceFog();
 
-        public Config() {}
+        public Config() {
+        }
 
         public Config(String id, String type, String parentId, float radius, String texture, String colorHex) {
             this.id = id;
@@ -130,7 +103,8 @@ public final class PlanetInstance {
         public String starsColorHex = DataConfig.Sky.STARS_COLOR_HEX_DEF;
         public boolean groundMode = DataConfig.Sky.GROUND_MODE_DEF;
 
-        public Sky() {}
+        public Sky() {
+        }
 
         public Sky copy() {
             Sky copy = new Sky();
@@ -156,7 +130,8 @@ public final class PlanetInstance {
         public float alpha = DataConfig.Clouds.ALPHA_DEF;
         public float noiseScale = DataConfig.Clouds.NOISE_SCALE.defF();
 
-        public Clouds() {}
+        public Clouds() {
+        }
 
         public Clouds(boolean enabled, String texture, float height, float density, float windSpeed, String colorHex, float alpha, float noiseScale) {
             this.enabled = enabled;
@@ -193,7 +168,8 @@ public final class PlanetInstance {
         public double ascendingNode = DataConfig.Orbit.ASCENDING_NODE.def();
         public double verticalOffset = DataConfig.Orbit.VERTICAL_OFFSET.def();
 
-        public Orbit() {}
+        public Orbit() {
+        }
 
         public Orbit(double radius, double periodDays, double epochAngle, String epochUtc, double inclination, double ascendingNode) {
             this.radius = radius;
@@ -230,7 +206,8 @@ public final class PlanetInstance {
         public float wavelengthB = DataConfig.Atmosphere.WAVELENGTH_B.defF();
         public String colorHex = DataConfig.Atmosphere.COLOR_HEX_DEF;
 
-        public Atmosphere() {}
+        public Atmosphere() {
+        }
 
         public Atmosphere copy() {
             Atmosphere copy = new Atmosphere();
@@ -266,7 +243,8 @@ public final class PlanetInstance {
         public float rockHeight = DataConfig.Ring.ROCK_HEIGHT_FALLBACK;
         public float rockOrbitSpeed = DataConfig.Ring.ROCK_ORBIT_SPEED_FALLBACK;
 
-        public Ring() {}
+        public Ring() {
+        }
 
         public Ring copy() {
             Ring copy = new Ring();
@@ -320,6 +298,10 @@ public final class PlanetInstance {
             this.cloudAlpha = builder.cloudAlpha;
             this.cloudNoiseScale = builder.cloudNoiseScale;
             this.spinHours = builder.spinHours;
+        }
+
+        public static Builder at(Vec3 position) {
+            return new Builder(position);
         }
 
         public float planetRadius() {
@@ -407,10 +389,6 @@ public final class PlanetInstance {
         @Override
         protected float getBaseRadius() {
             return 1.0F;
-        }
-
-        public static Builder at(Vec3 position) {
-            return new Builder(position);
         }
 
         public static final class Builder extends OrientedVolumeInstance.Builder<SurfaceInstance, Builder> {
@@ -527,7 +505,8 @@ public final class PlanetInstance {
             public float endDistance = DataConfig.Fog.END_DISTANCE_LOADER_FALLBACK;
             public boolean useRenderDistance = DataConfig.Fog.USE_RENDER_DISTANCE_DEF;
 
-            public SurfaceFog() {}
+            public SurfaceFog() {
+            }
 
             public SurfaceFog(boolean enabled, String colorHex, String shape, float startDistance, float endDistance, boolean useRenderDistance) {
                 this.enabled = enabled;
@@ -572,6 +551,10 @@ public final class PlanetInstance {
             this.waveLengths = new Vector3f(builder.waveLengths);
         }
 
+        public static Builder at(Vec3 position) {
+            return new Builder(position);
+        }
+
         public float planetRadius() {
             return this.planetRadius;
         }
@@ -603,10 +586,6 @@ public final class PlanetInstance {
         @Override
         protected float getBaseRadius() {
             return this.atmosphereRadius;
-        }
-
-        public static Builder at(Vec3 position) {
-            return new Builder(position);
         }
 
         public static final class Builder extends OrientedVolumeInstance.Builder<AtmosphereInstance, Builder> {
@@ -684,6 +663,10 @@ public final class PlanetInstance {
             this.ringTexture = builder.ringTexture;
         }
 
+        public static Builder at(Vec3 position) {
+            return new Builder(position);
+        }
+
         public float planetRadius() {
             return this.planetRadius;
         }
@@ -703,10 +686,6 @@ public final class PlanetInstance {
         @Override
         protected float getBaseRadius() {
             return 1.0F;
-        }
-
-        public static Builder at(Vec3 position) {
-            return new Builder(position);
         }
 
         public static final class Builder extends OrientedVolumeInstance.Builder<RingInstance, Builder> {
@@ -772,6 +751,10 @@ public final class PlanetInstance {
                 this.rockTexture = builder.rockTexture;
             }
 
+            public static Builder at(Vec3 position) {
+                return new Builder(position);
+            }
+
             public float planetRadius() {
                 return this.planetRadius;
             }
@@ -815,10 +798,6 @@ public final class PlanetInstance {
             @Override
             protected float getBaseRadius() {
                 return this.ringOuterRadius;
-            }
-
-            public static Builder at(Vec3 position) {
-                return new Builder(position);
             }
 
             public static final class Builder extends OrientedVolumeInstance.Builder<RocksInstance, Builder> {

@@ -1,0 +1,17 @@
+package tizio.dev.tsp.engine.client;
+
+import net.minecraft.client.Minecraft;
+import tizio.dev.tsp.core.handlers.oxygen.OxygenManager;
+import tizio.dev.tsp.core.handlers.temperature.TemperatureManager;
+
+public final class ClientPacketHandler {
+
+    public static void handlePlayerStatus(float oxygen, float temperature) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            OxygenManager.setOxygen(mc.player, oxygen);
+            TemperatureManager.setTemperature(mc.player, temperature);
+        }
+    }
+}
+

@@ -1,0 +1,17 @@
+{
+  "vertex": "blit",
+  "fragment": "tsp:color_correction",
+  "samplers": [
+    { "name": "DiffuseSampler" }
+  ],
+  "uniforms": [
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+    { "name": "OutSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "TonemapperMode", "type": "int", "count": 1, "values": [ 1 ] },
+    { "name": "Exposure", "type": "float", "count": 1, "values": [ 1.15 ] },
+    { "name": "Contrast", "type": "float", "count": 1, "values": [ 1.12 ] },
+    { "name": "Saturation", "type": "float", "count": 1, "values": [ 1.10 ] },
+    { "name": "VignetteIntensity", "type": "float", "count": 1, "values": [ 1.25 ] },
+    { "name": "Temperature", "type": "float", "count": 1, "values": [ 0.15 ] }
+  ]
+}

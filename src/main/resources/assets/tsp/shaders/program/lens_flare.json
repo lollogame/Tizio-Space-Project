@@ -1,0 +1,19 @@
+{
+  "vertex": "tsp:lens_flare",
+  "fragment": "tsp:lens_flare",
+  "samplers": [
+    { "name": "DiffuseSampler" },
+    { "name": "DepthSampler" }
+  ],
+  "uniforms": [
+    { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0,0.0,0.0,0.0, 0.0,1.0,0.0,0.0, 0.0,0.0,1.0,0.0, 0.0,0.0,0.0,1.0 ] },
+    { "name": "SunProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0,0.0,0.0,0.0, 0.0,1.0,0.0,0.0, 0.0,0.0,1.0,0.0, 0.0,0.0,0.0,1.0 ] },
+    { "name": "SunViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0,0.0,0.0,0.0, 0.0,1.0,0.0,0.0, 0.0,0.0,1.0,0.0, 0.0,0.0,0.0,1.0 ] },
+    { "name": "OutSize", "type": "float", "count": 2, "values": [ 1.0, 1.0 ] },
+    { "name": "SunRelPosMat", "type": "matrix4x4", "count": 16, "values": [ 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0 ] },
+    { "name": "SunColorMat", "type": "matrix4x4", "count": 16, "values": [ 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0, 0.0,0.0,0.0,0.0 ] },
+    { "name": "SunVisibility", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+    { "name": "SunScale", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+    { "name": "SunIgnoreDepth", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] }
+  ]
+}

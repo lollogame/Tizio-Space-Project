@@ -1,0 +1,24 @@
+{
+  "targets": [
+    "swap"
+  ],
+  "passes": [
+    {
+      "name": "tsp:color_correction",
+      "intarget": "minecraft:main",
+      "outtarget": "swap",
+      "uniforms": [
+        { "name": "Exposure", "values": [ 1.15 ] },
+        { "name": "Contrast", "values": [ 1.12 ] },
+        { "name": "Saturation", "values": [ 1.10 ] },
+        { "name": "VignetteIntensity", "values": [ 1.25 ] },
+        { "name": "Temperature", "values": [ 0.15 ] }
+      ]
+    },
+    {
+      "name": "blit",
+      "intarget": "swap",
+      "outtarget": "minecraft:main"
+    }
+  ]
+}

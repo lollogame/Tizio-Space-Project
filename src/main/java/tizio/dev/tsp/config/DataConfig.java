@@ -9,12 +9,29 @@ import java.util.Set;
 public final class DataConfig {
 
     public record Slider(double def, double min, double max) {
-        public float defF() { return (float) def; }
-        public float minF() { return (float) min; }
-        public float maxF() { return (float) max; }
-        public int defI() { return (int) def; }
-        public int minI() { return (int) min; }
-        public int maxI() { return (int) max; }
+        public float defF() {
+            return (float) def;
+        }
+
+        public float minF() {
+            return (float) min;
+        }
+
+        public float maxF() {
+            return (float) max;
+        }
+
+        public int defI() {
+            return (int) def;
+        }
+
+        public int minI() {
+            return (int) min;
+        }
+
+        public int maxI() {
+            return (int) max;
+        }
     }
 
     public static final class System {
@@ -22,9 +39,9 @@ public final class DataConfig {
         public static final int MAX_BODIES_LIMIT = 30;
         public static final String DEFAULT_SPACE_DIMENSION = "tsp:space";
         public static final Set<String> VANILLA_DIMENSION_BLACKLIST = Set.of(
-            "minecraft:overworld",
-            "minecraft:the_nether",
-            "minecraft:the_end"
+                "minecraft:overworld",
+                "minecraft:the_nether",
+                "minecraft:the_end"
         );
         public static final String DEFAULT_SYSTEM_ID = "new_system";
         public static final String NEW_SYSTEM_ID_PREFIX = "system_";
@@ -59,8 +76,13 @@ public final class DataConfig {
         public static final Vector3f BUILDER_COLOR_DEF = new Vector3f(1.0F, 0.90F, 0.72F);
         public static final float BUILDER_QUAD_SCALE_DEF = 1.2F;
 
-        public static float toBlocks(float normalized) { return normalized * RADIUS_SCALE; }
-        public static float normalize(float blocks) { return blocks / RADIUS_SCALE; }
+        public static float toBlocks(float normalized) {
+            return normalized * RADIUS_SCALE;
+        }
+
+        public static float normalize(float blocks) {
+            return blocks / RADIUS_SCALE;
+        }
     }
 
     public static final class BlackHole {
@@ -117,8 +139,13 @@ public final class DataConfig {
         public static final double COPY_ORBIT_OFFSET = 0.01D;
         public static final int MAX_MOONS_PER_MOON = 0;
 
-        public static float toBlocks(float normalized) { return normalized * RADIUS_SCALE; }
-        public static float normalize(float blocks) { return blocks / RADIUS_SCALE; }
+        public static float toBlocks(float normalized) {
+            return normalized * RADIUS_SCALE;
+        }
+
+        public static float normalize(float blocks) {
+            return blocks / RADIUS_SCALE;
+        }
     }
 
     public static final class Orbit {
@@ -143,8 +170,13 @@ public final class DataConfig {
         public static final Slider VERTICAL_OFFSET = new Slider(0.0, -2000.0, 2000.0);
         public static final double MAX_SCALED_RADIUS = 30_000_000.0;
 
-        public static double toBlocks(double normalized) { return normalized * RADIUS_SCALE; }
-        public static double normalize(double blocks) { return blocks / RADIUS_SCALE; }
+        public static double toBlocks(double normalized) {
+            return normalized * RADIUS_SCALE;
+        }
+
+        public static double normalize(double blocks) {
+            return blocks / RADIUS_SCALE;
+        }
     }
 
     public static final class Clouds {

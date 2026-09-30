@@ -25,19 +25,33 @@ public class ArmorProperties {
         this.customItemModels.putAll(builder.customItemModels);
     }
 
-    public String getId() { return id; }
-    public String getDisplayName() { return displayName; }
-    public ArmorTier getType() { return type; }
-    public ArmorMaterial getMaterial() { return material; }
-    public boolean hasCustom3DModel() { return custom3DModel; }
+    public static Builder create(String displayName, String id, ArmorTier type, ArmorMaterial material) {
+        return new Builder(displayName, id, type, material);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public ArmorTier getType() {
+        return type;
+    }
+
+    public ArmorMaterial getMaterial() {
+        return material;
+    }
+
+    public boolean hasCustom3DModel() {
+        return custom3DModel;
+    }
 
     @Nullable
     public String getCustomItemModel(ArmorItem.Type pieceType) {
         return customItemModels.get(pieceType);
-    }
-
-    public static Builder create(String displayName, String id, ArmorTier type, ArmorMaterial material) {
-        return new Builder(displayName, id, type, material);
     }
 
     public static class Builder {
@@ -45,8 +59,8 @@ public class ArmorProperties {
         private final String id;
         private final ArmorTier type;
         private final ArmorMaterial material;
-        private boolean custom3DModel = false;
         private final Map<ArmorItem.Type, String> customItemModels = new EnumMap<>(ArmorItem.Type.class);
+        private boolean custom3DModel = false;
 
         public Builder(String displayName, String id, ArmorTier type, ArmorMaterial material) {
             this.displayName = displayName;

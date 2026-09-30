@@ -59,10 +59,10 @@ public class TSPRecipeProvider extends RecipeProvider {
             }
 
             for (BlockFactory.CutBlockInfo cutInfo : factory.getCutBlocks()) {
-                BlockFactory targetFactory = RegisterBlocks.BUILDERS.get(cutInfo.getTargetBlockName());
+                BlockFactory targetFactory = RegisterBlocks.BUILDERS.get(cutInfo.targetBlockName());
                 if (targetFactory != null && targetFactory.getMainBlock() != null) {
                     stonecutterResultFromBase(writer, RecipeCategory.BUILDING_BLOCKS,
-                            targetFactory.getMainBlock().get(), mainBlock, cutInfo.getCount());
+                            targetFactory.getMainBlock().get(), mainBlock, cutInfo.count());
                 }
             }
 

@@ -13,12 +13,13 @@ public final class OrbitCollisionUtil {
     private static final double DEFAULT_STAR_RADIUS = 1500.0D;
     private static final double MIN_SEPARATION_MARGIN = 50.0D;
 
-    private OrbitCollisionUtil() {}
+    private OrbitCollisionUtil() {
+    }
 
     public static double getPhysicalClearanceRadius(PlanetInstance.Config body) {
         if (body == null) return 0.0D;
         double bodyRadius = DataConfig.Body.toBlocks(body.radius);
-        double radius = Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, bodyRadius);
+        double radius = Math.max(DataConfig.Body.MIN_PHYSICAL_RADIUS, bodyRadius);
         if (body.atmosphere != null && body.atmosphere.enabled) {
             double thickness = body.atmosphere.thickness <= 2.0F ? bodyRadius * body.atmosphere.thickness : body.atmosphere.thickness;
             radius = Math.max(radius, bodyRadius + Math.max(0.0D, thickness));
@@ -54,7 +55,7 @@ public final class OrbitCollisionUtil {
             }
         }
         if (system.star != null) {
-            return Math.max((double) DataConfig.Body.MIN_PHYSICAL_RADIUS, (double) DataConfig.Star.toBlocks(system.star.radius));
+            return Math.max(DataConfig.Body.MIN_PHYSICAL_RADIUS, (double) DataConfig.Star.toBlocks(system.star.radius));
         }
         return DEFAULT_STAR_RADIUS;
     }
@@ -81,7 +82,8 @@ public final class OrbitCollisionUtil {
                         ? system.star.id : DataConfig.Body.PARENT_ID_DEF;
                 List<PlanetInstance.Config> siblingPlanets = system.getMoonsOf(starParentId);
                 for (PlanetInstance.Config sibling : siblingPlanets) {
-                    if (sibling == null || sibling.id.equalsIgnoreCase(parentBody.id) || sibling.orbit == null) continue;
+                    if (sibling == null || sibling.id.equalsIgnoreCase(parentBody.id) || sibling.orbit == null)
+                        continue;
                     double dist = Math.abs(DataConfig.Orbit.toBlocks(sibling.orbit.radius) - parentOrbit);
                     double siblingClearance = getPhysicalClearanceRadius(sibling);
                     double safeDistance = Math.max(1000.0D, dist * 0.45D - siblingClearance);
@@ -94,8 +96,6 @@ public final class OrbitCollisionUtil {
         }
         return DataConfig.Orbit.RADIUS.max();
     }
-
-    public record Range(double min, double max) {}
 
     public static List<Range> getSiblingExclusionZones(SolarSystemData system, PlanetInstance.Config body) {
         List<Range> zones = new ArrayList<>();
@@ -174,5 +174,8 @@ public final class OrbitCollisionUtil {
         }
 
         return Utils.clamp(radius, minSafe, maxSafe);
+    }
+
+    public record Range(double min, double max) {
     }
 }

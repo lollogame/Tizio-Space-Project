@@ -58,7 +58,8 @@ public class LabeledSliderPopup extends Screen {
             if (onConfirm != null) {
                 onConfirm.accept(clamped);
             }
-        } catch (NumberFormatException ignored) {}
+        } catch (NumberFormatException ignored) {
+        }
         closePrompt();
     }
 

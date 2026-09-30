@@ -8,8 +8,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
 import tizio.dev.tsp.MainClass;
 import tizio.dev.tsp.core.handlers.temperature.TemperatureManager;
-import tizio.dev.tsp.core.network.PacketsRegistry;
 import tizio.dev.tsp.core.network.SyncPlayerStatusPacket;
+import tizio.dev.tsp.registry.RegisterPackets;
 
 @Mod.EventBusSubscriber(modid = MainClass.MODID)
 public final class OxygenEventHandler {
@@ -56,6 +56,6 @@ public final class OxygenEventHandler {
         if (player == null || player.connection == null) return;
         float oxygen = OxygenManager.getOxygen(player);
         float temperature = TemperatureManager.getTemperature(player);
-        PacketsRegistry.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new SyncPlayerStatusPacket(oxygen, temperature));
+        RegisterPackets.CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new SyncPlayerStatusPacket(oxygen, temperature));
     }
 }
