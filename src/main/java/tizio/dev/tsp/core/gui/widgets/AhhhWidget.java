@@ -56,7 +56,7 @@ public class AhhhWidget extends AbstractWidget {
         if (secretGif != null && secretGif.isLoaded()) {
             secretGif.update();
 
-            float gifScale = 0.8F;
+            float gifScale = 1.0F;
 
             guiGraphics.pose().pushPose();
             guiGraphics.pose().translate(this.initialCenterX, this.initialCenterY, 0.0F);
