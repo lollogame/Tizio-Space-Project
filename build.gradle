@@ -5,7 +5,6 @@ buildscript {
     }
     dependencies {
         classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
-        classpath 'com.guardsquare:proguard-gradle:7.4.2'
     }
 }
 
@@ -30,7 +29,7 @@ java {
 
 minecraft {
     mappings channel: mapping_channel, version: mapping_version
-    //accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
     copyIdeResources = true
 
     runs {
@@ -74,10 +73,10 @@ mixin {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
-    maven {
-        url "https://cursemaven.com"
-    }
-    mavenCentral()
+//    maven {
+//        url "https://cursemaven.com"
+//    }
+//    mavenCentral()
 }
 
 dependencies {
@@ -88,11 +87,20 @@ dependencies {
 }
 
 tasks.named('processResources', ProcessResources).configure {
-    var replaceProperties = [minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
-                             forge_version       : forge_version, forge_version_range: forge_version_range,
-                             loader_version_range: loader_version_range,
-                             mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
-                             mod_authors         : mod_authors, mod_description: mod_description,]
+    var replaceProperties = [
+
+            minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
+            forge_version       : forge_version, forge_version_range: forge_version_range,
+            loader_version_range: loader_version_range,
+            mod_id              : mod_id,
+            mod_name: mod_name,
+            mod_license: mod_license,
+            mod_version: mod_version,
+            mod_authors         : mod_authors,
+            homepage : homepage,
+            mod_description: mod_description,
+
+    ]
 
     inputs.properties replaceProperties
 
