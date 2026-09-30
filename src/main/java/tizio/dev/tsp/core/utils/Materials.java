@@ -211,7 +211,7 @@ public class Materials {
 
     public static synchronized AnimatedGif getSecretGif() {
         if (SECRET_GIF == null) {
-            SECRET_GIF = new AnimatedGif("https://media.tenor.com/HxqFc75TVOIAAAAi/cat-eating-chips.gif", "sus", true);
+            SECRET_GIF = new AnimatedGif("", "sus", true);
         }
         return SECRET_GIF;
     }
